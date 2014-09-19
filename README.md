@@ -13,7 +13,8 @@ opam switch 4.01.0+PIC # anterior version may work as well, +PIC is essential
 
 # Follow opam instructions to configure the environment
 
-# Install OCaml Facile library
+# Install ocamlfind and facile library
+opam install ocamlfind
 opam install facile
 
 # Build/install the Python library (recent version of setuptools needed)
@@ -24,3 +25,11 @@ python setup.py bdist_wheel
 ```
 
 I detailed my approach and some lessons learned [here](lessons.md)
+
+#### Things left to do
+
+- Sample programs (tutorial)
+- Improve `setup.py` for managing build dependencies
+- Clean a messy `value` becomes `value*` thing between the `.h` and the `.pxd` because of Cython mess with the `__getval()` function returning `value*` type objects.
+- Study the feasibility of building your own constraints in pure Python.
+
