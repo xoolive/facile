@@ -16,7 +16,7 @@ Things worked always earlier on my Mac until I realised the OCaml shipped throug
 
 Basically, I use Python objects to wrap OCaml `value` type objects. An OCaml value can be an integer or a pointer to an OCaml structure. I had in mind how Python GC works by counting references to objects. OCaml GC moves objects in addition, so when you keep a pointer to an OCaml structure in your Python object and OCaml GC messes things up... you get the picture!
 
-The keywords are `caml_register_global_root(v)` and `caml_remove_global_root`. The idea is to allocate memory in C and to keep there a pointer to a `value` (which is a pointer to an OCaml structure itself). When the GC moves things, it will update the reference in the C memory as well. Thank you.
+The keywords are `caml_register_global_root(v)` and `caml_remove_global_root`. The idea is to allocate memory in C and to keep there a pointer to a `value` (which is a pointer to an OCaml structure itself). When the GC moves things, it will update the reference in the C memory as well.
 
 #### `Makefile`, `scons`, `setuptools` etc.
 
@@ -30,5 +30,5 @@ I eventually imitated how Cython extends the `build_ext` command in order to com
 
 #### Wrap up everything
 
-I like wheels (`pip install wheel`) when packaging things. I didn't expect it to not be able to differentiate between different GLIBC versions. I have to install this `facile` wheel on Debian Stable (Wheezy) distributions which are still on an antediluvian version of the GLIBC: the installation fails. After compiling things on my own Debian Stable virtual machine, I found that even the `wheel` name is the same. Since `wheel` is not even installed on the machines I will have students try the library, I will just stick to `python-eggs` for this year.
+I like wheels (`pip install wheel`) when packaging Python libraries. I didn't expect it to not be able to differentiate between different GLIBC versions. I have to install this `facile` wheel on Debian Stable (Wheezy) distributions which are still on an antediluvian version of the GLIBC: the installation fails. After compiling things on my own Debian Stable virtual machine, I found that even the `wheel` name is the same. Since `wheel` is not even installed on the machines I will have students try the library, I will just stick to `python-eggs` for this year.
 
