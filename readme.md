@@ -24,6 +24,8 @@ python setup.py install
 python setup.py bdist_wheel
 ```
 
+After installing the package, you can try basic problems in the `examples` directory.
+
 I detailed my approach and some lessons learned [here](lessons.md)
 
 #### Things left to do
