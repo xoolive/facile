@@ -30,7 +30,6 @@ I detailed my approach and some lessons learned [here](lessons.md)
 
 #### Things left to do
 
-- Improve `setup.py` for managing build dependencies
 - Clean a messy `value` becomes `value*` thing between the `.h` and the `.pxd` because of Cython mess with the `__getval()` function returning `value*` type objects.
 - Study the feasibility of building your own constraints in pure Python.
 

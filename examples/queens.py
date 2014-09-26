@@ -26,13 +26,13 @@ def print_line(val, n):
             cumul = cumul + "o "
         else:
             cumul = cumul + "- "
-    print cumul
+    print (cumul)
 
 
 if __name__ == "__main__":
     solution = n_queen(8)
     if solution is not None:
-        print "Solution for the 8-queen problem"
+        print ("Solution for the 8-queen problem")
         [print_line(s, 8) for s in solution]
     else:
-        print "No solution found"
+        print ("No solution found")
