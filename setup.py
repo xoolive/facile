@@ -6,7 +6,7 @@ from Cython.Build import cythonize
 
 import os
 import os.path
-
+import platform
 import sysconfig
 import sys
 
@@ -35,6 +35,9 @@ facilepath = os.popen("ocamlfind query facile").readline().strip()
 if facilepath == "":
     print ("ocamlfind or facile not found")
     raise SystemError
+#     if os.path.exists(ocamlpath + "/facile.cma"):
+#         facilepath = ocamlpath
+#     else:
 
 INCLUDE = [ocamlpath]
 
@@ -46,10 +49,15 @@ except ImportError:
     raise
 
 mlobject = "%s/interface_ml.o" % bpath
+asmrunlib = ocamlpath+"/libasmrun.a"
+if platform.system == "Windows":
+    mlobject = "%s/interface_ml.obj" % bpath
+    asmrunlib = ocamlpath+"/libasmrun.lib"
+
 exists = not os.path.exists(mlobject)
 if exists or os.path.getmtime("interface.ml") > os.path.getmtime(mlobject):
-    os.system(("%s -output-obj -I %s -o %s/interface_ml.o %s/facile.cmxa" +
-               " interface.ml") % (ocamlopt, facilepath, bpath, facilepath))
+    os.system(("%s -output-obj -I %s -o %s %s/facile.cmxa interface.ml") %
+              (ocamlopt, facilepath, mlobject, facilepath))
     now = time.time()
     os.utime("facile.pyx", (now, now))
 
@@ -59,7 +67,7 @@ extensions = [
               language="c",
               include_dirs=INCLUDE,
               extra_compile_args=["-fPIC"],
-              extra_link_args=[mlobject, ocamlpath+"/libasmrun.a"]
+              extra_link_args=[mlobject, asmrunlib]
               )
 ]
 
