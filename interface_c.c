@@ -33,8 +33,9 @@ void fcl_destroy(value* v)
 
 value* val_interval(int i, int j)
 {
+  value v;
   CLOSURE("Fd.interval");
-  value v = caml_callback2(*closure, Val_int(i), Val_int(j));
+  v = caml_callback2(*closure, Val_int(i), Val_int(j));
   return fcl_wrap(v);
 }
 
@@ -47,8 +48,9 @@ char* val_name(value* in)
 
 void val_minmax(value* in, int* min, int* max)
 {
+  value a;
   CLOSURE ("Fd.min_max");
-  value a = caml_callback(*closure, *in);
+  a = caml_callback(*closure, *in);
   *min = Int_val(Field(a, 0));
   *max = Int_val(Field(a, 1));
   return;
@@ -63,92 +65,105 @@ int val_isbound(value* in)
 
 value* i2e(int in)
 {
+  value a;
   CLOSURE ("i2e");
-  value a = caml_callback(*closure, Val_int(in));
+  a = caml_callback(*closure, Val_int(in));
   return fcl_wrap(a);
 }
 
 value* e2fd(value* in)
 {
+  value a;
   CLOSURE ("e2fd");
-  value a = caml_callback(*closure, *in);
+  a = caml_callback(*closure, *in);
   return fcl_wrap(a);
 }
 
 value* fd2e(value* in)
 {
+  value a;
   CLOSURE ("fd2e");
-  value a = caml_callback(*closure, *in);
+  a = caml_callback(*closure, *in);
   return fcl_wrap(a);
 }
 
 value* arith_add(value* val1, value* val2)
 {
+  value a;
   CLOSURE("arith_add");
-  value a = caml_callback2(*closure, *val1, *val2);
+  a = caml_callback2(*closure, *val1, *val2);
   return fcl_wrap(a);
 }
 
 value* arith_sub(value* val1, value* val2)
 {
+  value a;
   CLOSURE("arith_sub");
-  value a = caml_callback2(*closure, *val1, *val2);
+  a = caml_callback2(*closure, *val1, *val2);
   return fcl_wrap(a);
 }
 
 value* arith_mul(value* val1, value* val2)
 {
+  value a;
   CLOSURE("arith_mul");
-  value a = caml_callback2(*closure, *val1, *val2);
+  a = caml_callback2(*closure, *val1, *val2);
   return fcl_wrap(a);
 }
 
 value* arith_abs(value* val1)
 {
+  value a;
   CLOSURE("arith_abs");
-  value a = caml_callback(*closure, *val1);
+  a = caml_callback(*closure, *val1);
   return fcl_wrap(a);
 }
 
 value* cstr_lt(value* in1, value* in2)
 {
+  value a;
   CLOSURE ("lt");
-  value a = caml_callback2(*closure, *in1, *in2);
+  a = caml_callback2(*closure, *in1, *in2);
   return fcl_wrap(a);
 }
 
 value* cstr_le(value* in1, value* in2)
 {
+  value a;
   CLOSURE ("le");
-  value a = caml_callback2(*closure, *in1, *in2);
+  a = caml_callback2(*closure, *in1, *in2);
   return fcl_wrap(a);
 }
 
 value* cstr_eq(value* in1, value* in2)
 {
+  value a;
   CLOSURE ("eq");
-  value a = caml_callback2(*closure, *in1, *in2);
+  a = caml_callback2(*closure, *in1, *in2);
   return fcl_wrap(a);
 }
 
 value* cstr_ne(value* in1, value* in2)
 {
+  value a;
   CLOSURE ("ne");
-  value a = caml_callback2(*closure, *in1, *in2);
+  a = caml_callback2(*closure, *in1, *in2);
   return fcl_wrap(a);
 }
 
 value* cstr_gt(value* in1, value* in2)
 {
+  value a;
   CLOSURE ("gt");
-  value a = caml_callback2(*closure, *in1, *in2);
+  a = caml_callback2(*closure, *in1, *in2);
   return fcl_wrap(a);
 }
 
 value* cstr_ge(value* in1, value* in2)
 {
+  value a;
   CLOSURE ("ge");
-  value a = caml_callback2(*closure, *in1, *in2);
+  a = caml_callback2(*closure, *in1, *in2);
   return fcl_wrap(a);
 }
 
@@ -168,29 +183,32 @@ void cstr_post(value* in)
 
 value* cstr_or(value* in1, value* in2)
 {
+  value a;
   CLOSURE ("Cstr.or");
-  value a = caml_callback2(*closure, *in1, *in2);
+  a = caml_callback2(*closure, *in1, *in2);
   return fcl_wrap(a);
 }
 
 value* cstr_alldiff(value** val, long len)
 {
+  value array, a;
+  size_t i = 0;
   CLOSURE("Cstr.alldiff");
   // À la barbare
-  value array = caml_alloc(len, 0);
-  size_t i = 0;
+  array = caml_alloc(len, 0);
   for(; i< len; ++i)
     Store_field(array, i, val[i][0]);
-  value a = caml_callback(*closure, array);
+  a = caml_callback(*closure, array);
   return fcl_wrap(a);
 }
 
 int goals_array_solve(value** val, long len, heuristic h)
 {
+  value array;
+  size_t i = 0;
   CLOSURE("Goals.Array.solve");
   // À la barbare
-  value array = caml_alloc(len, 0);
-  size_t i = 0;
+  array = caml_alloc(len, 0);
   for(; i < len; ++i)
     Store_field(array, i, val[i][0]);
   return Bool_val(caml_callback2(*closure, array, Val_int(h)));
@@ -198,13 +216,14 @@ int goals_array_solve(value** val, long len, heuristic h)
 
 int goals_array_solve_bt(value** val, long len, heuristic h, long* bt)
 {
+  value array, v;
+  size_t i = 0;
   CLOSURE("Goals.Array.solve_bt");
   // À la barbare
-  value array = caml_alloc(len, 0);
-  size_t i = 0;
+  array = caml_alloc(len, 0);
   for(; i < len; ++i)
     Store_field(array, i, val[i][0]);
-  value v = caml_callback2(*closure, array, Val_int(h));
+  v = caml_callback2(*closure, array, Val_int(h));
   *bt = Int_val(Field(v, 1));
   return Bool_val(Field(v, 0));
 }
@@ -213,13 +232,14 @@ int goals_array_solve_bt(value** val, long len, heuristic h, long* bt)
 int goals_minimize(value** val, long len, value* expr, long* solution,
                    long* optimal)
 {
+  value array, res;
+  size_t i = 0;
   CLOSURE("Goals.minimize");
   // À la barbare
-  value array = caml_alloc(len, 0);
-  size_t i = 0;
+  array = caml_alloc(len, 0);
   for(; i < len; ++i)
     Store_field(array, i, val[i][0]);
-  value res = caml_callback2(*closure, array, *expr);
+  res = caml_callback2(*closure, array, *expr);
   if (res == Val_int(0))
     return 0;
   for (i=0; i < Wosize_val(Field(Field(res, 0), 1)); ++i)
