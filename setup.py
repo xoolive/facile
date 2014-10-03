@@ -57,7 +57,7 @@ compileargs = ["-fPIC"]
 if platform.system() == "Windows":
     mlobject = "%s/interface_ml.obj" % bpath
     asmrunlib = ocamlpath + "/libasmrun.lib"
-	compileargs = []
+    compileargs = []
 
 # Check timestamps for OCaml file
 exists = not os.path.exists(mlobject)
