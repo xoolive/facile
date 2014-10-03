@@ -31,13 +31,14 @@ if ocamlopt == "":
     print ("ocamlc not found")
     raise SystemError
 
+# Rely on ocamlfind to find facile, but you can add some hints if need be
 facilepath = os.popen("ocamlfind query facile").readline().strip()
 if facilepath == "":
     print ("ocamlfind or facile not found")
-    raise SystemError
-#     if os.path.exists(ocamlpath + "/facile.cma"):
-#         facilepath = ocamlpath
-#     else:
+    if os.path.exists(ocamlpath + "/facile.cma"):
+        facilepath = ocamlpath
+    else:
+        raise SystemError
 
 INCLUDE = [ocamlpath]
 
@@ -49,11 +50,16 @@ except ImportError:
     raise
 
 mlobject = "%s/interface_ml.o" % bpath
-asmrunlib = ocamlpath+"/libasmrun.a"
-if platform.system == "Windows":
-    mlobject = "%s/interface_ml.obj" % bpath
-    asmrunlib = ocamlpath+"/libasmrun.lib"
+asmrunlib = ocamlpath + "/libasmrun.a"
+compileargs = ["-fPIC"]
 
+# Extensions are different with Windows, also no -fPIC
+if platform.system() == "Windows":
+    mlobject = "%s/interface_ml.obj" % bpath
+    asmrunlib = ocamlpath + "/libasmrun.lib"
+	compileargs = []
+
+# Check timestamps for OCaml file
 exists = not os.path.exists(mlobject)
 if exists or os.path.getmtime("interface.ml") > os.path.getmtime(mlobject):
     os.system(("%s -output-obj -I %s -o %s %s/facile.cmxa interface.ml") %
@@ -66,13 +72,13 @@ extensions = [
               ["facile.pyx", "interface_c.c"],
               language="c",
               include_dirs=INCLUDE,
-              extra_compile_args=["-fPIC"],
+              extra_compile_args=compileargs,
               extra_link_args=[mlobject, asmrunlib]
               )
 ]
 
 class mrclean(Command):
-    description = "custom clean command for OCaml objects"
+    description = "Custom clean command for OCaml objects"
     user_options = []
 
     def initialize_options(self):
@@ -83,7 +89,7 @@ class mrclean(Command):
 
     def run(self):
         assert os.getcwd() == self.cwd, 'Must be in: %s' % self.cwd
-        os.system('rm -rf *.cm* *.o %s' % bpath)
+        os.system('rm -rf *.cm* *.o *.obj %s' % mlobject)
 
 cmdclass = {}
 cmdclass['clean'] = mrclean
