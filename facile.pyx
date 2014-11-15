@@ -15,7 +15,7 @@ class Heuristic:
 
 cdef class Variable(object):
 
-    cdef value mlvalue
+    cdef long mlvalue
 
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
@@ -184,7 +184,7 @@ cdef class Variable(object):
 
 cdef class Arith(object):
 
-    cdef value mlvalue
+    cdef long mlvalue
 
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
@@ -335,7 +335,7 @@ cdef class Arith(object):
 
 cdef class Cstr(object):
 
-    cdef value mlvalue
+    cdef long mlvalue
 
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
@@ -403,10 +403,10 @@ def solve(variables, backtrack=False, heuristic=Heuristic.No):
         length = len(variables)
         if length < 1:
             return SyntaxError
-        if (backtrack==False):
-            return goals_array_solve(<value*> pt_vars, length, heuristic) == 1
+        if (not backtrack):
+            return goals_array_solve(<long*> pt_vars, length, heuristic) == 1
         else:
-            res = goals_array_solve_bt(<value*> pt_vars, length, heuristic, &bt)
+            res = goals_array_solve_bt(<long*> pt_vars, length, heuristic, &bt)
             return (res, bt)
     raise SyntaxError
 
@@ -442,7 +442,7 @@ def minimize(variables, expr):
             return SyntaxError
         sol = np.zeros(length, long)
         pt_sol = cnp.PyArray_DATA(sol)
-        if goals_minimize(<value*> pt_vars, length, expr.__getval(),
+        if goals_minimize(<long*> pt_vars, length, expr.__getval(),
                           <long*> pt_sol, &optimal) == 1 :
             return (optimal, sol)
         else:
@@ -486,7 +486,7 @@ def alldifferent(variables):
     """
 
     cdef long length
-    cdef value* pt_vars
+    cdef long* pt_vars
     if cpython.PySequence_Check(variables):
         if len(variables) < 2:
             raise SyntaxError
@@ -497,7 +497,7 @@ def alldifferent(variables):
             npvars = np.array([e2fd(v.__getval()) for v in variables])
         if npvars is None:
             raise TypeError
-        pt_vars = <value*> cnp.PyArray_DATA(npvars)
+        pt_vars = <long*> cnp.PyArray_DATA(npvars)
         length = len(variables)
         cstr_post(cstr_alldiff(pt_vars, length))
         return
