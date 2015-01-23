@@ -25,7 +25,7 @@ cdef extern from "interface.h":
     long cstr_ge(long, long)
 
     char* cstr_name(long)
-    void cstr_post(long)
+    int cstr_post(long)
     long cstr_or(long, long)
     long cstr_alldiff(long*, long)
 

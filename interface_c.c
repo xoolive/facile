@@ -174,11 +174,12 @@ char* cstr_name(value* in)
   return String_val(caml_callback(*closure, *in));
 }
 
-void cstr_post(value* in)
+int cstr_post(value* in)
 {
+  value v;
   CLOSURE ("Cstr.post");
-  caml_callback(*closure, *in);
-  return;
+  v = caml_callback_exn(*closure, *in);
+  return Is_exception_result(v);
 }
 
 value* cstr_or(value* in1, value* in2)
