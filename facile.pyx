@@ -353,7 +353,8 @@ cdef class Cstr(object):
         return Cstr(cstr_or(self.__getval(), c.__getval()))
 
     def post(self):
-        cstr_post(self.__getval())
+        if cstr_post(self.__getval()) == 1:
+            raise ValueError("Probably an invalid constraint. Think a != a")
 
 cimport cpython
 import numpy as np

@@ -30,7 +30,7 @@ value* cstr_gt(value* in1, value* in2);
 value* cstr_ge(value* in1, value* in2);
 
 char* cstr_name(value* in);
-void cstr_post(value* in);
+int cstr_post(value* in);
 value* cstr_or(value*, value*);
 value* cstr_alldiff(value**, long);
 

@@ -95,7 +95,7 @@ cmdclass = {}
 cmdclass['clean'] = mrclean
 
 setup(name="facile",
-      version="1.0",
+      version="1.1",
       author="Xavier Olive",
       author_email="xo.olive@gmail.com",
       description="Wrapping for OCaml Facile library into Python",
