@@ -349,8 +349,8 @@ cdef class Cstr(object):
     def __repr__(self):
         return (<bytes> cstr_name(self.__getval()))
 
-    def __or__(self, Cstr c):
-        return Cstr(cstr_or(self.__getval(), c.__getval()))
+    def __or__(Cstr c1, Cstr c2):
+        return Cstr(cstr_or(c1.__getval(), c2.__getval()))
 
     def post(self):
         if cstr_post(self.__getval()) == 1:
