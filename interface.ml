@@ -45,6 +45,15 @@ let _ =
   Callback.register "Cstr.name" Cstr.name;
   Callback.register "Cstr.alldiff" (Alldiff.cstr ~algo:Alldiff.Lazy);
   Callback.register "Cstr.or" (fun a b -> a ||~~ b);
+  Callback.register "Cstr.and" (fun a b -> a &&~~ b);
+
+  Callback.register "FdArray.get" FdArray.get;
+
+  Callback.register "FdArray.card" (
+    fun array j ->
+      let is_equal_to i x = fd2e x =~~ i2e i in
+      Arith.sum (Array.map (is_equal_to j) array)
+  );
 
   Callback.register "Goals.Array.solve"
     (fun x h -> Goals.solve (goal x h));

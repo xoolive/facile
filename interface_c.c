@@ -190,6 +190,14 @@ value* cstr_or(value* in1, value* in2)
   return fcl_wrap(a);
 }
 
+value* cstr_and(value* in1, value* in2)
+{
+  value a;
+  CLOSURE ("Cstr.and");
+  a = caml_callback2(*closure, *in1, *in2);
+  return fcl_wrap(a);
+}
+
 value* cstr_alldiff(value** val, long len)
 {
   value array, a;
@@ -200,6 +208,40 @@ value* cstr_alldiff(value** val, long len)
   for(; i< len; ++i)
     Store_field(array, i, val[i][0]);
   a = caml_callback(*closure, array);
+  return fcl_wrap(a);
+}
+
+value* fdarray_create(value** val, long len)
+{
+  value array;
+  size_t i = 0;
+  // À la barbare
+  array = caml_alloc(len, 0);
+  for(; i< len; ++i)
+    Store_field(array, i, val[i][0]);
+  return fcl_wrap(array);
+}
+
+void fdarray_read(value* val1, value** val2)
+{
+  size_t i = 0, len;
+  for (; i<Wosize_val(*val1); ++i)
+    val2[i] = fcl_wrap(Field(*val1, i));
+}
+
+value* fdarray_get(value* in1, value* in2)
+{
+  value a;
+  CLOSURE("FdArray.get");
+  a = caml_callback2(*closure, *in1, *in2);
+  return fcl_wrap(a);
+}
+
+value* fdarray_card(value* in1, long in2)
+{
+  value a;
+  CLOSURE("FdArray.card");
+  a = caml_callback2(*closure, *in1, Val_int(in2));
   return fcl_wrap(a);
 }
 

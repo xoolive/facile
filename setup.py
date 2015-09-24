@@ -28,7 +28,7 @@ if ocamlpath == "":
 
 ocamlopt = os.popen("which ocamlopt").readline().strip()
 if ocamlopt == "":
-    print ("ocamlc not found")
+    print ("ocamlopt not found")
     raise SystemError
 
 # Rely on ocamlfind to find facile, but you can add some hints if need be
@@ -53,15 +53,10 @@ mlobject = "%s/interface_ml.o" % bpath
 asmrunlib = ocamlpath + "/libasmrun.a"
 compileargs = ["-fPIC"]
 
-# Extensions are different with Windows, also no -fPIC
-if platform.system() == "Windows":
-    mlobject = "%s/interface_ml.obj" % bpath
-    asmrunlib = ocamlpath + "/libasmrun.lib"
-    compileargs = []
-
 # Check timestamps for OCaml file
 exists = not os.path.exists(mlobject)
 if exists or os.path.getmtime("interface.ml") > os.path.getmtime(mlobject):
+    print("Compiling interface.ml")
     os.system(("%s -output-obj -I %s -o %s %s/facile.cmxa interface.ml") %
               (ocamlopt, facilepath, mlobject, facilepath))
     now = time.time()
@@ -73,7 +68,7 @@ extensions = [
               language="c",
               include_dirs=INCLUDE,
               extra_compile_args=compileargs,
-              extra_link_args=[mlobject, asmrunlib]
+              extra_link_args=[mlobject, asmrunlib,]
               )
 ]
 

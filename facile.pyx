@@ -20,16 +20,16 @@ cdef class Variable(object):
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
 
-    def __cinit__ (self, int i, int j):
-        self.mlvalue = val_interval(i, j)
+    def __cinit__ (self, value):
+        self.mlvalue = value
 
     def __repr__(self):
         cdef int vmin, vmax
         val_minmax(self.mlvalue, &vmin, &vmax)
         if (val_isbound(self.mlvalue) == 1) :
-            return "value bound to %d" % (vmin)
+            return " = %d" % (vmin)
         else:
-            return "%s in [%d,%d]" % (<bytes> val_name(self.mlvalue), vmin, vmax)
+            return "%s ∈ [%d,%d]" % (<bytes> val_name(self.mlvalue), vmin, vmax)
 
     def __getval(self):
         return self.mlvalue
@@ -195,6 +195,9 @@ cdef class Arith(object):
     def __getval(self):
         return self.mlvalue
 
+    def var(self):
+        return Variable(e2fd(self.mlvalue))
+
     def __richcmp__(self, value, integer):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
         if integer == 0:
@@ -349,12 +352,55 @@ cdef class Cstr(object):
     def __repr__(self):
         return (<bytes> cstr_name(self.__getval()))
 
+    def __and__(Cstr c1, Cstr c2):
+        return Cstr(cstr_and(c1.__getval(), c2.__getval()))
+
     def __or__(Cstr c1, Cstr c2):
         return Cstr(cstr_or(c1.__getval(), c2.__getval()))
 
     def post(self):
         if cstr_post(self.__getval()) == 1:
             raise ValueError("Probably an invalid constraint. Think a != a")
+
+cdef class Array(object):
+
+    cdef long mlvalue
+    cdef long length
+
+    def __dealloc__(self):
+        fcl_destroy(self.mlvalue)
+
+    def __cinit__(self, value, length):
+        self.mlvalue = value
+        self.length = length
+
+    def __getval(self):
+        return self.mlvalue
+
+    def __repr__(self):
+        values = np.empty(self.length, dtype=long)
+        array = []
+        pt_vars = <long*> cnp.PyArray_DATA(values)
+        fdarray_read(self.mlvalue, pt_vars)
+        for i in range(self.length):
+            # memory should be properly freed upon GC on Variable(values[i])
+            array.append(Variable(values[i]))
+        return array.__repr__()
+
+    def __getitem__(self, key):
+        cdef long value
+        if isinstance(key, Variable):
+            value = fdarray_get(self.mlvalue, key.__getval())
+        elif isinstance(key, Arith):
+            value = fdarray_get(self.mlvalue, e2fd(key.__getval()))
+        elif isinstance(key, long):
+            value = fdarray_get(self.mlvalue, e2fd(i2e(key)))
+        else:
+            raise TypeError
+        return Variable(value)
+
+    def card(self, long card):
+        return Arith(fdarray_card(self.mlvalue, card))
 
 cimport cpython
 import numpy as np
@@ -489,15 +535,17 @@ def alldifferent(variables):
     cdef long length
     cdef long* pt_vars
     if cpython.PySequence_Check(variables):
-        if len(variables) < 2:
+        length = len(variables)
+        if length < 2:
             raise SyntaxError
-        npvars = None
-        if isinstance(variables[0], Variable):
-            npvars = np.array([v.__getval() for v in variables])
-        if isinstance(variables[0], Arith):
-            npvars = np.array([e2fd(v.__getval()) for v in variables])
-        if npvars is None:
-            raise TypeError
+        npvars = np.empty(length, dtype=long)
+        for i in range(length):
+            if isinstance(variables[i], Variable):
+                npvars[i] = variables[i].__getval()
+            elif isinstance(variables[i], Arith):
+                npvars[i] = e2fd(variables[i].__getval())
+            else:
+                raise TypeError
         pt_vars = <long*> cnp.PyArray_DATA(npvars)
         length = len(variables)
         cstr_post(cstr_alldiff(pt_vars, length))
@@ -514,4 +562,40 @@ def variable(a, b):
     >>> variable(0, 2)
     _0 in [0,2]
     """
-    return Variable(a, b)
+    cdef long value = val_interval(a, b)
+    return Variable(value)
+
+def array(variables):
+    """
+    array(iterable)
+
+    Cette fonction crée, à partir d'un tableau d'entiers ou de variables, une
+    structure que l'on peut indexer à l'aide d'une autre variable.
+
+    >>> array(range(10))
+    >>> a = [variable(0, 2) for i in range(7)]
+    >>> array(a)
+    """
+    cdef long length
+    cdef long* pt_vars
+    cdef long value
+    cdef Variable v
+    if cpython.PySequence_Check(variables):
+        length = len(variables)
+        if length < 2:
+            raise SyntaxError
+        npvars = np.empty(length, dtype=long)
+        for i in range(length):
+            if isinstance(variables[i], Variable):
+                npvars[i] = variables[i].__getval()
+            elif isinstance(variables[i], Arith):
+                npvars[i] = e2fd(variables[i].__getval())
+            elif isinstance(variables[i], int):
+                npvars[i] = e2fd(i2e(variables[i]))
+            else:
+                raise TypeError
+        pt_vars = <long*> cnp.PyArray_DATA(npvars)
+        value = fdarray_create(pt_vars, length)
+        return Array(value, length)
+    raise SyntaxError
+

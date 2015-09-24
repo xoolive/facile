@@ -29,9 +29,15 @@ value* cstr_ne(value* in1, value* in2);
 value* cstr_gt(value* in1, value* in2);
 value* cstr_ge(value* in1, value* in2);
 
+value* fdarray_create(value**val, long len);
+void fdarray_read(value* in1, value** in2);
+value* fdarray_get(value* in1, value* in2);
+value* fdarray_card(value* in1, long in2);
+
 char* cstr_name(value* in);
 int cstr_post(value* in);
 value* cstr_or(value*, value*);
+value* cstr_and(value*, value*);
 value* cstr_alldiff(value**, long);
 
 int goals_array_solve(value**, long, heuristic);
