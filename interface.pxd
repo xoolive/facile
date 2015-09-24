@@ -27,7 +27,13 @@ cdef extern from "interface.h":
     char* cstr_name(long)
     int cstr_post(long)
     long cstr_or(long, long)
+    long cstr_and(long, long)
     long cstr_alldiff(long*, long)
+
+    long fdarray_create(long*, long)
+    void fdarray_read(long, long*)
+    long fdarray_get(long, long)
+    long fdarray_card(long, long)
 
     int goals_array_solve(long*, long, int)
     int goals_array_solve_bt(long*, long, int, long*)
