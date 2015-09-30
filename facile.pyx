@@ -397,6 +397,8 @@ cdef class Array(object):
             value = fdarray_get(self.mlvalue, e2fd(i2e(key)))
         else:
             raise TypeError
+        if value == 0:
+            raise IndexError("Index out of bounds")
         return Variable(value)
 
     def card(self, long card):
