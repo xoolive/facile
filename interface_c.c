@@ -233,7 +233,8 @@ value* fdarray_get(value* in1, value* in2)
 {
   value a;
   CLOSURE("FdArray.get");
-  a = caml_callback2(*closure, *in1, *in2);
+  a = caml_callback2_exn(*closure, *in1, *in2);
+  if Is_exception_result(a) return 0;
   return fcl_wrap(a);
 }
 
