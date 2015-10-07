@@ -459,6 +459,28 @@ def solve(variables, backtrack=False, heuristic=Heuristic.No):
             return (res, bt)
     raise SyntaxError
 
+def solve_all(variables):
+    cdef long length
+    cdef long res
+    cdef long* pt_res_i
+    if cpython.PySequence_Check(variables):
+        npvars = np.array([v.__getval() for v in variables])
+        pt_vars = cnp.PyArray_DATA(npvars)
+        length = len(variables)
+        if length < 1:
+            return SyntaxError
+        res = goals_array_solve_all(<long*> pt_vars, length)
+        sols = []
+        res_np = np.empty(length, dtype=int)
+        pt_res_np = <long*> cnp.PyArray_DATA(res_np)
+        res = parse_array(res, pt_res_np)
+        while res != 0:
+            sols.append(list(res_np))
+            res = parse_array(res, pt_res_np)
+        sols.reverse()
+        return sols
+    raise SyntaxError
+
 def minimize(variables, expr):
     """
     minimize(variables, expression)

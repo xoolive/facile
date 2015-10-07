@@ -36,5 +36,7 @@ cdef extern from "interface.h":
     long fdarray_card(long, long)
 
     int goals_array_solve(long*, long, int)
+    long goals_array_solve_all(long*, long)
+    long parse_array(long, long*)
     int goals_array_solve_bt(long*, long, int, long*)
     int goals_minimize(long*, long, long, long*, long*)
