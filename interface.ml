@@ -58,6 +58,19 @@ let _ =
   Callback.register "Goals.Array.solve"
     (fun x h -> Goals.solve (goal x h));
 
+  Callback.register "Gools.Array.solve_all"
+    (fun x ->
+       let store = ref [] in
+       let store_res res =
+         Fd.fprint_array stdout res;
+         let vals = Array.map Fd.min res in
+         store := vals::!store in
+       let _ = Goals.solve ( (Goals.Array.labeling x
+                              &&~ Goals.atomic (fun () -> store_res x)
+                              &&~ Goals.fail) ||~ Goals.success) in
+       !store
+    );
+
   Callback.register "Goals.Array.solve_bt" (
     fun x h ->
       let backtrack = ref 0 in

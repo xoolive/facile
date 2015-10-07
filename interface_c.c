@@ -224,7 +224,7 @@ value* fdarray_create(value** val, long len)
 
 void fdarray_read(value* val1, value** val2)
 {
-  size_t i = 0, len;
+  size_t i = 0;
   for (; i<Wosize_val(*val1); ++i)
     val2[i] = fcl_wrap(Field(*val1, i));
 }
@@ -256,6 +256,35 @@ int goals_array_solve(value** val, long len, heuristic h)
   for(; i < len; ++i)
     Store_field(array, i, val[i][0]);
   return Bool_val(caml_callback2(*closure, array, Val_int(h)));
+}
+
+value* goals_array_solve_all(value** val, long len)
+{
+  value array, all;
+  size_t i = 0;
+  CLOSURE("Gools.Array.solve_all");
+  // À la barbare
+  array = caml_alloc(len, 0);
+  for(; i < len; ++i)
+    Store_field(array, i, val[i][0]);
+  all = caml_callback(*closure, array);
+  return fcl_wrap(all);
+}
+
+value* parse_array(value* list, long* res)
+{
+  size_t i = 0;
+  value head;
+  value* tmp;
+  if ( *list == Val_emptylist )
+    return 0;
+  head = Field(*list, 0);
+  for (i = 0; i < Wosize_val(head); ++i)
+    res[i] = Int_val(Field(head, i));
+  tmp = list;
+  list = fcl_wrap(Field(*list, 1));
+  fcl_destroy(tmp);
+  return list;
 }
 
 int goals_array_solve_bt(value** val, long len, heuristic h, long* bt)

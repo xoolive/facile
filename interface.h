@@ -41,5 +41,7 @@ value* cstr_and(value*, value*);
 value* cstr_alldiff(value**, long);
 
 int goals_array_solve(value**, long, heuristic);
+value* goals_array_solve_all(value**, long);
+value* parse_array(value*, long*);
 int goals_array_solve_bt(value**, long, heuristic, long*);
 int goals_minimize(value**, long, value*, long*, long*);
