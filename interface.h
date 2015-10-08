@@ -32,7 +32,7 @@ value* cstr_ge(value* in1, value* in2);
 value* fdarray_create(value**val, long len);
 void fdarray_read(value* in1, value** in2);
 value* fdarray_get(value* in1, value* in2);
-value* fdarray_card(value* in1, long in2);
+value* fdarray_count_eq(value* in1, long in2);
 
 char* cstr_name(value* in);
 int cstr_post(value* in);

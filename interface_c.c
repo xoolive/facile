@@ -238,10 +238,10 @@ value* fdarray_get(value* in1, value* in2)
   return fcl_wrap(a);
 }
 
-value* fdarray_card(value* in1, long in2)
+value* fdarray_count_eq(value* in1, long in2)
 {
   value a;
-  CLOSURE("FdArray.card");
+  CLOSURE("FdArray.count_eq");
   a = caml_callback2(*closure, *in1, Val_int(in2));
   return fcl_wrap(a);
 }

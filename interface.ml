@@ -49,7 +49,7 @@ let _ =
 
   Callback.register "FdArray.get" FdArray.get;
 
-  Callback.register "FdArray.card" (
+  Callback.register "FdArray.count_eq" (
     fun array j ->
       let is_equal_to i x = fd2e x =~~ i2e i in
       Arith.sum (Array.map (is_equal_to j) array)
