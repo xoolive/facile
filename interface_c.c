@@ -277,7 +277,10 @@ value* parse_array(value* list, long* res)
   value head;
   value* tmp;
   if ( *list == Val_emptylist )
+  {
+    fcl_destroy(list);
     return 0;
+  }
   head = Field(*list, 0);
   for (i = 0; i < Wosize_val(head); ++i)
     res[i] = Int_val(Field(head, i));
