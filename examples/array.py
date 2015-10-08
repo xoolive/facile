@@ -6,7 +6,7 @@ array = [facile.variable(0,10) for i in range(10)]
 a = facile.array(array)
 
 for i in range(10):
-    facile.constraint(a.card(i) == array[i])
+    facile.constraint(a.count_eq(i) == array[i])
 # useless constraint, but for the sake of testing
 facile.constraint(a[0] != 0)
 

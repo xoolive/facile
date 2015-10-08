@@ -195,8 +195,11 @@ cdef class Arith(object):
     def __getval(self):
         return self.mlvalue
 
-    def var(self):
+    def variable(self):
         return Variable(e2fd(self.mlvalue))
+
+    def __repr__(self):
+        return self.variable().__repr__()
 
     def __richcmp__(self, value, integer):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
@@ -401,8 +404,14 @@ cdef class Array(object):
             raise IndexError("Index out of bounds")
         return Variable(value)
 
-    def card(self, long card):
-        return Arith(fdarray_card(self.mlvalue, card))
+    def count_eq(self, long nb):
+        """
+        count_eq(self, long nb)
+
+        The count_eq method returns an expression equal to the number of
+        occurrences of nb in the array.
+        """
+        return Arith(fdarray_count_eq(self.mlvalue, nb))
 
 cimport cpython
 import numpy as np
@@ -460,6 +469,21 @@ def solve(variables, backtrack=False, heuristic=Heuristic.No):
     raise SyntaxError
 
 def solve_all(variables):
+    """
+    solve_all(variables)
+
+    La fonction solve_all résout le problème défini par les contraintes posées
+    précédemment sur les variables passées en paramètre.
+
+    Elle renvoie toutes les solutions possibles au problème posé.
+
+    La fonction soulève une exception SyntaxError si variables n'est pas itérable.
+    >>> a = variable(0, 1)
+    >>> b = variable(0, 1)
+    >>> constraint(a != b)
+    >>> solve_all([a, b])
+    [[0, 1], [1, 0]]
+    """
     cdef long length
     cdef long res
     cdef long* pt_res_i
@@ -475,9 +499,9 @@ def solve_all(variables):
         pt_res_np = <long*> cnp.PyArray_DATA(res_np)
         res = parse_array(res, pt_res_np)
         while res != 0:
-            sols.append(list(res_np))
+            # Avoid returning np.int64 type objects
+            sols.insert(0, [int(x) for x in res_np])
             res = parse_array(res, pt_res_np)
-        sols.reverse()
         return sols
     raise SyntaxError
 
