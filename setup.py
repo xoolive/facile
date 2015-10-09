@@ -71,7 +71,7 @@ extensions = [
               language="c",
               include_dirs=INCLUDE,
               extra_compile_args=compileargs,
-              extra_link_args=[mlobject, asmrunlib, "-static-libgcc"]
+              extra_link_args=[mlobject, asmrunlib, ]
               )
 ]
 
