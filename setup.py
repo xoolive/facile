@@ -71,7 +71,7 @@ extensions = [
               language="c",
               include_dirs=INCLUDE,
               extra_compile_args=compileargs,
-              extra_link_args=[mlobject, asmrunlib,]
+              extra_link_args=[mlobject, asmrunlib, "-static-libgcc"]
               )
 ]
 
@@ -100,6 +100,6 @@ setup(name="facile",
       license="LGPL 3.0",
       url="https://github.com/xoolive/facile",
       cmdclass=cmdclass,
-      ext_modules=cythonize(extensions()),
+      ext_modules=cythonize(extensions),
       install_requires=get_requirements(),
       )
