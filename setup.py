@@ -102,4 +102,6 @@ setup(name="facile",
       cmdclass=cmdclass,
       ext_modules=cythonize(extensions),
       install_requires=get_requirements(),
+      scripts=['facile.pyx', 'interface.pxd', 'interface.h', 'interface.ml',
+          'requirements.txt'],
       )
