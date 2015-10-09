@@ -12,6 +12,9 @@ import sys
 
 import time
 
+def get_requirements():
+    return [line.strip() for line in open("requirements.txt")]
+
 # I know, it's bad! Feel free to improve...
 bpath = "build/temp.%s-%s.%s" % (sysconfig.get_platform(),
                                  sys.version_info[0], sys.version_info[1])
@@ -93,7 +96,10 @@ setup(name="facile",
       version="1.1",
       author="Xavier Olive",
       author_email="xo.olive@gmail.com",
-      description="Wrapping for OCaml Facile library into Python",
-      ext_modules=cythonize(extensions),
-      cmdclass=cmdclass
+      description="Wrapping for OCaml Facile library for Python",
+      license="LGPL 3.0",
+      url="https://github.com/xoolive/facile",
+      cmdclass=cmdclass,
+      ext_modules=cythonize(extensions()),
+      install_requires=get_requirements(),
       )
