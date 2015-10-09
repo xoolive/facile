@@ -15,6 +15,16 @@ import time
 def get_requirements():
     return [line.strip() for line in open("requirements.txt")]
 
+def get_long_description():
+    import codecs
+    with codecs.open('readme.md', encoding='utf-8') as f:
+        readme = f.read()
+    try:
+        from pypandoc import convert
+        return convert(readme, 'rst', 'md')
+    except ImportError:
+        return ""
+
 # I know, it's bad! Feel free to improve...
 bpath = "build/temp.%s-%s.%s" % (sysconfig.get_platform(),
                                  sys.version_info[0], sys.version_info[1])
@@ -97,6 +107,7 @@ setup(name="facile",
       author="Xavier Olive",
       author_email="xo.olive@gmail.com",
       description="Wrapping for OCaml Facile library for Python",
+      long_description=get_long_description(),
       license="LGPL 3.0",
       url="https://github.com/xoolive/facile",
       cmdclass=cmdclass,
