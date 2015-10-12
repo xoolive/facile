@@ -211,6 +211,15 @@ value* cstr_alldiff(value** val, long len)
   return fcl_wrap(a);
 }
 
+value* cstr_boolean(value* cstr)
+{
+  value a;
+  CLOSURE("Cstr.boolean");
+  a = caml_callback_exn(*closure, *cstr);
+  if Is_exception_result(a) return 0;
+  return fcl_wrap(a);
+}
+
 value* fdarray_create(value** val, long len)
 {
   value array;

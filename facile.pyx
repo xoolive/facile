@@ -21,6 +21,8 @@ cdef class Variable(object):
         fcl_destroy(self.mlvalue)
 
     def __cinit__ (self, value):
+        if value == 0:  # May happen on Cstr.boolean
+            raise Exception("Constraint non reifiable")
         self.mlvalue = value
 
     def __repr__(self):
@@ -47,7 +49,7 @@ cdef class Variable(object):
     def __richcmp__(self, value, integer):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
         if integer == 0:
-            return self.__lt(value)
+           return self.__lt(value)
         if integer == 1:
             return self.__le(value)
         if integer == 2:
@@ -145,6 +147,8 @@ cdef class Variable(object):
         if isinstance(b, int):
             c = arith_add(fd2e(a.__getval()), i2e(b))
             return Arith(c)
+        if isinstance(b, Cstr):
+            return a + Variable(cstr_boolean(b.__getval()))
         raise TypeError
 
     def __sub__(a, b):
@@ -303,6 +307,8 @@ cdef class Arith(object):
         if isinstance(b, int):
             c = arith_add(a.__getval(), i2e(b))
             return Arith(c)
+        if isinstance(b, Cstr):
+            return a + Variable(cstr_boolean(b.__getval()))
         raise TypeError
 
     def __sub__(a, b):
@@ -361,6 +367,30 @@ cdef class Cstr(object):
     def __or__(Cstr c1, Cstr c2):
         return Cstr(cstr_or(c1.__getval(), c2.__getval()))
 
+    def __add__(c1, c2):
+        if isinstance(c2, Cstr):
+            return c1 + Variable(cstr_boolean(c2.__getval()))
+        if isinstance(c1, Cstr):
+            return Variable(cstr_boolean(c1.__getval())) + c2
+        raise TypeError
+
+    def __sub__(c1, c2):
+        if isinstance(c2, Cstr):
+            return c1 - Variable(cstr_boolean(c2.__getval()))
+        if isinstance(c1, Cstr):
+            return Variable(cstr_boolean(c1.__getval())) - c2
+        raise TypeError
+
+    def __mul__(c1, c2):
+        if isinstance(c2, Cstr):
+            return c1 * Variable(cstr_boolean(c2.__getval()))
+        if isinstance(c1, Cstr):
+            return Variable(cstr_boolean(c1.__getval())) * c2
+        raise TypeError
+
+    def __abs__(a):
+        return Variable(cstr_boolean(a.__getval()))
+
     def post(self):
         if cstr_post(self.__getval()) == 1:
             raise ValueError("Probably an invalid constraint. Think a != a")
@@ -403,15 +433,6 @@ cdef class Array(object):
         if value == 0:
             raise IndexError("Index out of bounds")
         return Variable(value)
-
-    def count_eq(self, long nb):
-        """
-        count_eq(self, long nb)
-
-        The count_eq method returns an expression equal to the number of
-        occurrences of nb in the array.
-        """
-        return Arith(fdarray_count_eq(self.mlvalue, nb))
 
 cimport cpython
 import numpy as np

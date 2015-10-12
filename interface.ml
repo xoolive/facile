@@ -46,6 +46,7 @@ let _ =
   Callback.register "Cstr.alldiff" (Alldiff.cstr ~algo:Alldiff.Lazy);
   Callback.register "Cstr.or" (fun a b -> a ||~~ b);
   Callback.register "Cstr.and" (fun a b -> a &&~~ b);
+  Callback.register "Cstr.boolean" (Reify.boolean ~delay_on_negation:true);
 
   Callback.register "FdArray.get" FdArray.get;
 

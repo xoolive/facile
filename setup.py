@@ -103,7 +103,7 @@ cmdclass = {}
 cmdclass['clean'] = mrclean
 
 setup(name="facile",
-      version="1.1",
+      version="1.2",
       author="Xavier Olive",
       author_email="xo.olive@gmail.com",
       description="Wrapping for OCaml Facile library for Python",
@@ -113,6 +113,4 @@ setup(name="facile",
       cmdclass=cmdclass,
       ext_modules=cythonize(extensions),
       install_requires=get_requirements(),
-      scripts=['facile.pyx', 'interface.pxd', 'interface.h', 'interface.ml',
-          'requirements.txt'],
       )

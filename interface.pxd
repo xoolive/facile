@@ -29,6 +29,7 @@ cdef extern from "interface.h":
     long cstr_or(long, long)
     long cstr_and(long, long)
     long cstr_alldiff(long*, long)
+    long cstr_boolean(long)
 
     long fdarray_create(long*, long)
     void fdarray_read(long, long*)
