@@ -39,6 +39,7 @@ int cstr_post(value* in);
 value* cstr_or(value*, value*);
 value* cstr_and(value*, value*);
 value* cstr_alldiff(value**, long);
+value* cstr_boolean(value*);
 
 int goals_array_solve(value**, long, heuristic);
 value* goals_array_solve_all(value**, long);
