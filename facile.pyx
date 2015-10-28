@@ -548,6 +548,8 @@ def minimize(variables, expr):
     """
     cdef long length
     cdef long optimal
+    if isinstance(expr, Variable):
+        expr = Arith(fd2e(expr.__getval()))
     if not isinstance(expr, Arith):
         raise SyntaxError
     if cpython.PySequence_Check(variables):
