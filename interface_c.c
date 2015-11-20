@@ -238,20 +238,30 @@ void fdarray_read(value* val1, value** val2)
     val2[i] = fcl_wrap(Field(*val1, i));
 }
 
+value* fdarray_min(value* in1)
+{
+  value a;
+  CLOSURE("FdArray.min");
+  a = caml_callback_exn(*closure, *in1);
+  if Is_exception_result(a) return 0;
+  return fcl_wrap(a);
+}
+
+value* fdarray_max(value* in1)
+{
+  value a;
+  CLOSURE("FdArray.max");
+  a = caml_callback_exn(*closure, *in1);
+  if Is_exception_result(a) return 0;
+  return fcl_wrap(a);
+}
+
 value* fdarray_get(value* in1, value* in2)
 {
   value a;
   CLOSURE("FdArray.get");
   a = caml_callback2_exn(*closure, *in1, *in2);
   if Is_exception_result(a) return 0;
-  return fcl_wrap(a);
-}
-
-value* fdarray_count_eq(value* in1, long in2)
-{
-  value a;
-  CLOSURE("FdArray.count_eq");
-  a = caml_callback2(*closure, *in1, Val_int(in2));
   return fcl_wrap(a);
 }
 
