@@ -49,12 +49,10 @@ let _ =
   Callback.register "Cstr.boolean" (Reify.boolean ~delay_on_negation:true);
 
   Callback.register "FdArray.get" FdArray.get;
+  Callback.register "FdArray.max" FdArray.max;
+  Callback.register "FdArray.min" FdArray.min;
 
-  Callback.register "FdArray.count_eq" (
-    fun array j ->
-      let is_equal_to i x = fd2e x =~~ i2e i in
-      Arith.sum (Array.map (is_equal_to j) array)
-  );
+  Callback.register "Interval.is_member" Interval.is_member;
 
   Callback.register "Goals.Array.solve"
     (fun x h -> Goals.solve (goal x h));

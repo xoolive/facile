@@ -31,7 +31,7 @@ cdef class Variable(object):
         if (val_isbound(self.mlvalue) == 1) :
             return " = %d" % (vmin)
         else:
-            return "%s ∈ [%d,%d]" % (<bytes> val_name(self.mlvalue), vmin, vmax)
+            return "%s in [%d,%d]" % (<bytes> val_name(self.mlvalue), vmin, vmax)
 
     def __getval(self):
         return self.mlvalue
@@ -63,6 +63,9 @@ cdef class Variable(object):
         return None
 
     def __lt(self, fd):
+        if isinstance(fd, Cstr):
+            c = cstr_lt(fd2e(self.__getval()), fd.__abs__().__getval())
+            return Cstr(c)
         if isinstance(fd, Arith):
             c = cstr_lt(fd2e(self.__getval()), fd.__getval())
             return Cstr(c)
@@ -75,6 +78,9 @@ cdef class Variable(object):
         raise TypeError
 
     def __le(self, fd):
+        if isinstance(fd, Cstr):
+            c = cstr_le(fd2e(self.__getval()), fd.__abs__().__getval())
+            return Cstr(c)
         if isinstance(fd, Arith):
             c = cstr_le(fd2e(self.__getval()), fd.__getval())
             return Cstr(c)
@@ -87,6 +93,9 @@ cdef class Variable(object):
         raise TypeError
 
     def __eq(self, fd):
+        if isinstance(fd, Cstr):
+            c = cstr_eq(fd2e(self.__getval()), fd.__abs__().__getval())
+            return Cstr(c)
         if isinstance(fd, Arith):
             c = cstr_eq(fd2e(self.__getval()), fd.__getval())
             return Cstr(c)
@@ -99,6 +108,9 @@ cdef class Variable(object):
         raise TypeError
 
     def __ne(self, fd):
+        if isinstance(fd, Cstr):
+            c = cstr_ne(fd2e(self.__getval()), fd.__abs__().__getval())
+            return Cstr(c)
         if isinstance(fd, Arith):
             c = cstr_ne(fd2e(self.__getval()), fd.__getval())
             return Cstr(c)
@@ -111,6 +123,9 @@ cdef class Variable(object):
         raise TypeError
 
     def __gt(self, fd):
+        if isinstance(fd, Cstr):
+            c = cstr_gt(fd2e(self.__getval()), fd.__abs__().__getval())
+            return Cstr(c)
         if isinstance(fd, Arith):
             c = cstr_gt(fd2e(self.__getval()), fd.__getval())
             return Cstr(c)
@@ -123,6 +138,9 @@ cdef class Variable(object):
         raise TypeError
 
     def __ge(self, fd):
+        if isinstance(fd, Cstr):
+            c = cstr_ge(fd2e(self.__getval()), fd.__abs__().__getval())
+            return Cstr(c)
         if isinstance(fd, Arith):
             c = cstr_ge(fd2e(self.__getval()), fd.__getval())
             return Cstr(c)
@@ -222,6 +240,9 @@ cdef class Arith(object):
         return None
 
     def __lt(self, value):
+        if isinstance(value, Cstr):
+            c = cstr_lt(self.__getval(), value.__abs__().__getval())
+            return Cstr(c)
         if isinstance(value, Arith):
             c = cstr_lt(self.__getval(), value.__getval())
             return Cstr(c)
@@ -234,6 +255,9 @@ cdef class Arith(object):
         raise TypeError
 
     def __le(self, value):
+        if isinstance(value, Cstr):
+            c = cstr_le(self.__getval(), value.__abs__().__getval())
+            return Cstr(c)
         if isinstance(value, Arith):
             c = cstr_le(self.__getval(), value.__getval())
             return Cstr(c)
@@ -246,6 +270,9 @@ cdef class Arith(object):
         raise TypeError
 
     def __eq(self, value):
+        if isinstance(value, Cstr):
+            c = cstr_eq(self.__getval(), value.__abs__().__getval())
+            return Cstr(c)
         if isinstance(value, Arith):
             c = cstr_eq(self.__getval(), value.__getval())
             return Cstr(c)
@@ -258,6 +285,9 @@ cdef class Arith(object):
         raise TypeError
 
     def __ne(self, value):
+        if isinstance(value, Cstr):
+            c = cstr_ne(self.__getval(), value.__abs__().__getval())
+            return Cstr(c)
         if isinstance(value, Arith):
             c = cstr_ne(self.__getval(), value.__getval())
             return Cstr(c)
@@ -270,6 +300,9 @@ cdef class Arith(object):
         raise TypeError
 
     def __gt(self, value):
+        if isinstance(value, Cstr):
+            c = cstr_gt(self.__getval(), value.__abs__().__getval())
+            return Cstr(c)
         if isinstance(value, Arith):
             c = cstr_gt(self.__getval(), value.__getval())
             return Cstr(c)
@@ -282,6 +315,9 @@ cdef class Arith(object):
         raise TypeError
 
     def __ge(self, value):
+        if isinstance(value, Cstr):
+            c = cstr_ge(self.__getval(), value.__abs__().__getval())
+            return Cstr(c)
         if isinstance(value, Arith):
             c = cstr_ge(self.__getval(), value.__getval())
             return Cstr(c)
@@ -361,6 +397,22 @@ cdef class Cstr(object):
     def __repr__(self):
         return (<bytes> cstr_name(self.__getval()))
 
+    def __richcmp__(self, value, integer):
+    # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
+        if integer == 0:
+            return self.__abs__().__lt(value)
+        if integer == 1:
+            return self.__abs__().__le(value)
+        if integer == 2:
+            return self.__abs__().__eq(value)
+        if integer == 3:
+            return self.__abs__().__ne(value)
+        if integer == 4:
+            return self.__abs__().__gt(value)
+        if integer == 5:
+            return self.__abs__().__ge(value)
+        return None
+
     def __and__(Cstr c1, Cstr c2):
         return Cstr(cstr_and(c1.__getval(), c2.__getval()))
 
@@ -395,7 +447,24 @@ cdef class Cstr(object):
         if cstr_post(self.__getval()) == 1:
             raise ValueError("Probably an invalid constraint. Think a != a")
 
+    # For Python 2.x
+    def __nonzero__(self):
+        raise SyntaxError("You may want to check help(facile.Array)")
+
+    # For Python 3.x
+    def __bool__(self):
+        raise SyntaxError("You may want to check help(facile.Array)")
+
 cdef class Array(object):
+    """
+    This structure facilitates the manipulation of arrays of variables and/or
+    expressions.
+
+    - It can be indexed by variables, expressions or integers.
+    - It can be max()-ed or min()-ed.
+
+    Use `facile.array(iterable)` to create such a structure.
+    """
 
     cdef long mlvalue
     cdef long length
@@ -410,17 +479,24 @@ cdef class Array(object):
     def __getval(self):
         return self.mlvalue
 
-    def __repr__(self):
+    def __len__(self):
+        return self.length
+
+    def __iter__(self):
         values = np.empty(self.length, dtype=long)
-        array = []
         pt_vars = <long*> cnp.PyArray_DATA(values)
         fdarray_read(self.mlvalue, pt_vars)
         for i in range(self.length):
-            # memory should be properly freed upon GC on Variable(values[i])
-            array.append(Variable(values[i]))
+            yield Variable(values[i])
+
+    def __repr__(self):
+        array = [x for x in self]
         return array.__repr__()
 
     def __getitem__(self, key):
+        """ Return self[key].
+        key can be a variable, an expression or an integer.
+        """
         cdef long value
         if isinstance(key, Variable):
             value = fdarray_get(self.mlvalue, key.__getval())
@@ -432,6 +508,26 @@ cdef class Array(object):
             raise TypeError
         if value == 0:
             raise IndexError("Index out of bounds")
+        return Variable(value)
+
+    def value(self):
+        """Apply value() to all elements in Array."""
+        return [x.value() for x in self]
+
+    def max(self):
+        """Return a new variable that is the max of all expressions in self."""
+        cdef long value
+        value = fdarray_max(self.mlvalue)
+        if value == 0:
+            raise IndexError("Empty list")
+        return Variable(value)
+
+    def min(self):
+        """Return a new variable that is the min of all expressions in self."""
+        cdef long value
+        value = fdarray_min(self.mlvalue)
+        if value == 0:
+            raise IndexError("Empty list")
         return Variable(value)
 
 cimport cpython
@@ -477,6 +573,7 @@ def solve(variables, backtrack=False, heuristic=Heuristic.No):
     cdef long length
     cdef long bt
     if cpython.PySequence_Check(variables):
+        variables = [x for x in variables] ## quickfix for segfault with Array
         npvars = np.array([v.__getval() for v in variables])
         pt_vars = cnp.PyArray_DATA(npvars)
         length = len(variables)
@@ -509,6 +606,7 @@ def solve_all(variables):
     cdef long res
     cdef long* pt_res_i
     if cpython.PySequence_Check(variables):
+        variables = [x for x in variables] ## quickfix for segfault with Array
         npvars = np.array([v.__getval() for v in variables])
         pt_vars = cnp.PyArray_DATA(npvars)
         length = len(variables)
@@ -553,6 +651,7 @@ def minimize(variables, expr):
     if not isinstance(expr, Arith):
         raise SyntaxError
     if cpython.PySequence_Check(variables):
+        variables = [x for x in variables] ## quickfix for segfault with Array
         npvars = np.array([v.__getval() for v in variables])
         pt_vars = cnp.PyArray_DATA(npvars)
         length = len(variables)
