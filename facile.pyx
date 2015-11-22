@@ -22,7 +22,7 @@ cdef class Variable(object):
 
     def __cinit__ (self, value):
         if value == 0:  # May happen on Cstr.boolean
-            raise Exception("Constraint non reifiable")
+            raise Exception("Non reifiable constraint")
         self.mlvalue = value
 
     def __repr__(self):
@@ -37,14 +37,19 @@ cdef class Variable(object):
         return self.mlvalue
 
     def value(self):
-        """ Renvoie la valeur numérique de la variable.
-        Renvoie None si le solver n'a pas trouvé de solution. """
+        """ Return the numerical value of the variable.
+        Return None if no solution has been found. """
         cdef int vmin, vmax
         val_minmax(self.mlvalue, &vmin, &vmax)
         if (val_isbound(self.mlvalue)==1):
             return vmin
         else:
             return None
+
+    def in_interval(self, int inf, int sup):
+        cdef long res
+        res = interval_ismember(self.mlvalue, inf, sup)
+        return Variable(res)
 
     def __richcmp__(self, value, integer):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
@@ -449,11 +454,11 @@ cdef class Cstr(object):
 
     # For Python 2.x
     def __nonzero__(self):
-        raise SyntaxError("You may want to check help(facile.Array)")
+        raise SyntaxError("You may want to check help(array)")
 
     # For Python 3.x
     def __bool__(self):
-        raise SyntaxError("You may want to check help(facile.Array)")
+        raise SyntaxError("You may want to check help(array)")
 
 cdef class Array(object):
     """
@@ -463,7 +468,7 @@ cdef class Array(object):
     - It can be indexed by variables, expressions or integers.
     - It can be max()-ed or min()-ed.
 
-    Use `facile.array(iterable)` to create such a structure.
+    Use `array(iterable)` to create such a structure.
     """
 
     cdef long mlvalue
@@ -538,30 +543,25 @@ def solve(variables, backtrack=False, heuristic=Heuristic.No):
     """
     solve(variables, backtrack=False, heuristic=Heuristic.No)
 
-    La fonction solve résout le problème défini par les contraintes posées
-    précédemment sur les variables passées en paramètre.
+    The `solve` function solves the problem defined by all posted constraints
+    on variables passed in parameter.
 
-    Elle renvoie par défaut True si le problème a une solution et False sinon.
+    It returns True if the problem has a solution and False otherwise.
 
-    Si backtrack est à True, elle renvoie deux arguments res et bt, le premier
-    étant le même booléen que présenté ci-dessus, et le second étant le nombre
-    de backtracks opérés jusqu'à la première solution.
+    If `backtrack` is set to True, it returns two arguments: the first one is
+    the boolean introduced above, the second is the number of backtracks made
+    until the first solution was hit.
 
-    Le dernier argument se nomme heuristic et permet de choisir parmi 4
-    stratégies de choix de la prochaine variable à explorer lors du parcours de
-    l'arbre de recherche:
+    The last `heuristic` argument let you choose between four strategies for
+    selecting the next variable to explore:
+    - by default, `Heuristic.No` is chosen;
+    - `Heuristic.Min_size` chooses the variable with the smallest domain;
+    - `Heuristic.Min_value` chooses the variable with a minimal smallest
+    value in its domain;
+    - `Heuristic.Min_min` combines the hereabove strategies.
 
-    - par défaut, si on ne précise rien, c'est facile.Heuristic.No qui est
-    choisi;
-    - avec facile.Heuristic.Min_size, l'algorithme de recherche choisit pour
-    prochaine variable celle au domaine le plus petit;
-    - avec facile.Heuristic.Min_value, l'algorithme de recherche choisit pour
-    prochaine variable celle dont le domaine a la valeur minimale la plus petite;
-    - avec facile.Heuristic.Min_min, l'algorithme de recherche choisit pour
-    prochaine variable celle au domaine le plus petit et à la valeur minimale
-    de domaine la plus petite.
+    The `solve` function raises SyntaxError if `variables` is not iterable.
 
-    La fonction soulève une exception SyntaxError si variables n'est pas itérable.
     >>> a = variable(0, 1)
     >>> b = variable(0, 1)
     >>> constraint(a != b)
@@ -590,12 +590,14 @@ def solve_all(variables):
     """
     solve_all(variables)
 
-    La fonction solve_all résout le problème défini par les contraintes posées
-    précédemment sur les variables passées en paramètre.
+    The `solve_all` function solves the problem defined by all posted
+    constraints on variables passed in parameter.
 
-    Elle renvoie toutes les solutions possibles au problème posé.
+    It returns all possible solutions to the problem.
 
-    La fonction soulève une exception SyntaxError si variables n'est pas itérable.
+    The `solve_all` function raises SyntaxError if `variables` is not
+    iterable.
+
     >>> a = variable(0, 1)
     >>> b = variable(0, 1)
     >>> constraint(a != b)
@@ -628,15 +630,16 @@ def minimize(variables, expr):
     """
     minimize(variables, expression)
 
-    La fonction minimize résout le problème défini par les contraintes posées
-    précédemment sur les variables passées en paramètre, en minimisant
-    l'expression passée en paramètre.
+    The `minimize` function solves the problem defined by all posted
+    constraints on variables passed in parameter, and minimizes the
+    expression passed in parameter.
 
-    Elle renvoie un vecteur vide si le problème n'a pas de solution, est un
-    couple (optimal, valeurs) avec les valeurs dans le même ordre que variables.
+    It returns an empty list if the problem has no solution, and a pair
+    `(optimal, values)` with `value`s appearing in the same order as
+    `variables`.
 
-    La fonction soulève une exception SyntaxError si variables n'est pas
-    itérable ou si expression n'est pas valide.
+    The `minimize` function raises SyntaxError if `variables` is not
+    iterable or if expression is not valid.
 
     >>> a = variable(0, 10)
     >>> b = variable(0, 10)
@@ -671,11 +674,11 @@ def constraint(cstr):
     """
     constraint(cstr)
 
-    Cette fonction permet de définir une contrainte pour le solveur, exprimée de
-    manière "naturelle" avec des expressions sur les variables.
+    The `constraint` function defines a constraint and posts it to the
+    solver. The constraint can be expressed in an intuitive manner, based
+    on expressions on variables.
 
-    La fonction soulève une exception SyntaxError si cstr n'est pas une
-    contrainte.
+    `constraint` raises `SyntaxError` if the parameter is not a constraint.
 
     >>> a = variable(0, 1)
     >>> b = variable(0, 1)
@@ -691,11 +694,11 @@ def alldifferent(variables):
     """
     alldifferent(variables)
 
-    Cette fonction permet de définir une contrainte globale alldifferent pour le
-    solveur.
+    The `alldifferent` function defines and posts a global constraint to the
+    solver.
 
-    La fonction soulève une exception SyntaxError si variables n'est pas
-    itérable, et si variables ne contient pas au moins 2 variables.
+    `alldifferent` raises a SyntaxError if `variables` is not iterable and if
+    variables does not contain more than two variables.
 
     >>> a = variable(0, 1)
     >>> b = variable(0, 1)
@@ -726,8 +729,8 @@ def variable(a, b):
     """
     variable(min, max)
 
-    Cette fonction crée une variable à valeurs entière sur un intervalle
-    discret, dont les bornes min et max sont passées en paramètre.
+    The `variable` function creates a variable on a discrete interval, with
+    min/max as bounds.
 
     >>> variable(0, 2)
     _0 in [0,2]
@@ -739,12 +742,15 @@ def array(variables):
     """
     array(iterable)
 
-    Cette fonction crée, à partir d'un tableau d'entiers ou de variables, une
-    structure que l'on peut indexer à l'aide d'une autre variable.
+    This structure facilitates the manipulation of arrays of variables and/or
+    expressions.
 
-    >>> array(range(10))
-    >>> a = [variable(0, 2) for i in range(7)]
-    >>> array(a)
+    - It can be indexed by variables, expressions or integers.
+    - It can be max()-ed or min()-ed.
+
+    >>> a = array([variable(0, 2) for i in range(7)])
+    >>> constraint(a.max() = 1)
+    >>> constraint(a[a[0]] == a[0])
     """
     cdef long length
     cdef long* pt_vars
