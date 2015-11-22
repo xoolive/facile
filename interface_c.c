@@ -63,6 +63,14 @@ int val_isbound(value* in)
   return Bool_val(caml_callback(*closure, *in));
 }
 
+value* interval_ismember(value* in, int inf, int sup)
+{
+  value a;
+  CLOSURE ("Interval.is_member");
+  a = caml_callback3(*closure, *in, Val_int(inf), Val_int(sup));
+  return fcl_wrap(a);
+}
+
 value* i2e(int in)
 {
   value a;

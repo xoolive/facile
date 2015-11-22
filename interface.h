@@ -13,6 +13,8 @@ char* val_name(value* in);
 int val_isbound(value* in);
 void val_minmax(value* in, int* min, int* max);
 
+value* interval_ismember(value* in, int inf, int sup);
+
 value* fd2e(value* in);
 value* e2fd(value* in);
 value* i2e(int in);

@@ -8,6 +8,8 @@ cdef extern from "interface.h":
     char* val_name(long)
     int val_isbound(long)
 
+    long interval_ismember(long, int, int);
+
     long fd2e(long)
     long e2fd(long)
     long i2e(int)
