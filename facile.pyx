@@ -22,7 +22,7 @@ cdef class Variable(object):
 
     def __cinit__ (self, value):
         if value == 0:  # May happen on Cstr.boolean
-            raise Exception("Non reifiable constraint")
+            raise TypeError("Non reifiable constraint")
         self.mlvalue = value
 
     def __repr__(self):
@@ -80,7 +80,7 @@ cdef class Variable(object):
         if isinstance(fd, int):
             c = cstr_lt(fd2e(self.__getval()), i2e(fd))
             return Cstr(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __le(self, fd):
         if isinstance(fd, Cstr):
@@ -95,7 +95,7 @@ cdef class Variable(object):
         if isinstance(fd, int):
             c = cstr_le(fd2e(self.__getval()), i2e(fd))
             return Cstr(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __eq(self, fd):
         if isinstance(fd, Cstr):
@@ -110,7 +110,7 @@ cdef class Variable(object):
         if isinstance(fd, int):
             c = cstr_eq(fd2e(self.__getval()), i2e(fd))
             return Cstr(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __ne(self, fd):
         if isinstance(fd, Cstr):
@@ -125,7 +125,7 @@ cdef class Variable(object):
         if isinstance(fd, int):
             c = cstr_ne(fd2e(self.__getval()), i2e(fd))
             return Cstr(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __gt(self, fd):
         if isinstance(fd, Cstr):
@@ -140,7 +140,7 @@ cdef class Variable(object):
         if isinstance(fd, int):
             c = cstr_gt(fd2e(self.__getval()), i2e(fd))
             return Cstr(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __ge(self, fd):
         if isinstance(fd, Cstr):
@@ -155,7 +155,7 @@ cdef class Variable(object):
         if isinstance(fd, int):
             c = cstr_ge(fd2e(self.__getval()), i2e(fd))
             return Cstr(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __add__(a, b):
         if isinstance(a, int):
@@ -172,7 +172,7 @@ cdef class Variable(object):
             return Arith(c)
         if isinstance(b, Cstr):
             return a + Variable(cstr_boolean(b.__getval()))
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __sub__(a, b):
         if isinstance(a, int):
@@ -187,7 +187,7 @@ cdef class Variable(object):
         if isinstance(b, int):
             c = arith_sub(fd2e(a.__getval()), i2e(b))
             return Arith(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __mul__(a, b):
         if isinstance(a, int):
@@ -202,7 +202,13 @@ cdef class Variable(object):
         if isinstance(b, int):
             c = arith_mul(fd2e(a.__getval()), i2e(b))
             return Arith(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
+
+    def __pos__(a):
+        return a
+
+    def __neg__(a):
+        return 0 - a
 
     def __abs__(a):
         c = arith_abs(fd2e(a.__getval()))
@@ -257,7 +263,7 @@ cdef class Arith(object):
         if isinstance(value, int):
             c = cstr_lt(self.__getval(), i2e(value))
             return Cstr(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __le(self, value):
         if isinstance(value, Cstr):
@@ -272,7 +278,7 @@ cdef class Arith(object):
         if isinstance(value, int):
             c = cstr_le(self.__getval(), i2e(value))
             return Cstr(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __eq(self, value):
         if isinstance(value, Cstr):
@@ -287,7 +293,7 @@ cdef class Arith(object):
         if isinstance(value, int):
             c = cstr_eq(self.__getval(), i2e(value))
             return Cstr(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __ne(self, value):
         if isinstance(value, Cstr):
@@ -302,7 +308,7 @@ cdef class Arith(object):
         if isinstance(value, int):
             c = cstr_ne(self.__getval(), i2e(value))
             return Cstr(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __gt(self, value):
         if isinstance(value, Cstr):
@@ -317,7 +323,7 @@ cdef class Arith(object):
         if isinstance(value, int):
             c = cstr_gt(self.__getval(), i2e(value))
             return Cstr(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __ge(self, value):
         if isinstance(value, Cstr):
@@ -332,7 +338,7 @@ cdef class Arith(object):
         if isinstance(value, int):
             c = cstr_ge(self.__getval(), i2e(value))
             return Cstr(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
 
     def __add__(a, b):
@@ -350,7 +356,7 @@ cdef class Arith(object):
             return Arith(c)
         if isinstance(b, Cstr):
             return a + Variable(cstr_boolean(b.__getval()))
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __sub__(a, b):
         if isinstance(a, int):
@@ -365,7 +371,7 @@ cdef class Arith(object):
         if isinstance(b, int):
             c = arith_sub(a.__getval(), i2e(b))
             return Arith(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __mul__(a, b):
         if isinstance(a, int):
@@ -380,7 +386,13 @@ cdef class Arith(object):
         if isinstance(b, int):
             c = arith_mul(a.__getval(), i2e(b))
             return Arith(c)
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
+
+    def __pos__(a):
+        return a
+
+    def __neg__(a):
+        return 0 - a
 
     def __abs__(a):
         c = arith_abs(a.__getval())
@@ -429,36 +441,42 @@ cdef class Cstr(object):
             return c1 + Variable(cstr_boolean(c2.__getval()))
         if isinstance(c1, Cstr):
             return Variable(cstr_boolean(c1.__getval())) + c2
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __sub__(c1, c2):
         if isinstance(c2, Cstr):
             return c1 - Variable(cstr_boolean(c2.__getval()))
         if isinstance(c1, Cstr):
             return Variable(cstr_boolean(c1.__getval())) - c2
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
 
     def __mul__(c1, c2):
         if isinstance(c2, Cstr):
             return c1 * Variable(cstr_boolean(c2.__getval()))
         if isinstance(c1, Cstr):
             return Variable(cstr_boolean(c1.__getval())) * c2
-        raise TypeError
+        raise TypeError("Expressions of incompatible types")
+
+    def __pos__(a):
+        return Variable(cstr_boolean(a.__getval()))
+
+    def __neg__(a):
+        return 0 - Variable(cstr_boolean(a.__getval()))
 
     def __abs__(a):
         return Variable(cstr_boolean(a.__getval()))
 
     def post(self):
         if cstr_post(self.__getval()) == 1:
-            raise ValueError("Probably an invalid constraint. Think a != a")
+            raise ValueError("The problem is overconstrained")
 
     # For Python 2.x
     def __nonzero__(self):
-        raise SyntaxError("You may want to check help(array)")
+        raise SyntaxError("Use a.max() not max(a). Refer to help(facile.array)")
 
     # For Python 3.x
     def __bool__(self):
-        raise SyntaxError("You may want to check help(array)")
+        raise SyntaxError("Use a.max() not max(a). Refer to help(facile.array)")
 
 cdef class Array(object):
     """
@@ -510,7 +528,7 @@ cdef class Array(object):
         elif isinstance(key, long):
             value = fdarray_get(self.mlvalue, e2fd(i2e(key)))
         else:
-            raise TypeError
+            raise TypeError("Index should be integer, variable or expression")
         if value == 0:
             raise IndexError("Index out of bounds")
         return Variable(value)
@@ -560,7 +578,7 @@ def solve(variables, backtrack=False, heuristic=Heuristic.No):
     value in its domain;
     - `Heuristic.Min_min` combines the hereabove strategies.
 
-    The `solve` function raises SyntaxError if `variables` is not iterable.
+    The `solve` function raises TypeError if `variables` is not iterable.
 
     >>> a = variable(0, 1)
     >>> b = variable(0, 1)
@@ -578,13 +596,13 @@ def solve(variables, backtrack=False, heuristic=Heuristic.No):
         pt_vars = cnp.PyArray_DATA(npvars)
         length = len(variables)
         if length < 1:
-            return SyntaxError
+            return TypeError("The argument list must be non empty")
         if (not backtrack):
             return goals_array_solve(<long*> pt_vars, length, heuristic) == 1
         else:
             res = goals_array_solve_bt(<long*> pt_vars, length, heuristic, &bt)
             return (res, bt)
-    raise SyntaxError
+    raise TypeError("The argument must be iterable")
 
 def solve_all(variables):
     """
@@ -595,7 +613,7 @@ def solve_all(variables):
 
     It returns all possible solutions to the problem.
 
-    The `solve_all` function raises SyntaxError if `variables` is not
+    The `solve_all` function raises TypeError if `variables` is not
     iterable.
 
     >>> a = variable(0, 1)
@@ -613,7 +631,7 @@ def solve_all(variables):
         pt_vars = cnp.PyArray_DATA(npvars)
         length = len(variables)
         if length < 1:
-            return SyntaxError
+            return TypeError("The argument list must be non empty")
         res = goals_array_solve_all(<long*> pt_vars, length)
         sols = []
         res_np = np.empty(length, dtype=int)
@@ -624,7 +642,7 @@ def solve_all(variables):
             sols.insert(0, [int(x) for x in res_np])
             res = parse_array(res, pt_res_np)
         return sols
-    raise SyntaxError
+    raise TypeError("The argument must be iterable")
 
 def minimize(variables, expr):
     """
@@ -638,7 +656,7 @@ def minimize(variables, expr):
     `(optimal, values)` with `value`s appearing in the same order as
     `variables`.
 
-    The `minimize` function raises SyntaxError if `variables` is not
+    The `minimize` function raises TypeError if `variables` is not
     iterable or if expression is not valid.
 
     >>> a = variable(0, 10)
@@ -659,7 +677,7 @@ def minimize(variables, expr):
         pt_vars = cnp.PyArray_DATA(npvars)
         length = len(variables)
         if length < 1:
-            return SyntaxError
+            return TypeError("The argument list must be non empty")
         sol = np.zeros(length, long)
         pt_sol = cnp.PyArray_DATA(sol)
         if goals_minimize(<long*> pt_vars, length, expr.__getval(),
@@ -667,7 +685,7 @@ def minimize(variables, expr):
             return (optimal, sol)
         else:
             return []
-    raise SyntaxError
+    raise TypeError("The argument must be iterable")
 
 
 def constraint(cstr):
@@ -678,7 +696,7 @@ def constraint(cstr):
     solver. The constraint can be expressed in an intuitive manner, based
     on expressions on variables.
 
-    `constraint` raises `SyntaxError` if the parameter is not a constraint.
+    `constraint` raises `TypeError` if the parameter is not a constraint.
 
     >>> a = variable(0, 1)
     >>> b = variable(0, 1)
@@ -686,7 +704,7 @@ def constraint(cstr):
     """
 
     if not isinstance(cstr, Cstr):
-        raise SyntaxError
+        raise TypeError("The argument must be a (non-reified) constraint")
     cstr.post()
 
 
@@ -694,10 +712,10 @@ def alldifferent(variables):
     """
     alldifferent(variables)
 
-    The `alldifferent` function defines and posts a global constraint to the
-    solver.
+    The `alldifferent` function defines a global constraint to be later posted
+    to the solver.
 
-    `alldifferent` raises a SyntaxError if `variables` is not iterable and if
+    `alldifferent` raises a TypeError if `variables` is not iterable and if
     variables does not contain more than two variables.
 
     >>> a = variable(0, 1)
@@ -710,7 +728,7 @@ def alldifferent(variables):
     if cpython.PySequence_Check(variables):
         length = len(variables)
         if length < 2:
-            raise SyntaxError
+            raise TypeError("The argument list must be non empty")
         npvars = np.empty(length, dtype=long)
         for i in range(length):
             if isinstance(variables[i], Variable):
@@ -718,12 +736,11 @@ def alldifferent(variables):
             elif isinstance(variables[i], Arith):
                 npvars[i] = e2fd(variables[i].__getval())
             else:
-                raise TypeError
+                raise TypeError("Arguments must be variables or expressions")
         pt_vars = <long*> cnp.PyArray_DATA(npvars)
         length = len(variables)
-        cstr_post(cstr_alldiff(pt_vars, length))
-        return
-    raise SyntaxError
+        return Cstr(cstr_alldiff(pt_vars, length))
+    raise TypeError("The argument must be iterable")
 
 def variable(a, b):
     """
@@ -758,8 +775,8 @@ def array(variables):
     cdef Variable v
     if cpython.PySequence_Check(variables):
         length = len(variables)
-        if length < 2:
-            raise SyntaxError
+        if length < 1:
+            raise TypeError("The argument list must be non-empty")
         npvars = np.empty(length, dtype=long)
         for i in range(length):
             if isinstance(variables[i], Variable):
@@ -769,9 +786,9 @@ def array(variables):
             elif isinstance(variables[i], int):
                 npvars[i] = e2fd(i2e(variables[i]))
             else:
-                raise TypeError
+                raise TypeError("The arguments must be variables or expressions")
         pt_vars = <long*> cnp.PyArray_DATA(npvars)
         value = fdarray_create(pt_vars, length)
         return Array(value, length)
-    raise SyntaxError
+    raise TypeError("The argument must be iterable")
 

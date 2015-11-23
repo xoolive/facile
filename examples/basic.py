@@ -20,7 +20,7 @@ a = variable(0, 2)
 b = variable(0, 2)
 c = variable(0, 2)
 
-alldifferent([a, b, c])
+constraint(alldifferent([a, b, c]))
 constraint(a + b <= 2 * c)
 if solve([a, b, c]):
     print ("Solution found a=%d, b=%d and c=%d" %

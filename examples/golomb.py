@@ -24,7 +24,7 @@ def golomb(n):
     for i in range(n-1):
         for j in range(i + 1, n):
             distances.append(ticks[j] - ticks[i])
-    facile.alldifferent(distances)
+    facile.constraint(facile.alldifferent(distances))
 
     for d in distances:
         facile.constraint(d > 0)
