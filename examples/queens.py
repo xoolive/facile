@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from facile import variable, alldifferent, solve
+from facile import variable, alldifferent, constraint, solve
 
 
 def n_queen(n):
@@ -9,9 +9,9 @@ def n_queen(n):
     diag1 = [queens[i] + i for i in range(n)]
     diag2 = [queens[i] - i for i in range(n)]
 
-    alldifferent(queens)
-    alldifferent(diag1)
-    alldifferent(diag2)
+    constraint(alldifferent(queens))
+    constraint(alldifferent(diag1))
+    constraint(alldifferent(diag2))
 
     if solve(queens):
         return [x.value() for x in queens]
