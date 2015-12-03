@@ -14,6 +14,8 @@ int val_isbound(value* in);
 void val_minmax(value* in, int* min, int* max);
 
 value* interval_ismember(value* in, int inf, int sup);
+value* sorting_sort(value* in);
+value* gcc_cstr(value*, value**, long*, long);
 
 value* fd2e(value* in);
 value* e2fd(value* in);

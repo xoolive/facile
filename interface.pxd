@@ -8,7 +8,9 @@ cdef extern from "interface.h":
     char* val_name(long)
     int val_isbound(long)
 
-    long interval_ismember(long, int, int);
+    long interval_ismember(long, int, int)
+    long sorting_sort(long)
+    long gcc_cstr(long, long*, long*, long)
 
     long fd2e(long)
     long e2fd(long)

@@ -53,6 +53,8 @@ let _ =
   Callback.register "FdArray.min" FdArray.min;
 
   Callback.register "Interval.is_member" Interval.is_member;
+  Callback.register "Sorting.sort" Sorting.sort;
+  Callback.register "Gcc.cstr" (Gcc.cstr ~level:Gcc.High);
 
   Callback.register "Goals.Array.solve"
     (fun x h -> Goals.solve (goal x h));
@@ -61,7 +63,6 @@ let _ =
     (fun x ->
        let store = ref [] in
        let store_res res =
-         Fd.fprint_array stdout res;
          let vals = Array.map Fd.min res in
          store := vals::!store in
        let _ = Goals.solve ( (Goals.Array.labeling x
