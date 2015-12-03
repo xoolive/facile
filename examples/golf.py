@@ -1,5 +1,6 @@
 # coding: utf-8
 
+from __future__ import division
 import facile
 
 # A Golf Tournament (from http://www.icparc.ic.ac.uk/~cg6/conjunto.html)
