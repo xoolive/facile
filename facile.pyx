@@ -55,19 +55,19 @@ cdef class Variable(object):
         res = interval_ismember(self.mlvalue, inf, sup)
         return Variable(res)
 
-    def __richcmp__(self, value, integer):
+    def __richcmp__(self, value, op):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
-        if integer == 0:
+        if op == 0:
            return self.__lt(value)
-        if integer == 1:
+        if op == 1:
             return self.__le(value)
-        if integer == 2:
+        if op == 2:
             return self.__eq(value)
-        if integer == 3:
+        if op == 3:
             return self.__ne(value)
-        if integer == 4:
+        if op == 4:
             return self.__gt(value)
-        if integer == 5:
+        if op == 5:
             return self.__ge(value)
         return None
 
@@ -238,19 +238,19 @@ cdef class Arith(object):
     def __repr__(self):
         return self.variable().__repr__()
 
-    def __richcmp__(self, value, integer):
+    def __richcmp__(self, value, op):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
-        if integer == 0:
+        if op == 0:
             return self.__lt(value)
-        if integer == 1:
+        if op == 1:
             return self.__le(value)
-        if integer == 2:
+        if op == 2:
             return self.__eq(value)
-        if integer == 3:
+        if op == 3:
             return self.__ne(value)
-        if integer == 4:
+        if op == 4:
             return self.__gt(value)
-        if integer == 5:
+        if op == 5:
             return self.__ge(value)
         return None
 
@@ -417,19 +417,19 @@ cdef class Cstr(object):
     def __repr__(self):
         return (<bytes> cstr_name(self.__getval()))
 
-    def __richcmp__(self, value, integer):
+    def __richcmp__(self, value, op):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
-        if integer == 0:
+        if op == 0:
             return self.__abs__().__lt(value)
-        if integer == 1:
+        if op == 1:
             return self.__abs__().__le(value)
-        if integer == 2:
+        if op == 2:
             return self.__abs__().__eq(value)
-        if integer == 3:
+        if op == 3:
             return self.__abs__().__ne(value)
-        if integer == 4:
+        if op == 4:
             return self.__abs__().__gt(value)
-        if integer == 5:
+        if op == 5:
             return self.__abs__().__ge(value)
         return None
 
@@ -476,12 +476,12 @@ cdef class Cstr(object):
     # For Python 2.x
     def __nonzero__(self):
         print (array.__doc__)
-        raise SyntaxError("This operation is not allowed. Check facile.array")
+        raise SyntaxError("This operation is not allowed. Check facile.array()")
 
     # For Python 3.x
     def __bool__(self):
         print (array.__doc__)
-        raise SyntaxError("This operation is not allowed. Check facile.array")
+        raise SyntaxError("This operation is not allowed. Check facile.array()")
 
 cdef class Array(object):
     """
@@ -489,6 +489,8 @@ cdef class Array(object):
     expressions.
 
     - It can be indexed by variables, expressions or integers.
+    - You can compare two arrays of the same length and get an iterable with
+      the corresponding constraints.
     - You can access its max() or min().
     - You can access its sorted version: sort()
     - You can apply a Global Cardinality Constraint: gcc()
@@ -539,6 +541,25 @@ cdef class Array(object):
         if value == 0:
             raise IndexError("Index out of bounds")
         return Variable(value)
+
+    def __richcmp__(a, b, op):
+        # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
+        if not isinstance(a, Array) or not isinstance(b, Array):
+            raise SyntaxError("Arrays can only be compared with arrays")
+        if len(a) != len(b):
+            raise IndexError("The two arrays must be of same length")
+        if op == 0:
+            return [x < y for (x, y) in zip(a, b)]
+        if op == 1:
+            return [x <= y for (x, y) in zip(a, b)]
+        if op == 2:
+            return [x == y for (x, y) in zip(a, b)]
+        if op == 3:
+            return [x != y for (x, y) in zip(a, b)]
+        if op == 4:
+            return [x > y for (x, y) in zip(a, b)]
+        if op == 5:
+            return [x >= y for (x, y) in zip(a, b)]
 
     def value(self):
         """Apply value() to all elements in Array."""
@@ -820,11 +841,13 @@ def array(variables):
     expressions.
 
     - It can be indexed by variables, expressions or integers.
-    - It can be max()-ed or min()-ed.
+    - You can compare two arrays of the same length and get an iterable with
+      the corresponding constraints.
+    - You can access its max() or min().
+    - You can access its sorted version: sort()
+    - You can apply a Global Cardinality Constraint: gcc()
 
-    >>> a = array([variable(0, 2) for i in range(7)])
-    >>> constraint(a.max() = 1)
-    >>> constraint(a[a[0]] == a[0])
+    >>> a = array([variable(0, 1), variable(0, 3), variable(0, 5)])
     """
     cdef long length
     cdef long* pt_vars
