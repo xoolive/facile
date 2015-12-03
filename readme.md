@@ -69,5 +69,6 @@ Do not hesitate to share if you find a better compilation experience.
 
 #### Things left to do
 
+- Find a way to better parametrize the resolution process (heuristics, variable choice order, etc.)
 - Study the feasibility of building your own constraints in pure Python.
 
