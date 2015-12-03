@@ -71,6 +71,14 @@ value* interval_ismember(value* in, int inf, int sup)
   return fcl_wrap(a);
 }
 
+value* sorting_sort(value* in)
+{
+  value a;
+  CLOSURE ("Sorting.sort");
+  a = caml_callback(*closure, *in);
+  return fcl_wrap(a);
+}
+
 value* i2e(int in)
 {
   value a;
@@ -225,6 +233,24 @@ value* cstr_boolean(value* cstr)
   CLOSURE("Cstr.boolean");
   a = caml_callback_exn(*closure, *cstr);
   if Is_exception_result(a) return 0;
+  return fcl_wrap(a);
+}
+
+value* gcc_cstr(value* array, value** cards, long* values, long len)
+{
+  value a, distribution;
+  size_t i = 0;
+  CLOSURE("Gcc.cstr");
+  distribution = caml_alloc(len, 0);
+  for(; i<len; ++i)
+  {
+    value b = caml_alloc(2, 0);
+    Store_field(b, 0, cards[i]);
+    Store_field(b, 1, Val_long(values[i]));
+
+    Store_field(distribution, i, b);
+  }
+  a = caml_callback2(*closure, *array, distribution);
   return fcl_wrap(a);
 }
 

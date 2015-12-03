@@ -3,6 +3,10 @@
 
 from interface cimport *
 
+cimport cpython
+import numpy as np
+cimport numpy as cnp
+
 # Initialize OCaml
 init()
 
@@ -472,11 +476,13 @@ cdef class Cstr(object):
 
     # For Python 2.x
     def __nonzero__(self):
-        raise SyntaxError("Use a.max() not max(a). Refer to help(facile.array)")
+        print (array.__doc__)
+        raise SyntaxError("This operation is not allowed. Check facile.array")
 
     # For Python 3.x
     def __bool__(self):
-        raise SyntaxError("Use a.max() not max(a). Refer to help(facile.array)")
+        print (array.__doc__)
+        raise SyntaxError("This operation is not allowed. Check facile.array")
 
 cdef class Array(object):
     """
@@ -484,7 +490,9 @@ cdef class Array(object):
     expressions.
 
     - It can be indexed by variables, expressions or integers.
-    - It can be max()-ed or min()-ed.
+    - You can access its max() or min().
+    - You can access its sorted version: sort()
+    - You can apply a Global Cardinality Constraint: gcc()
 
     Use `array(iterable)` to create such a structure.
     """
@@ -553,9 +561,57 @@ cdef class Array(object):
             raise IndexError("Empty list")
         return Variable(value)
 
-cimport cpython
-import numpy as np
-cimport numpy as cnp
+    def sort(self):
+        """Return an array of variables sorted in increasing order."""
+        cdef long value
+        value = sorting_sort(self.mlvalue)
+        return Array(value, self.length)
+
+    def gcc(self, distribution):
+        """Return a Global Cardinality Constraint w.r.t distribution.
+
+        For each pair (c, v) in distribution, c variables in the array will be
+        instantiated to v.
+        Also, the sum of the cardinals will be equal to the number of variables
+        in the array (the corresponding constraint is automatically posted).
+        >>> a = array([facile.variable(0,3) for i in range(5)])
+        >>> constraint(a.gcc([(1, 3), (1, 2), (3, 1)]))
+
+        Note that this constraint is not reifiable.
+
+        If you need a simpler cardinality constraint, you can write:
+        >>> c1 = sum([p == value for p in array]) == cardinal
+        """
+
+        cdef long value
+        cdef long l = len(distribution)
+        cdef long card = 0
+
+        cards = []
+        values = []
+        for (c, v) in distribution:
+            if isinstance(c, int):
+                card = i2e(c)
+            if isinstance(c, Arith):
+                card = c.__getval()
+            if isinstance(c, Variable):
+                card = fd2e(c.__getval())
+            if card == 0:
+                raise TypeError(
+                        "Cardinals must be integers, variables or expressions")
+            if not isinstance(v, int):
+                raise TypeError("Values must be integers")
+            cards.append(card)
+            values.append(v)
+            card = 0
+
+        np_cards = np.array(cards)
+        pt_cards = cnp.PyArray_DATA(np_cards)
+        np_values = np.array(values)
+        pt_values = cnp.PyArray_DATA(np_values)
+
+        value = gcc_cstr(self.mlvalue, <long*> pt_cards, <long*> pt_values, l)
+        return Cstr(value)
 
 def solve(variables, backtrack=False, heuristic=Heuristic.No):
     """
