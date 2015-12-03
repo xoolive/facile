@@ -344,7 +344,6 @@ cdef class Arith(object):
             return Cstr(c)
         raise TypeError("Expressions of incompatible types")
 
-
     def __add__(a, b):
         if isinstance(a, int):
             c = arith_add(i2e(a), b.__getval())
@@ -533,7 +532,7 @@ cdef class Array(object):
             value = fdarray_get(self.mlvalue, key.__getval())
         elif isinstance(key, Arith):
             value = fdarray_get(self.mlvalue, e2fd(key.__getval()))
-        elif isinstance(key, long):
+        elif isinstance(key, int):
             value = fdarray_get(self.mlvalue, e2fd(i2e(key)))
         else:
             raise TypeError("Index should be integer, variable or expression")
