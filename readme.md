@@ -62,7 +62,7 @@ python setup.py bdist_wheel
 
 After installing the package, you can try basic problems in the `examples` directory.
 
-I detailed my approach and some lessons learned [here](lessons.md)
+I detailed my approach and some lessons learned [here](http://www.xoolive.org/2014/09/20/python-wrapping-for-ocaml-facile-library.html)
 
 Note: For building Windows packages, I use cross-compilation from Linux or Mac.  
 Do not hesitate to share if you find a better compilation experience.
