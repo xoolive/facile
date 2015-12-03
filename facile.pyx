@@ -648,6 +648,8 @@ def solve(variables, backtrack=False, heuristic=Heuristic.No):
     cdef long bt
     if cpython.PySequence_Check(variables):
         variables = [x for x in variables] ## quickfix for segfault with Array
+        for x in variables:
+            assert isinstance(x, Variable), "All arguments must be variables"
         npvars = np.array([v.__getval() for v in variables])
         pt_vars = cnp.PyArray_DATA(npvars)
         length = len(variables)
