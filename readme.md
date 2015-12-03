@@ -18,7 +18,7 @@ For Linux:
 easy_install facile
 ```
 
-- `facile` is provided for Python 2.7, 3.4 and 3.5, on Windows, Linux and MacOS.  
+- `facile` is provided for Python 2.7, 3.4 and 3.5, on Windows (no 2.7 version), Linux and MacOS.  
   The Linux version cannot be provided as wheel file: it has been compiled under a Debian Stable (Wheezy) environment for an older version of `glibc`.
 - There is a dependency on `numpy`. If you get a weird numpy error, consider upgrading it.
 
