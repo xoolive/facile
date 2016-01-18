@@ -804,6 +804,7 @@ def alldifferent(variables):
     cdef long length
     cdef long* pt_vars
     if cpython.PySequence_Check(variables):
+        variables = [x for x in variables] ## quickfix for segfault with Array
         length = len(variables)
         if length < 2:
             raise TypeError("The argument list must be non empty")
