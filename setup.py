@@ -103,7 +103,7 @@ cmdclass = {}
 cmdclass['clean'] = mrclean
 
 setup(name="facile",
-      version="1.2",
+      version="1.3",
       author="Xavier Olive",
       author_email="xo.olive@gmail.com",
       description="Python constraint programming library",
