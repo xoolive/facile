@@ -214,6 +214,24 @@ value* cstr_and(value* in1, value* in2)
   return fcl_wrap(a);
 }
 
+value* cstr_xor(value* in1, value* in2)
+{
+  value a;
+  CLOSURE ("Cstr.xor");
+  a = caml_callback2_exn(*closure, *in1, *in2);
+  if Is_exception_result(a) return 0;
+  return fcl_wrap(a);
+}
+
+value* cstr_not(value* in)
+{
+  value a;
+  CLOSURE("Cstr.not");
+  a = caml_callback_exn(*closure, *in);
+  if Is_exception_result(a) return 0;
+  return fcl_wrap(a);
+}
+
 value* cstr_alldiff(value** val, long len)
 {
   value array, a;

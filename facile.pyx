@@ -26,7 +26,7 @@ cdef class Variable(object):
 
     def __cinit__ (self, value):
         if value == 0:  # May happen on Cstr.boolean
-            raise TypeError("Non reifiable constraint")
+            raise ValueError("Non reifiable constraint")
         self.mlvalue = value
 
     def __repr__(self):
@@ -409,13 +409,15 @@ cdef class Cstr(object):
         fcl_destroy(self.mlvalue)
 
     def __cinit__(self, value):
+        if value == 0:  # May happen on Cstr.boolean
+            raise ValueError("Non reifiable constraint")
         self.mlvalue = value
 
     def __getval(self):
         return self.mlvalue
 
     def __repr__(self):
-        return (<bytes> cstr_name(self.__getval()))
+        return str(<bytes> cstr_name(self.__getval()))
 
     def __richcmp__(self, value, op):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
@@ -438,6 +440,12 @@ cdef class Cstr(object):
 
     def __or__(Cstr c1, Cstr c2):
         return Cstr(cstr_or(c1.__getval(), c2.__getval()))
+
+    def __invert__(self):
+        return Cstr(cstr_not(self.__getval()))
+
+    def __xor__(Cstr c1, Cstr c2):
+        return Cstr(cstr_xor(c1.__getval(), c2.__getval()))
 
     def __add__(c1, c2):
         if isinstance(c2, Cstr):

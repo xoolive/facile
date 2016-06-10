@@ -43,6 +43,8 @@ char* cstr_name(value* in);
 int cstr_post(value* in);
 value* cstr_or(value*, value*);
 value* cstr_and(value*, value*);
+value* cstr_xor(value*, value*);
+value* cstr_not(value*);
 value* cstr_alldiff(value**, long);
 value* cstr_boolean(value*);
 
