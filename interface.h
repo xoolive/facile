@@ -8,6 +8,8 @@ typedef enum h {
 
 void init();
 
+int is_proper_value(value*);
+
 value* val_interval(int i, int j);
 char* val_name(value* in);
 int val_isbound(value* in);
