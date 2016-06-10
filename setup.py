@@ -113,4 +113,5 @@ setup(name="facile",
       cmdclass=cmdclass,
       ext_modules=cythonize(extensions),
       install_requires=get_requirements(),
+      test_suite="doctests",
       )
