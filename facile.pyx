@@ -475,13 +475,11 @@ cdef class Cstr(object):
 
     # For Python 2.x
     def __nonzero__(self):
-        print (array.__doc__)
-        raise SyntaxError("This operation is not allowed. Check facile.array()")
+        raise ValueError("A constraint cannot be interpreted as a boolean.")
 
     # For Python 3.x
     def __bool__(self):
-        print (array.__doc__)
-        raise SyntaxError("This operation is not allowed. Check facile.array()")
+        raise ValueError("A constraint cannot be interpreted as a boolean.")
 
 cdef class Array(object):
     """
