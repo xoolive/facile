@@ -25,8 +25,10 @@ cdef class Variable(object):
         fcl_destroy(self.mlvalue)
 
     def __cinit__ (self, value):
-        if value == 0:  # May happen on Cstr.boolean
+        if value == 0:
             raise ValueError("Non reifiable constraint")
+        if not is_proper_value(value):
+            raise RuntimeError("Invalid pointer value")
         self.mlvalue = value
 
     def __repr__(self):
@@ -227,6 +229,8 @@ cdef class Arith(object):
         fcl_destroy(self.mlvalue)
 
     def __cinit__(self, value):
+        if not is_proper_value(value):
+            raise RuntimeError("Invalid pointer value")
         self.mlvalue = value
 
     def __getval(self):
@@ -409,8 +413,10 @@ cdef class Cstr(object):
         fcl_destroy(self.mlvalue)
 
     def __cinit__(self, value):
-        if value == 0:  # May happen on Cstr.boolean
+        if value == 0:
             raise ValueError("Non reifiable constraint")
+        if not is_proper_value(value):
+            raise RuntimeError("Invalid pointer value")
         self.mlvalue = value
 
     def __getval(self):
@@ -511,6 +517,8 @@ cdef class Array(object):
         fcl_destroy(self.mlvalue)
 
     def __cinit__(self, value, length):
+        if not is_proper_value(value):
+            raise RuntimeError("Invalid pointer value")
         self.mlvalue = value
         self.length = length
 

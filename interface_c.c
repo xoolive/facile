@@ -12,6 +12,12 @@
   if (closure == NULL)\
     closure = caml_named_value(A);
 
+#include <caml/address_class.h>
+int is_proper_value(value* v)
+{
+  return Is_in_value_area(*v);
+}
+
 void init() {
   static char* argv[2] = { "python", NULL };
   caml_startup(argv);

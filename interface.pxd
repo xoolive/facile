@@ -1,6 +1,7 @@
 cdef extern from "interface.h":
 
     void init()
+    int is_proper_value(long)
     void fcl_destroy(long v)
 
     long val_interval(int, int)
