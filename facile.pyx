@@ -37,7 +37,7 @@ cdef class Variable(object):
         if (val_isbound(self.mlvalue) == 1) :
             return " = %d" % (vmin)
         else:
-            return "%s in [%d,%d]" % (<bytes> val_name(self.mlvalue), vmin, vmax)
+            return "%s in [%d,%d]" % ((<bytes> val_name(self.mlvalue)).decode(), vmin, vmax)
 
     def __getval(self):
         return self.mlvalue
@@ -423,7 +423,7 @@ cdef class Cstr(object):
         return self.mlvalue
 
     def __repr__(self):
-        return str(<bytes> cstr_name(self.__getval()))
+        return (<bytes> cstr_name(self.__getval())).decode()
 
     def __richcmp__(self, value, op):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
@@ -442,15 +442,64 @@ cdef class Cstr(object):
         return None
 
     def __and__(Cstr c1, Cstr c2):
+        """`&` (and) operator on constraints.
+
+        >>> x = array([variable(0, 1) for i in range(3)])
+        >>> c1 = x[0] != x[1]
+        >>> c2 = x[1] != x[2]
+        >>> constraint(c1 & c2)
+        >>> assert solve(x)
+        >>> x.value()
+        [0, 1, 0]
+        """
         return Cstr(cstr_and(c1.__getval(), c2.__getval()))
 
     def __or__(Cstr c1, Cstr c2):
+        """`|` (or) operator on constraints.
+
+        >>> x = array([variable(0, 1) for i in range(3)])
+        >>> c1 = x[0] != x[1]
+        >>> c2 = x[1] != x[2]
+        >>> constraint(c1 | c2)
+        >>> assert solve(x)
+        >>> x.value()
+        [0, 0, 1]
+        """
         return Cstr(cstr_or(c1.__getval(), c2.__getval()))
 
     def __invert__(self):
+        """`~` (not) operator on constraints.
+
+        >>> x = array([variable(0, 1) for i in range(3)])
+        >>> c1 = x[0] != x[1]
+        >>> c2 = x[1] != x[2]
+        >>> constraint(~c1)
+        >>> constraint(c2)
+        >>> assert solve(x)
+        >>> x.value()
+        [0, 0, 1]
+
+        The ~ operator can only be applied to reifiable constraints.
+        >>> x = array([variable(0, 1) for i in range(3)])
+        >>> c = alldifferent(x)
+        >>> constraint(~c)
+        Traceback (most recent call last):
+            ...
+        ValueError: Non reifiable constraint
+        """
         return Cstr(cstr_not(self.__getval()))
 
     def __xor__(Cstr c1, Cstr c2):
+        """`^` (xor) operator on constraints.
+
+        >>> x = array([variable(0, 1) for i in range(3)])
+        >>> c1 = x[0] != x[1]
+        >>> c2 = x[1] != x[2]
+        >>> constraint(c1 ^ c2)
+        >>> assert solve(x)
+        >>> x.value()
+        [0, 0, 1]
+        """
         return Cstr(cstr_xor(c1.__getval(), c2.__getval()))
 
     def __add__(c1, c2):
@@ -608,13 +657,14 @@ cdef class Array(object):
         instantiated to v.
         Also, the sum of the cardinals will be equal to the number of variables
         in the array (the corresponding constraint is automatically posted).
-        >>> a = array([facile.variable(0,3) for i in range(5)])
-        >>> constraint(a.gcc([(1, 3), (1, 2), (3, 1)]))
+        >>> a = array([variable(0,3) for i in range(5)])
+        >>> c = constraint(a.gcc([(1, 3), (1, 2), (3, 1)]))
 
         Note that this constraint is not reifiable.
 
         If you need a simpler cardinality constraint, you can write:
-        >>> c1 = sum([p == value for p in array]) == cardinal
+        >>> value, cardinal = 2, 2
+        >>> c1 = sum([p == value for p in a]) == cardinal
         """
 
         cdef long value
@@ -676,14 +726,14 @@ def solve(variables, backtrack=False, heuristic=Heuristic.No):
     >>> solve([a, b])
     True
     >>> a.value(), b.value()
-    0, 1
+    (0, 1)
     """
     cdef long length
     cdef long bt
     if cpython.PySequence_Check(variables):
         variables = [x for x in variables] ## quickfix for segfault with Array
-        for x in variables:
-            assert isinstance(x, Variable), "All arguments must be variables"
+        for v in variables:
+            assert isinstance(v, Variable), "All arguments must be variables"
         npvars = np.array([v.__getval() for v in variables])
         pt_vars = cnp.PyArray_DATA(npvars)
         length = len(variables)
@@ -719,6 +769,8 @@ def solve_all(variables):
     cdef long* pt_res_i
     if cpython.PySequence_Check(variables):
         variables = [x for x in variables] ## quickfix for segfault with Array
+        for v in variables:
+            assert isinstance(v, Variable), "All arguments must be variables"
         npvars = np.array([v.__getval() for v in variables])
         pt_vars = cnp.PyArray_DATA(npvars)
         length = len(variables)
@@ -755,7 +807,7 @@ def minimize(variables, expr):
     >>> b = variable(0, 10)
     >>> constraint(a + b == 10)
     >>> minimize([a, b], a*a + b*b)
-    (55, array([5, 5]))
+    (50, array([5, 5]))
     """
     cdef long length
     cdef long optimal
@@ -765,6 +817,8 @@ def minimize(variables, expr):
         raise SyntaxError
     if cpython.PySequence_Check(variables):
         variables = [x for x in variables] ## quickfix for segfault with Array
+        for v in variables:
+            assert isinstance(v, Variable), "All arguments must be variables"
         npvars = np.array([v.__getval() for v in variables])
         pt_vars = cnp.PyArray_DATA(npvars)
         length = len(variables)
@@ -812,7 +866,7 @@ def alldifferent(variables):
 
     >>> a = variable(0, 1)
     >>> b = variable(0, 1)
-    >>> alldifferent([a, b])
+    >>> c = alldifferent([a, b])
     """
 
     cdef long length
@@ -842,8 +896,7 @@ def variable(a, b):
     The `variable` function creates a variable on a discrete interval, with
     min/max as bounds.
 
-    >>> variable(0, 2)
-    _0 in [0,2]
+    >>> v = variable(0, 2)
     """
     cdef long value = val_interval(a, b)
     return Variable(value)
