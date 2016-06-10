@@ -32,6 +32,8 @@ cdef extern from "interface.h":
     int cstr_post(long)
     long cstr_or(long, long)
     long cstr_and(long, long)
+    long cstr_xor(long, long)
+    long cstr_not(long)
     long cstr_alldiff(long*, long)
     long cstr_boolean(long)
 

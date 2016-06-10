@@ -47,6 +47,8 @@ let _ =
   Callback.register "Cstr.or" (fun a b -> a ||~~ b);
   Callback.register "Cstr.and" (fun a b -> a &&~~ b);
   Callback.register "Cstr.boolean" (Reify.boolean ~delay_on_negation:true);
+  Callback.register "Cstr.not" Reify.not;
+  Callback.register "Cstr.xor" Reify.xor;
 
   Callback.register "FdArray.get" FdArray.get;
   Callback.register "FdArray.max" FdArray.max;
