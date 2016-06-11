@@ -96,6 +96,8 @@ if clang or distutils.sysconfig_get_config_vars()['CC'] == 'clang':
     # Mute the ugly trick for value/value*
     os.environ['CFLAGS'] += " -Wno-int-conversion"
     os.environ['CFLAGS'] += " -Wno-incompatible-pointer-types"
+    # Other warning on a Python flag (not my fault...)
+    os.environ['CFLAGS'] += " -Wno-unknown-warning-option"
 
 extensions = [
     Extension("facile",
