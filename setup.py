@@ -8,6 +8,7 @@ import os
 import os.path
 import platform
 import sysconfig
+import distutils
 import sys
 
 import time
@@ -75,21 +76,26 @@ if exists or os.path.getmtime("interface.ml") > os.path.getmtime(mlobject):
     now = time.time()
     os.utime("facile.pyx", (now, now))
 
+# First check if the environment variable is set
+clang = False
 try:
     if os.environ['CC'] == "clang":
         clang = True
 except KeyError:
-    clang = False
-finally:
-    import distutils
-    if clang or distutils.sysconfig_get_config_vars()['CC'] == 'clang':
-        try:
-            _ = os.environ['CFLAGS']
-        except KeyError:
-            os.environ['CFLAGS'] = ""
-        os.environ['CFLAGS'] += " -Wno-unused-function"
-        os.environ['CFLAGS'] += " -Wno-int-conversion"
-        os.environ['CFLAGS'] += " -Wno-incompatible-pointer-types"
+    pass
+
+# I am not sure that is how setuptools find the proper compiler, but it sure
+# looks like so
+if clang or distutils.sysconfig_get_config_vars()['CC'] == 'clang':
+    try:
+        _ = os.environ['CFLAGS']
+    except KeyError:
+        os.environ['CFLAGS'] = ""
+    # Flag for numpy
+    os.environ['CFLAGS'] += " -Wno-unused-function"
+    # Mute the ugly trick for value/value*
+    os.environ['CFLAGS'] += " -Wno-int-conversion"
+    os.environ['CFLAGS'] += " -Wno-incompatible-pointer-types"
 
 extensions = [
     Extension("facile",
