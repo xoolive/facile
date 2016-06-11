@@ -75,6 +75,22 @@ if exists or os.path.getmtime("interface.ml") > os.path.getmtime(mlobject):
     now = time.time()
     os.utime("facile.pyx", (now, now))
 
+try:
+    if os.environ['CC'] == "clang":
+        clang = True
+except KeyError:
+    clang = False
+finally:
+    import distutils
+    if clang or distutils.sysconfig_get_config_vars()['CC'] == 'clang':
+        try:
+            _ = os.environ['CFLAGS']
+        except KeyError:
+            os.environ['CFLAGS'] = ""
+        os.environ['CFLAGS'] += " -Wno-unused-function"
+        os.environ['CFLAGS'] += " -Wno-int-conversion"
+        os.environ['CFLAGS'] += " -Wno-incompatible-pointer-types"
+
 extensions = [
     Extension("facile",
               ["facile.pyx", "interface_c.c"],
@@ -85,7 +101,7 @@ extensions = [
               )
 ]
 
-class mrclean(Command):
+class clean(Command):
     description = "Custom clean command for OCaml objects"
     user_options = []
 
@@ -100,7 +116,7 @@ class mrclean(Command):
         os.system('rm -rf *.cm* *.o *.obj %s' % mlobject)
 
 cmdclass = {}
-cmdclass['clean'] = mrclean
+cmdclass['clean'] = clean
 
 setup(name="facile",
       version="1.3",
