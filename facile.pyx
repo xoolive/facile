@@ -1,5 +1,45 @@
-# distutils: language = c
 # -*- coding: utf-8 -*-
+# distutils: language = c
+# cython: embedsignature=True
+
+"""Facile stands for Functional Constraint Library.
+
+It uses a solver written in OCaml to find solutions to problems expressed as
+Constraint Programming problems.
+
+Example: Find two variables a and b taking values on {0, 1} so that their
+values are different.
+>>> a = variable(0, 1)
+>>> b = variable(0, 1)
+>>> constraint(a != b)
+>>> solve([a, b])
+True
+>>> a.value(), b.value()
+(0, 1)
+
+Some global constraints, like alldifferent, are also implemented.
+>>> a = variable(0, 2)
+>>> b = variable(0, 2)
+>>> c = variable(0, 2)
+>>> constraint(alldifferent([a, b, c]))
+>>> constraint(a + b <= 2 * c)
+>>> solve([a, b, c])
+True
+>>> a.value(), b.value(), c.value()
+(0, 1, 2)
+
+See also (definition):
+    - alldifferent
+    - array
+    - constraint
+    - variable
+
+See also (resolution):
+    - minimize
+    - solve
+    - solve_all
+
+"""
 
 from interface cimport *
 
@@ -18,6 +58,16 @@ class Heuristic:
 
 
 cdef class Variable(object):
+    """The Variable is the core element for CSP problems.
+
+    This class **shall not be directly instanciated**, but through the
+    `variable` function instead.
+    >>> a = variable(0, 1)
+
+    Variables may be summed, subtracted, multiplied with other variables or
+    integers. They may also be compounded into all kind of expressions
+    >>> c = a * a + 2 * a + 1
+    """
 
     cdef long mlvalue
 
@@ -37,7 +87,8 @@ cdef class Variable(object):
         if (val_isbound(self.mlvalue) == 1) :
             return " = %d" % (vmin)
         else:
-            return "%s in [%d,%d]" % ((<bytes> val_name(self.mlvalue)).decode(), vmin, vmax)
+            t = ((<bytes> val_name(self.mlvalue)).decode(), vmin, vmax)
+            return "%s in [%d,%d]" % t
 
     def __getval(self):
         return self.mlvalue
@@ -222,6 +273,17 @@ cdef class Variable(object):
 
 
 cdef class Arith(object):
+    """The Arith is an unevaluated expression made of Variables.
+
+    This class **shall not be directly instanciated**, but through operations
+    on integers, variables or other expressions.
+    >>> a = variable(0, 1)
+    >>> e = a + 1
+
+    Arith may be summed, subtracted, multiplied with other variables or
+    integers. They may also be compounded into all kind of expressions
+    >>> c = e * e + 2 * e + 1
+    """
 
     cdef long mlvalue
 
@@ -406,6 +468,43 @@ cdef class Arith(object):
         return Arith(c)
 
 cdef class Cstr(object):
+    """The Cstr is a way to build relations on expressions or variables.
+
+    This class **shall not be directly instanciated**, but through arithmetic
+    relations on expressions or through dedicated functions instead.
+    >>> x = [variable(0, 5) for i in range(5)]
+    >>> c1 = x[0] != 0
+    >>> c2 = x[3] > x[2] + x[1]
+    >>> c3 = alldifferent(x)
+
+    Constraints must be posted to the solver in order to be taken into account.
+    >>> constraint(c1)
+
+    Constraints may be compounded with & (and), | (or), ^ (xor), ~ (not)
+    operators. Constraints may also be converted (reified) into variables
+    evaluated to 1 if the constraint is verified and to 0 if the constraint is
+    violated.
+    >>> constraint(c1 | c2)
+
+    Constraints are automatically reified when included into arithmetic
+    operations. `c_sum` means that more than 3 constraints of c are verified.
+    >>> c = [x[i] > x[i + 1] for i in range(4)]
+    >>> c_sum = sum(c) > 3
+
+    We can force the reification of a constraint into a variable with a `+`
+    prefix.
+    >>> x_c2 = +c2
+    >>> constraint(x_c2 == 0)
+
+    This is equivalent to:
+    >>> constraint(~c2)
+
+    Some constraints are not reifiable, e.g. alldifferent.
+    >>> +alldifferent(x)
+    Traceback (most recent call last):
+        ...
+    ValueError: Non reifiable constraint
+    """
 
     cdef long mlvalue
 
@@ -524,39 +623,45 @@ cdef class Cstr(object):
         raise TypeError("Expressions of incompatible types")
 
     def __pos__(a):
+        """Constraint reification."""
         return Variable(cstr_boolean(a.__getval()))
 
     def __neg__(a):
+        """Constraint reification."""
         return 0 - Variable(cstr_boolean(a.__getval()))
 
     def __abs__(a):
+        """Constraint reification."""
         return Variable(cstr_boolean(a.__getval()))
 
     def post(self):
+        """Constraint posting to the solver."""
         if cstr_post(self.__getval()) == 1:
             raise ValueError("The problem is overconstrained")
 
     # For Python 2.x
     def __nonzero__(self):
+        """Constraints cannot be interpreted as booleans."""
         raise ValueError("A constraint cannot be interpreted as a boolean.")
 
     # For Python 3.x
     def __bool__(self):
+        """Constraints cannot be interpreted as booleans."""
         raise ValueError("A constraint cannot be interpreted as a boolean.")
 
 cdef class Array(object):
-    """
-    This structure facilitates the manipulation of arrays of variables and/or
-    expressions.
+    """Array helps the manipulation of arrays of variables and/or expressions.
 
     - It can be indexed by variables, expressions or integers.
     - You can compare two arrays of the same length and get an iterable with
       the corresponding constraints.
     - You can access its max() or min().
     - You can access its sorted version: sort()
-    - You can apply a Global Cardinality Constraint: gcc()
+    - You can apply an alldifferent constraint: alldifferent()
+    - You can apply a global cardinAlity constraint: gcc()
 
-    Use `array(iterable)` to create such a structure.
+    This class **shall not be directly instanciated**, but through `array`
+    function over an iterable structure instead.
     """
 
     cdef long mlvalue
@@ -589,8 +694,11 @@ cdef class Array(object):
         return array.__repr__()
 
     def __getitem__(self, key):
-        """ Return self[key].
+        """Returns self[key].
         key can be a variable, an expression or an integer.
+
+        Warning: An implicit constraint is set on the key so that it takes
+        values between 0 and (len-1).
         """
         cdef long value
         if isinstance(key, Variable):
@@ -629,7 +737,17 @@ cdef class Array(object):
         return [x.value() for x in self]
 
     def max(self):
-        """Return a new variable that is the max of all expressions in self."""
+        """Returns a new variable that is the max of all expressions in self.
+
+        >>> a = array([variable(0, 10) for i in range(3)])
+        >>> constraint(a.alldifferent())
+        >>> constraint(a.min() == 4)
+        >>> constraint(a.max() == 6)
+        >>> solve(a)
+        True
+        >>> a.value()
+        [4, 5, 6]
+        """
         cdef long value
         value = fdarray_max(self.mlvalue)
         if value == 0:
@@ -637,7 +755,17 @@ cdef class Array(object):
         return Variable(value)
 
     def min(self):
-        """Return a new variable that is the min of all expressions in self."""
+        """Returns a new variable that is the min of all expressions in self.
+
+        >>> a = array([variable(0, 10) for i in range(3)])
+        >>> constraint(a.alldifferent())
+        >>> constraint(a.min() == 4)
+        >>> constraint(a.max() == 6)
+        >>> solve(a)
+        True
+        >>> a.value()
+        [4, 5, 6]
+        """
         cdef long value
         value = fdarray_min(self.mlvalue)
         if value == 0:
@@ -650,6 +778,21 @@ cdef class Array(object):
         value = sorting_sort(self.mlvalue)
         return Array(value, self.length)
 
+    def alldifferent(self):
+        """Equivalent to alldifferent applied to all elements of the array.
+
+        >>> a = array([variable(0, 2) for i in range(3)])
+        >>> constraint(a.alldifferent())
+        >>> solve(a)
+        True
+        >>> a.value()
+        [0, 1, 2]
+
+        See also: help(alldifferent)
+        """
+
+        return alldifferent(list(self))
+
     def gcc(self, distribution):
         """Return a Global Cardinality Constraint w.r.t distribution.
 
@@ -659,12 +802,20 @@ cdef class Array(object):
         in the array (the corresponding constraint is automatically posted).
         >>> a = array([variable(0,3) for i in range(5)])
         >>> c = constraint(a.gcc([(1, 3), (1, 2), (3, 1)]))
+        >>> solve(a)
+        True
+        >>> a.value()
+        [1, 1, 1, 2, 3]
 
         Note that this constraint is not reifiable.
 
         If you need a simpler cardinality constraint, you can write:
-        >>> value, cardinal = 2, 2
-        >>> c1 = sum([p == value for p in a]) == cardinal
+        >>> a = array([variable(0,3) for i in range(5)])
+        >>> constraint(sum([p == 1 for p in a]) == 2)
+        >>> solve(a)
+        True
+        >>> a.value()
+        [0, 0, 0, 1, 1]
         """
 
         cdef long value
@@ -698,8 +849,7 @@ cdef class Array(object):
         return Cstr(value)
 
 def solve(variables, backtrack=False, heuristic=Heuristic.No):
-    """
-    solve(variables, backtrack=False, heuristic=Heuristic.No)
+    """Solves the current CSP problem.
 
     The `solve` function solves the problem defined by all posted constraints
     on variables passed in parameter.
@@ -747,8 +897,7 @@ def solve(variables, backtrack=False, heuristic=Heuristic.No):
     raise TypeError("The argument must be iterable")
 
 def solve_all(variables):
-    """
-    solve_all(variables)
+    """Solves the CSP problem and yields all solutions.
 
     The `solve_all` function solves the problem defined by all posted
     constraints on variables passed in parameter.
@@ -790,8 +939,6 @@ def solve_all(variables):
 
 def minimize(variables, expr):
     """
-    minimize(variables, expression)
-
     The `minimize` function solves the problem defined by all posted
     constraints on variables passed in parameter, and minimizes the
     expression passed in parameter.
@@ -836,17 +983,22 @@ def minimize(variables, expr):
 
 def constraint(cstr):
     """
-    constraint(cstr)
-
     The `constraint` function defines a constraint and posts it to the
     solver. The constraint can be expressed in an intuitive manner, based
     on expressions on variables.
 
-    `constraint` raises `TypeError` if the parameter is not a constraint.
-
     >>> a = variable(0, 1)
     >>> b = variable(0, 1)
     >>> constraint(a != b)
+
+    `constraint` raises `TypeError` if the parameter is not a constraint.
+
+    >>> constraint(a)
+    Traceback (most recent call last):
+        ...
+    TypeError: The argument must be a (non-reified) constraint
+
+    See also: help(Cstr)
     """
 
     if not isinstance(cstr, Cstr):
@@ -855,18 +1007,20 @@ def constraint(cstr):
 
 
 def alldifferent(variables):
-    """
-    alldifferent(variables)
-
-    The `alldifferent` function defines a global constraint to be later posted
-    to the solver.
+    """ Creates an alldifferent constraint (non-reifiable).
 
     `alldifferent` raises a TypeError if `variables` is not iterable and if
     variables does not contain more than two variables.
 
     >>> a = variable(0, 1)
     >>> b = variable(0, 1)
-    >>> c = alldifferent([a, b])
+    >>> constraint(alldifferent([a, b]))
+    >>> solve([a, b])
+    True
+    >>> a.value(), b.value()
+    (0, 1)
+
+    See also: help(Array.alldifferent)
     """
 
     cdef long length
@@ -889,21 +1043,24 @@ def alldifferent(variables):
         return Cstr(cstr_alldiff(pt_vars, length))
     raise TypeError("The argument must be iterable")
 
-def variable(a, b):
-    """
-    variable(min, max)
+def variable(min_val, max_val):
+    """Creates a Variable taking values on a discrete interval.
 
     The `variable` function creates a variable on a discrete interval, with
-    min/max as bounds.
+    `min_val` and `max_val`  as bounds.
+    >>> a = variable(0, 2)
 
-    >>> v = variable(0, 2)
+    Variables may be summed, subtracted, multiplied with other variables or
+    integers. They may also be compounded into all kind of expressions
+    >>> e = a * a + 2 * a + 1
+
+    See also: help(Variable)
     """
-    cdef long value = val_interval(a, b)
+    cdef long value = val_interval(min_val, max_val)
     return Variable(value)
 
 def array(variables):
-    """
-    array(iterable)
+    """Creates an Array from an iterable structure.
 
     This structure facilitates the manipulation of arrays of variables and/or
     expressions.
@@ -913,9 +1070,20 @@ def array(variables):
       the corresponding constraints.
     - You can access its max() or min().
     - You can access its sorted version: sort()
+    - You can apply an alldifferent constraint: alldifferent()
     - You can apply a Global Cardinality Constraint: gcc()
 
     >>> a = array([variable(0, 1), variable(0, 3), variable(0, 5)])
+    >>> constraint(a.min() == 1)
+    >>> constraint(alldifferent(a))
+    >>> constraint(abs(a[0] - a[1]) >= 2)
+    >>> constraint(abs(a[1] - a[2]) >= 2)
+    >>> solve(a)
+    True
+    >>> a.value()
+    [1, 3, 5]
+
+    See also: help(Array)
     """
     cdef long length
     cdef long* pt_vars
