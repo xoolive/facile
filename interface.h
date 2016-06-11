@@ -7,6 +7,7 @@ typedef enum h {
   MIN_MIN } heuristic;
 
 void init();
+void fcl_destroy(value*);
 
 int is_proper_value(value*);
 
