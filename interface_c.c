@@ -12,10 +12,12 @@
   if (closure == NULL)\
     closure = caml_named_value(A);
 
-#include <caml/address_class.h>
+/* Let's keep it for later... */
+/* #include <caml/address_class.h> */
 int is_proper_value(value* v)
 {
-  return Is_in_value_area(*v);
+  return 1;
+/*   return Is_in_value_area(*v); */
 }
 
 void init() {

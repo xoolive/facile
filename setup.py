@@ -1,6 +1,5 @@
 from setuptools import setup
 from setuptools.extension import Extension
-from distutils.command import build_ext
 from distutils.core import Command
 from Cython.Build import cythonize
 
@@ -26,35 +25,55 @@ def get_long_description():
     except ImportError:
         return ""
 
-# I know, it's bad! Feel free to improve...
-bpath = "build/temp.%s-%s.%s" % (sysconfig.get_platform(),
-                                 sys.version_info[0], sys.version_info[1])
+def ocaml_config(prefix="", bpath=None):
 
-if not os.path.exists("build"):
-    os.mkdir("build")
-if not os.path.exists(bpath):
-    os.mkdir(bpath)
+    if bpath is None:
+        # I know, it's bad! Feel free to improve...
+        bpath = "build/temp.%s-%s.%s" % (sysconfig.get_platform(),
+                sys.version_info[0], sys.version_info[1])
 
-ocamlpath = os.popen("ocamlc -where").readline().strip()
-if ocamlpath == "":
-    print ("ocamlc not found")
-    raise SystemError
+    if not os.path.exists("build"):
+        os.mkdir("build")
+    if not os.path.exists(bpath):
+        os.mkdir(bpath)
 
-ocamlopt = os.popen("which ocamlopt").readline().strip()
-if ocamlopt == "":
-    print ("ocamlopt not found")
-    raise SystemError
+    mlobject = "%s/interface_ml.o" % bpath
 
-# Rely on ocamlfind to find facile, but you can add some hints if need be
-facilepath = os.popen("ocamlfind query facile").readline().strip()
-if facilepath == "":
-    print ("ocamlfind or facile not found")
-    if os.path.exists(ocamlpath + "/facile.cma"):
-        facilepath = ocamlpath
-    else:
-        raise SystemError
+    ocamlpath = os.popen("%socamlopt -where" % prefix).readline().strip()
+    if ocamlpath == "":
+        raise SystemError("%socamlopt not found" % prefix)
 
-INCLUDE = [ocamlpath]
+    asmrunlib = ocamlpath + "/libasmrun.a"
+
+    # Rely on ocamlfind to find facile, but you can add some hints if need be
+    facilepath = os.popen("%socamlfind query facile" % prefix).readline().strip()
+    if facilepath == "":
+        raise SystemError("%socamlfind or facile not found" % prefix)
+
+    # Check timestamps for OCaml file
+    exists = not os.path.exists(mlobject)
+    if exists or os.path.getmtime("interface.ml") > os.path.getmtime(mlobject):
+        print ("Compiling interface.ml")
+        cmd = ("%socamlfind ocamlopt -package facile -linkpkg -output-obj" +
+            " -o %s interface.ml") % (prefix, mlobject)
+        print (cmd)
+        os.system(cmd)
+        now = time.time()
+        os.utime("facile.pyx", (now, now))
+
+    return ocamlpath, mlobject, asmrunlib
+
+if sys.platform != "win32":
+    ocamlpath, mlobject, asmrunlib = ocaml_config()
+    compileargs = ["-fPIC"]
+    INCLUDE = [ocamlpath]
+else:
+    # cross-compiled so whatever: fill everything with nonsense...
+    INCLUDE = ""
+    compiler = ""
+    compileargs = []
+    mlobject = ""
+    asmrunlib = ""
 
 try:
     import numpy
@@ -62,42 +81,36 @@ try:
 except ImportError:
     print ("numpy is required")
     raise
+except:
+    # go safely through the rest and make your bundle
+    assert sys.platform == "win32"
 
-mlobject = "%s/interface_ml.o" % bpath
-asmrunlib = ocamlpath + "/libasmrun.a"
-compileargs = ["-fPIC"]
-
-# Check timestamps for OCaml file
-exists = not os.path.exists(mlobject)
-if exists or os.path.getmtime("interface.ml") > os.path.getmtime(mlobject):
-    print("Compiling interface.ml")
-    os.system(("%s -output-obj -I %s -o %s %s/facile.cmxa interface.ml") %
-              (ocamlopt, facilepath, mlobject, facilepath))
-    now = time.time()
-    os.utime("facile.pyx", (now, now))
-
-# First check if the environment variable is set
-clang = False
 try:
-    if os.environ['CC'] == "clang":
-        clang = True
+    os.environ['CFLAGS']
 except KeyError:
+    os.environ['CFLAGS'] = ""
+
+try:
+    import sysconfig
+    compiler = sysconfig.get_config_vars()['CC']
+    compiler = os.environ['CC']
+except:
     pass
 
-# I am not sure that is how setuptools find the proper compiler, but it sure
-# looks like so
-if clang or distutils.sysconfig_get_config_vars()['CC'] == 'clang':
-    try:
-        _ = os.environ['CFLAGS']
-    except KeyError:
-        os.environ['CFLAGS'] = ""
-    # Flag for numpy
-    os.environ['CFLAGS'] += " -Wno-unused-function"
-    # Mute the ugly trick for value/value*
-    os.environ['CFLAGS'] += " -Wno-int-conversion"
-    os.environ['CFLAGS'] += " -Wno-incompatible-pointer-types"
+# Flag for numpy
+os.environ['CFLAGS'] += " -Wno-unused-function"
+# Mute the ugly trick for value/value*
+os.environ['CFLAGS'] += " -Wno-int-conversion"
+os.environ['CFLAGS'] += " -Wno-incompatible-pointer-types"
+
+# Compiler specific
+if compiler == "clang":
     # Other warning on a Python flag (not my fault...)
     os.environ['CFLAGS'] += " -Wno-unknown-warning-option"
+
+# gcc
+if "gcc" in compiler: #.find("gcc") >= 0:
+    os.environ['CFLAGS'] += " -Wno-strict-prototypes"
 
 extensions = [
     Extension("facile",
@@ -121,10 +134,65 @@ class clean(Command):
 
     def run(self):
         assert os.getcwd() == self.cwd, 'Must be in: %s' % self.cwd
-        os.system('rm -rf *.cm* *.o *.obj %s' % mlobject)
+        os.system('rm -rf *.cm* *.o *.obj *.so %s' % mlobject)
+
+
+class cross(Command):
+    description = "Cross-compilation for Windows"
+    user_options = []
+
+    def initialize_options(self):
+        self.cwd = None
+
+    def finalize_options(self):
+        self.cwd = os.getcwd()
+
+    def run(self):
+        self.tmp = "build/temp.win32-%s.%s" % (sys.version_info[:2])
+        self.lib = "build/lib.win32-%s.%s" % (sys.version_info[:2])
+
+        if not os.path.exists(self.tmp):
+            os.mkdir(self.tmp)
+        if not os.path.exists(self.lib):
+            os.mkdir(self.lib)
+
+        config = ocaml_config(prefix="i686-w64-mingw32-", bpath=self.tmp)
+        ocamlpath, mlobject, asmrunlib = config
+
+        cmd = ("i686-w64-mingw32-gcc %s -c facile.c -o %s/facile.o " +
+                "-I cross-compile/win32-py%s.%s/include -I %s") % \
+                (os.environ['CFLAGS'], self.tmp, sys.version_info[0],
+                        sys.version_info[1], ocamlpath)
+
+        print (cmd)
+        os.system(cmd)
+
+        cmd = ("i686-w64-mingw32-gcc %s -c interface_c.c -o %s/interface_c.o " +
+                "-I cross-compile/win32-py%s.%s/include -I %s") % \
+                (os.environ['CFLAGS'], self.tmp, sys.version_info[0],
+                        sys.version_info[1], ocamlpath)
+
+        print (cmd)
+        os.system(cmd)
+
+        pyd_file = "facile.pyd"
+        if sys.version_info[:2] > (3, 4):
+            pyd_file = "facile.cp%s%s-win32.pyd" % sys.version_info[:2]
+
+        cmd = ("flexlink -maindll -chain mingw %s/facile.o %s/interface_c.o " +
+                "%s/interface_ml.o -o %s/%s %s " +
+                "cross-compile/win32-py%s.%s/libpython%s%s.a -- -static-libgcc")
+        cmd = cmd % (self.tmp, self.tmp, self.tmp, self.lib, pyd_file, asmrunlib,
+                sys.version_info[0], sys.version_info[1],
+                sys.version_info[0], sys.version_info[1])
+
+        print (cmd)
+        os.system(cmd)
+
 
 cmdclass = {}
 cmdclass['clean'] = clean
+cmdclass['cross'] = cross
 
 setup(name="facile",
       version="1.3",
