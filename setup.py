@@ -109,7 +109,7 @@ if compiler == "clang":
     os.environ['CFLAGS'] += " -Wno-unknown-warning-option"
 
 # gcc
-if "gcc" in compiler: #.find("gcc") >= 0:
+if "gcc" in compiler:
     os.environ['CFLAGS'] += " -Wno-strict-prototypes"
 
 extensions = [
