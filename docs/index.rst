@@ -24,4 +24,5 @@ This package is a Cython-based wrapping in Python of basic functionalities of th
 
    installation
    quickstart
+   examples
 
