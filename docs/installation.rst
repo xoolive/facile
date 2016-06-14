@@ -40,13 +40,11 @@ In order to compile the tool, I recommend the following method:
     #  (optional) Prepare a package
     python setup.py bdist_wheel
 
-After installing the package, you can try basic problems in the
-``examples`` directory.
 
 I detailed my approach and some lessons learned
 `here <http://www.xoolive.org/2014/09/20/python-wrapping-for-ocaml-facile-library.html>`__
 
 For building Windows packages, I use cross-compilation from Linux
-or Mac (see the ``python setup.py cross`` command)
+or Mac (see the specifically designed cross command of setup.py)
 
 *Do not hesitate to share if you find a better compilation experience.*

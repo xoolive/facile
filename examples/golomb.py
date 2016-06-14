@@ -9,7 +9,14 @@
 import facile
 
 def golomb(n):
+
+    # On peut majorer la taille de la règle par 2 ** n. En effet, si
+    # ticks[i] vaut 2**i alors tous les ticks[i] - ticks[j] = 2**i - 2**j
+    # = 2**j * (2**(i-j) - 1) qui sont tous différents.
+    # On a donc au moins cette solution.
+
     n2 = 2 ** n
+    
     ticks = [facile.variable(0, n2) for i in range(n)]
 
     # First tick at the start of the ruler
