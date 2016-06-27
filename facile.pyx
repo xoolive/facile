@@ -56,6 +56,8 @@ class Heuristic:
     Min_value = 2
     Min_min = 3
 
+# Prevent end-user using constructors
+cdef object __SECRET__ = object()
 
 cdef class Variable(object):
     """The Variable is the core element for CSP problems.
@@ -74,7 +76,9 @@ cdef class Variable(object):
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
 
-    def __cinit__ (self, value):
+    def __cinit__ (self, value, secret):
+        if secret != __SECRET__:
+            raise ValueError("Use facile.variable function")
         if value == 0:
             raise ValueError("Non reifiable constraint")
         if not is_proper_value(value):
@@ -106,7 +110,7 @@ cdef class Variable(object):
     def in_interval(self, int inf, int sup):
         cdef long res
         res = interval_ismember(self.mlvalue, inf, sup)
-        return Variable(res)
+        return Variable(res, __SECRET__)
 
     def __richcmp__(self, value, op):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
@@ -127,138 +131,138 @@ cdef class Variable(object):
     def __lt(self, fd):
         if isinstance(fd, Cstr):
             c = cstr_lt(fd2e(self.__getval()), fd.__abs__().__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, Arith):
             c = cstr_lt(fd2e(self.__getval()), fd.__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, Variable):
             c = cstr_lt(fd2e(self.__getval()), fd2e(fd.__getval()))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, int):
             c = cstr_lt(fd2e(self.__getval()), i2e(fd))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __le(self, fd):
         if isinstance(fd, Cstr):
             c = cstr_le(fd2e(self.__getval()), fd.__abs__().__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, Arith):
             c = cstr_le(fd2e(self.__getval()), fd.__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, Variable):
             c = cstr_le(fd2e(self.__getval()), fd2e(fd.__getval()))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, int):
             c = cstr_le(fd2e(self.__getval()), i2e(fd))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __eq(self, fd):
         if isinstance(fd, Cstr):
             c = cstr_eq(fd2e(self.__getval()), fd.__abs__().__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, Arith):
             c = cstr_eq(fd2e(self.__getval()), fd.__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, Variable):
             c = cstr_eq(fd2e(self.__getval()), fd2e(fd.__getval()))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, int):
             c = cstr_eq(fd2e(self.__getval()), i2e(fd))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __ne(self, fd):
         if isinstance(fd, Cstr):
             c = cstr_ne(fd2e(self.__getval()), fd.__abs__().__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, Arith):
             c = cstr_ne(fd2e(self.__getval()), fd.__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, Variable):
             c = cstr_ne(fd2e(self.__getval()), fd2e(fd.__getval()))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, int):
             c = cstr_ne(fd2e(self.__getval()), i2e(fd))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __gt(self, fd):
         if isinstance(fd, Cstr):
             c = cstr_gt(fd2e(self.__getval()), fd.__abs__().__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, Arith):
             c = cstr_gt(fd2e(self.__getval()), fd.__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, Variable):
             c = cstr_gt(fd2e(self.__getval()), fd2e(fd.__getval()))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, int):
             c = cstr_gt(fd2e(self.__getval()), i2e(fd))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __ge(self, fd):
         if isinstance(fd, Cstr):
             c = cstr_ge(fd2e(self.__getval()), fd.__abs__().__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, Arith):
             c = cstr_ge(fd2e(self.__getval()), fd.__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, Variable):
             c = cstr_ge(fd2e(self.__getval()), fd2e(fd.__getval()))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(fd, int):
             c = cstr_ge(fd2e(self.__getval()), i2e(fd))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __add__(a, b):
         if isinstance(a, int):
             c = arith_add(i2e(a), fd2e(b.__getval()))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, Arith):
             c = arith_add(fd2e(a.__getval()), b.__getval())
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, Variable):
             c = arith_add(fd2e(a.__getval()), fd2e(b.__getval()))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, int):
             c = arith_add(fd2e(a.__getval()), i2e(b))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, Cstr):
-            return a + Variable(cstr_boolean(b.__getval()))
+            return a + Variable(cstr_boolean(b.__getval()), __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __sub__(a, b):
         if isinstance(a, int):
             c = arith_sub(i2e(a), fd2e(b.__getval()))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, Arith):
             c = arith_sub(fd2e(a.__getval()), b.__getval())
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, Variable):
             c = arith_sub(fd2e(a.__getval()), fd2e(b.__getval()))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, int):
             c = arith_sub(fd2e(a.__getval()), i2e(b))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __mul__(a, b):
         if isinstance(a, int):
             c = arith_mul(i2e(a), fd2e(b.__getval()))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, Arith):
             c = arith_mul(fd2e(a.__getval()), b.__getval())
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, Variable):
             c = arith_mul(fd2e(a.__getval()), fd2e(b.__getval()))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, int):
             c = arith_mul(fd2e(a.__getval()), i2e(b))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __pos__(a):
@@ -269,7 +273,7 @@ cdef class Variable(object):
 
     def __abs__(a):
         c = arith_abs(fd2e(a.__getval()))
-        return Arith(c)
+        return Arith(c, __SECRET__)
 
 
 cdef class Arith(object):
@@ -290,16 +294,16 @@ cdef class Arith(object):
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
 
-    def __cinit__(self, value):
-        if not is_proper_value(value):
-            raise RuntimeError("Invalid pointer value")
+    def __cinit__(self, value, secret):
+        if secret != __SECRET__:
+            raise ValueError("Invalid pointer value")
         self.mlvalue = value
 
     def __getval(self):
         return self.mlvalue
 
     def variable(self):
-        return Variable(e2fd(self.mlvalue))
+        return Variable(e2fd(self.mlvalue), __SECRET__)
 
     def __repr__(self):
         return self.variable().__repr__()
@@ -323,138 +327,138 @@ cdef class Arith(object):
     def __lt(self, value):
         if isinstance(value, Cstr):
             c = cstr_lt(self.__getval(), value.__abs__().__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, Arith):
             c = cstr_lt(self.__getval(), value.__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, Variable):
             c = cstr_lt(self.__getval(), fd2e(value.__getval()))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, int):
             c = cstr_lt(self.__getval(), i2e(value))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __le(self, value):
         if isinstance(value, Cstr):
             c = cstr_le(self.__getval(), value.__abs__().__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, Arith):
             c = cstr_le(self.__getval(), value.__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, Variable):
             c = cstr_le(self.__getval(), fd2e(value.__getval()))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, int):
             c = cstr_le(self.__getval(), i2e(value))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __eq(self, value):
         if isinstance(value, Cstr):
             c = cstr_eq(self.__getval(), value.__abs__().__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, Arith):
             c = cstr_eq(self.__getval(), value.__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, Variable):
             c = cstr_eq(self.__getval(), fd2e(value.__getval()))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, int):
             c = cstr_eq(self.__getval(), i2e(value))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __ne(self, value):
         if isinstance(value, Cstr):
             c = cstr_ne(self.__getval(), value.__abs__().__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, Arith):
             c = cstr_ne(self.__getval(), value.__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, Variable):
             c = cstr_ne(self.__getval(), fd2e(value.__getval()))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, int):
             c = cstr_ne(self.__getval(), i2e(value))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __gt(self, value):
         if isinstance(value, Cstr):
             c = cstr_gt(self.__getval(), value.__abs__().__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, Arith):
             c = cstr_gt(self.__getval(), value.__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, Variable):
             c = cstr_gt(self.__getval(), fd2e(value.__getval()))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, int):
             c = cstr_gt(self.__getval(), i2e(value))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __ge(self, value):
         if isinstance(value, Cstr):
             c = cstr_ge(self.__getval(), value.__abs__().__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, Arith):
             c = cstr_ge(self.__getval(), value.__getval())
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, Variable):
             c = cstr_ge(self.__getval(), fd2e(value.__getval()))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         if isinstance(value, int):
             c = cstr_ge(self.__getval(), i2e(value))
-            return Cstr(c)
+            return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __add__(a, b):
         if isinstance(a, int):
             c = arith_add(i2e(a), b.__getval())
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, Arith):
             c = arith_add(a.__getval(), b.__getval())
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, Variable):
             c = arith_add(a.__getval(), fd2e(b.__getval()))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, int):
             c = arith_add(a.__getval(), i2e(b))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, Cstr):
-            return a + Variable(cstr_boolean(b.__getval()))
+            return a + Variable(cstr_boolean(b.__getval()), __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __sub__(a, b):
         if isinstance(a, int):
             c = arith_sub(i2e(a), b.__getval())
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, Arith):
             c = arith_sub(a.__getval(), b.__getval())
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, Variable):
             c = arith_sub(a.__getval(), fd2e(b.__getval()))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, int):
             c = arith_sub(a.__getval(), i2e(b))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __mul__(a, b):
         if isinstance(a, int):
             c = arith_mul(i2e(a), b.__getval())
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, Arith):
             c = arith_mul(a.__getval(), b.__getval())
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, Variable):
             c = arith_mul(a.__getval(), fd2e(b.__getval()))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         if isinstance(b, int):
             c = arith_mul(a.__getval(), i2e(b))
-            return Arith(c)
+            return Arith(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __pos__(a):
@@ -465,7 +469,7 @@ cdef class Arith(object):
 
     def __abs__(a):
         c = arith_abs(a.__getval())
-        return Arith(c)
+        return Arith(c, __SECRET__)
 
 cdef class Cstr(object):
     """The Cstr is a way to build relations on expressions or variables.
@@ -511,11 +515,11 @@ cdef class Cstr(object):
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
 
-    def __cinit__(self, value):
+    def __cinit__(self, value, secret):
+        if secret != __SECRET__:
+            raise ValueError("Invalid pointer value")
         if value == 0:
             raise ValueError("Non reifiable constraint")
-        if not is_proper_value(value):
-            raise RuntimeError("Invalid pointer value")
         self.mlvalue = value
 
     def __getval(self):
@@ -551,7 +555,7 @@ cdef class Cstr(object):
         >>> x.value()
         [0, 1, 0]
         """
-        return Cstr(cstr_and(c1.__getval(), c2.__getval()))
+        return Cstr(cstr_and(c1.__getval(), c2.__getval()), __SECRET__)
 
     def __or__(Cstr c1, Cstr c2):
         """`|` (or) operator on constraints.
@@ -564,7 +568,7 @@ cdef class Cstr(object):
         >>> x.value()
         [0, 0, 1]
         """
-        return Cstr(cstr_or(c1.__getval(), c2.__getval()))
+        return Cstr(cstr_or(c1.__getval(), c2.__getval()), __SECRET__)
 
     def __invert__(self):
         """`~` (not) operator on constraints.
@@ -586,7 +590,7 @@ cdef class Cstr(object):
             ...
         ValueError: Non reifiable constraint
         """
-        return Cstr(cstr_not(self.__getval()))
+        return Cstr(cstr_not(self.__getval()), __SECRET__)
 
     def __xor__(Cstr c1, Cstr c2):
         """`^` (xor) operator on constraints.
@@ -599,40 +603,40 @@ cdef class Cstr(object):
         >>> x.value()
         [0, 0, 1]
         """
-        return Cstr(cstr_xor(c1.__getval(), c2.__getval()))
+        return Cstr(cstr_xor(c1.__getval(), c2.__getval()), __SECRET__)
 
     def __add__(c1, c2):
         if isinstance(c2, Cstr):
-            return c1 + Variable(cstr_boolean(c2.__getval()))
+            return c1 + Variable(cstr_boolean(c2.__getval()), __SECRET__)
         if isinstance(c1, Cstr):
-            return Variable(cstr_boolean(c1.__getval())) + c2
+            return Variable(cstr_boolean(c1.__getval()), __SECRET__) + c2
         raise TypeError("Expressions of incompatible types")
 
     def __sub__(c1, c2):
         if isinstance(c2, Cstr):
-            return c1 - Variable(cstr_boolean(c2.__getval()))
+            return c1 - Variable(cstr_boolean(c2.__getval()), __SECRET__)
         if isinstance(c1, Cstr):
-            return Variable(cstr_boolean(c1.__getval())) - c2
+            return Variable(cstr_boolean(c1.__getval()), __SECRET__) - c2
         raise TypeError("Expressions of incompatible types")
 
     def __mul__(c1, c2):
         if isinstance(c2, Cstr):
-            return c1 * Variable(cstr_boolean(c2.__getval()))
+            return c1 * Variable(cstr_boolean(c2.__getval()), __SECRET__)
         if isinstance(c1, Cstr):
-            return Variable(cstr_boolean(c1.__getval())) * c2
+            return Variable(cstr_boolean(c1.__getval()), __SECRET__) * c2
         raise TypeError("Expressions of incompatible types")
 
     def __pos__(a):
         """Constraint reification."""
-        return Variable(cstr_boolean(a.__getval()))
+        return Variable(cstr_boolean(a.__getval()), __SECRET__)
 
     def __neg__(a):
         """Constraint reification."""
-        return 0 - Variable(cstr_boolean(a.__getval()))
+        return 0 - Variable(cstr_boolean(a.__getval()), __SECRET__)
 
     def __abs__(a):
         """Constraint reification."""
-        return Variable(cstr_boolean(a.__getval()))
+        return Variable(cstr_boolean(a.__getval()), __SECRET__)
 
     def post(self):
         """Constraint posting to the solver."""
@@ -687,7 +691,7 @@ cdef class Array(object):
         pt_vars = <long*> cnp.PyArray_DATA(values)
         fdarray_read(self.mlvalue, pt_vars)
         for i in range(self.length):
-            yield Variable(values[i])
+            yield Variable(values[i], __SECRET__)
 
     def __repr__(self):
         array = [x for x in self]
@@ -711,7 +715,7 @@ cdef class Array(object):
             raise TypeError("Index should be integer, variable or expression")
         if value == 0:
             raise IndexError("Index out of bounds")
-        return Variable(value)
+        return Variable(value, __SECRET__)
 
     def __richcmp__(a, b, op):
         # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
@@ -752,7 +756,7 @@ cdef class Array(object):
         value = fdarray_max(self.mlvalue)
         if value == 0:
             raise IndexError("Empty list")
-        return Variable(value)
+        return Variable(value, __SECRET__)
 
     def min(self):
         """Returns a new variable that is the min of all expressions in self.
@@ -770,7 +774,7 @@ cdef class Array(object):
         value = fdarray_min(self.mlvalue)
         if value == 0:
             raise IndexError("Empty list")
-        return Variable(value)
+        return Variable(value, __SECRET__)
 
     def sort(self):
         """Return an array of variables sorted in increasing order."""
@@ -846,7 +850,7 @@ cdef class Array(object):
         pt_values = cnp.PyArray_DATA(np_values)
 
         value = gcc_cstr(self.mlvalue, <long*> pt_cards, <long*> pt_values, l)
-        return Cstr(value)
+        return Cstr(value, __SECRET__)
 
 def solve(variables, backtrack=False, heuristic=Heuristic.No):
     """Solves the current CSP problem.
@@ -959,7 +963,7 @@ def minimize(variables, expr):
     cdef long length
     cdef long optimal
     if isinstance(expr, Variable):
-        expr = Arith(fd2e(expr.__getval()))
+        expr = Arith(fd2e(expr.__getval()), __SECRET__)
     if not isinstance(expr, Arith):
         raise SyntaxError
     if cpython.PySequence_Check(variables):
@@ -1040,7 +1044,7 @@ def alldifferent(variables):
                 raise TypeError("Arguments must be variables or expressions")
         pt_vars = <long*> cnp.PyArray_DATA(npvars)
         length = len(variables)
-        return Cstr(cstr_alldiff(pt_vars, length))
+        return Cstr(cstr_alldiff(pt_vars, length), __SECRET__)
     raise TypeError("The argument must be iterable")
 
 def variable(min_val, max_val):
@@ -1057,7 +1061,7 @@ def variable(min_val, max_val):
     See also: help(Variable)
     """
     cdef long value = val_interval(min_val, max_val)
-    return Variable(value)
+    return Variable(value, __SECRET__)
 
 def array(variables):
     """Creates an Array from an iterable structure.
