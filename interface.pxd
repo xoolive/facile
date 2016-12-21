@@ -35,7 +35,7 @@ cdef extern from "interface.h":
     long cstr_and(long, long)
     long cstr_xor(long, long)
     long cstr_not(long)
-    long cstr_alldiff(long*, long)
+    long cstr_alldiff(long*, long, int)
     long cstr_boolean(long)
 
     long fdarray_create(long*, long)
@@ -44,8 +44,23 @@ cdef extern from "interface.h":
     long fdarray_max(long)
     long fdarray_min(long)
 
-    int goals_array_solve(long*, long, int)
-    long goals_array_solve_all(long*, long)
+    long strategy_minvalue()
+    long strategy_mindomain()
+    long strategy_minmin()
+
+    long goals_success()
+    long goals_fail()
+    long goals_or(long, long)
+    long goals_and(long, long)
+    long goals_forall(long, long*, long)
+    long goals_atomic(int i)
+    long goals_minimize(long goal, long expr, int i)
+    int goals_solve(int, long)
+
+    void fcl_interrupt()
+
+    void set_backtrack_callback(int, void(*fct)(int, int))
+    void set_atomic_callback(int, void(*fct)(int))
+    void set_onsol_callback(int, void(*fct)(int, int))
+
     long parse_array(long, long*)
-    int goals_array_solve_bt(long*, long, int, long*)
-    int goals_minimize(long*, long, long, long*, long*)

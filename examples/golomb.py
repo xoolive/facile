@@ -16,7 +16,7 @@ def golomb(n):
     # On a donc au moins cette solution.
 
     n2 = 2 ** n
-    
+
     ticks = [facile.variable(0, n2) for i in range(n)]
 
     # First tick at the start of the ruler
@@ -30,23 +30,23 @@ def golomb(n):
     distances = []
     for i in range(n-1):
         for j in range(i + 1, n):
-            distances.append(ticks[j] - ticks[i])
-    facile.constraint(facile.alldifferent(distances))
+            distances.append(facile.variable(ticks[j] - ticks[i]))
+    facile.constraint(facile.alldifferent(distances, on_refine=True))
 
     for d in distances:
         facile.constraint(d > 0)
 
     # Breaking the symmetry
-    size = len(distances)
-    facile.constraint(distances[size - 1] > distances[0])
+    facile.constraint(distances[-1] > distances[0])
 
-    return (facile.minimize(ticks, ticks[n-1])[1])
+    return (facile.minimize(ticks, ticks[n-1], backtrack=True,
+        on_solution=print))
 
 if __name__ == "__main__":
     import sys
     n = 5
     if len(sys.argv) > 1:
         n = int(sys.argv[1])
-        if n > 10:
-            print ("With due respect, 10 may be time-consuming enough...")
+        if n > 11:
+            print ("With due respect, n=11 may be time-consuming enough...")
     print (golomb(n))

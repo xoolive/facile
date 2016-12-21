@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 
-from facile import variable, alldifferent, constraint, solve
+from facile import *
 
 
 def n_queen(n):
     """Solves the n-queen problem. """
-    queens = [variable(0, n-1) for i in range(n)]
-    diag1 = [queens[i] + i for i in range(n)]
-    diag2 = [queens[i] - i for i in range(n)]
+
+    queens = array(variable(0, n-1) for i in range(n))
 
     constraint(alldifferent(queens))
-    constraint(alldifferent(diag1))
-    constraint(alldifferent(diag2))
+    constraint(alldifferent(queens[i] - i for i in range(n)))
+    constraint(alldifferent(queens[i] + i for i in range(n)))
 
-    if solve(queens):
+    if solve(queens, strategy=Strategy.min_min()):
         return [x.value() for x in queens]
     else:
         return None

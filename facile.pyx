@@ -12,8 +12,7 @@ values are different.
 >>> a = variable(0, 1)
 >>> b = variable(0, 1)
 >>> constraint(a != b)
->>> solve([a, b])
-True
+>>> assert solve([a, b])
 >>> a.value(), b.value()
 (0, 1)
 
@@ -23,8 +22,7 @@ Some global constraints, like alldifferent, are also implemented.
 >>> c = variable(0, 2)
 >>> constraint(alldifferent([a, b, c]))
 >>> constraint(a + b <= 2 * c)
->>> solve([a, b, c])
-True
+>>> assert solve([a, b, c])
 >>> a.value(), b.value(), c.value()
 (0, 1, 2)
 
@@ -41,20 +39,53 @@ See also (resolution):
 
 """
 
-from interface cimport *
+import array
+import collections
 
 cimport cpython
-import numpy as np
-cimport numpy as cnp
+
+from interface cimport *
+from cpython cimport array
 
 # Initialize OCaml
 init()
 
-class Heuristic:
-    No = 0
-    Min_size = 1
-    Min_value = 2
-    Min_min = 3
+import heapq
+import itertools
+
+class gc_list(object):
+
+    def __init__(self, h):
+        self._h = h
+        self._c = iter(itertools.count())
+
+    def push(self, p):
+        return heapq.heappush(self._h, p)
+
+    def pop(self):
+        """Return the smallest number in h or a bigger number"""
+        try:
+            return heapq.heappop(self._h)
+        except IndexError:
+            return next(self._c)
+
+
+class callback(object):
+
+    h = gc_list([])
+
+    def __init__(self, f):
+        self.f = f
+        self.id = self.h.pop()
+        # minimalistic @functools.wraps
+        self.__doc__ = f.__doc__
+
+    def __call__(self, *args, **kwargs):
+        self.f(*args, **kwargs)
+
+    def __del__(self):
+        self.h.push(self.id)
+
 
 # Prevent end-user using constructors
 cdef object __SECRET__ = object()
@@ -111,6 +142,11 @@ cdef class Variable(object):
         cdef long res
         res = interval_ismember(self.mlvalue, inf, sup)
         return Variable(res, __SECRET__)
+
+    @classmethod
+    def interval(cls, int min_val, int max_val):
+        cdef long value = val_interval(min_val, max_val)
+        return cls(value, __SECRET__)
 
     def __richcmp__(self, value, op):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
@@ -233,7 +269,7 @@ cdef class Variable(object):
             return Arith(c, __SECRET__)
         if isinstance(b, Cstr):
             return a + Variable(cstr_boolean(b.__getval()), __SECRET__)
-        raise TypeError("Expressions of incompatible types")
+        return NotImplemented
 
     def __sub__(a, b):
         if isinstance(a, int):
@@ -248,7 +284,7 @@ cdef class Variable(object):
         if isinstance(b, int):
             c = arith_sub(fd2e(a.__getval()), i2e(b))
             return Arith(c, __SECRET__)
-        raise TypeError("Expressions of incompatible types")
+        return NotImplemented
 
     def __mul__(a, b):
         if isinstance(a, int):
@@ -263,7 +299,7 @@ cdef class Variable(object):
         if isinstance(b, int):
             c = arith_mul(fd2e(a.__getval()), i2e(b))
             return Arith(c, __SECRET__)
-        raise TypeError("Expressions of incompatible types")
+        return NotImplemented
 
     def __pos__(a):
         return a
@@ -429,7 +465,7 @@ cdef class Arith(object):
             return Arith(c, __SECRET__)
         if isinstance(b, Cstr):
             return a + Variable(cstr_boolean(b.__getval()), __SECRET__)
-        raise TypeError("Expressions of incompatible types")
+        return NotImplemented
 
     def __sub__(a, b):
         if isinstance(a, int):
@@ -444,7 +480,7 @@ cdef class Arith(object):
         if isinstance(b, int):
             c = arith_sub(a.__getval(), i2e(b))
             return Arith(c, __SECRET__)
-        raise TypeError("Expressions of incompatible types")
+        return NotImplemented
 
     def __mul__(a, b):
         if isinstance(a, int):
@@ -459,7 +495,7 @@ cdef class Arith(object):
         if isinstance(b, int):
             c = arith_mul(a.__getval(), i2e(b))
             return Arith(c, __SECRET__)
-        raise TypeError("Expressions of incompatible types")
+        return NotImplemented
 
     def __pos__(a):
         return a
@@ -610,21 +646,21 @@ cdef class Cstr(object):
             return c1 + Variable(cstr_boolean(c2.__getval()), __SECRET__)
         if isinstance(c1, Cstr):
             return Variable(cstr_boolean(c1.__getval()), __SECRET__) + c2
-        raise TypeError("Expressions of incompatible types")
+        return NotImplemented
 
     def __sub__(c1, c2):
         if isinstance(c2, Cstr):
             return c1 - Variable(cstr_boolean(c2.__getval()), __SECRET__)
         if isinstance(c1, Cstr):
             return Variable(cstr_boolean(c1.__getval()), __SECRET__) - c2
-        raise TypeError("Expressions of incompatible types")
+        return NotImplemented
 
     def __mul__(c1, c2):
         if isinstance(c2, Cstr):
             return c1 * Variable(cstr_boolean(c2.__getval()), __SECRET__)
         if isinstance(c1, Cstr):
             return Variable(cstr_boolean(c1.__getval()), __SECRET__) * c2
-        raise TypeError("Expressions of incompatible types")
+        return NotImplemented
 
     def __pos__(a):
         """Constraint reification."""
@@ -653,6 +689,7 @@ cdef class Cstr(object):
         """Constraints cannot be interpreted as booleans."""
         raise ValueError("A constraint cannot be interpreted as a boolean.")
 
+# TODO operateurs terme à terme (+, -, *) with zip_longest
 cdef class Array(object):
     """Array helps the manipulation of arrays of variables and/or expressions.
 
@@ -687,15 +724,14 @@ cdef class Array(object):
         return self.length
 
     def __iter__(self):
-        values = np.empty(self.length, dtype=long)
-        pt_vars = <long*> cnp.PyArray_DATA(values)
-        fdarray_read(self.mlvalue, pt_vars)
+        cdef array.array values = array.array('L', range(self.length))
+        cdef long* pt_vals = values.data.as_longs
+        fdarray_read(self.mlvalue, pt_vals)
         for i in range(self.length):
             yield Variable(values[i], __SECRET__)
 
     def __repr__(self):
-        array = [x for x in self]
-        return array.__repr__()
+        return repr(list(self))
 
     def __getitem__(self, key):
         """Returns self[key].
@@ -782,7 +818,7 @@ cdef class Array(object):
         value = sorting_sort(self.mlvalue)
         return Array(value, self.length)
 
-    def alldifferent(self):
+    def alldifferent(self, *args, **kwargs):
         """Equivalent to alldifferent applied to all elements of the array.
 
         >>> a = array([variable(0, 2) for i in range(3)])
@@ -795,7 +831,7 @@ cdef class Array(object):
         See also: help(alldifferent)
         """
 
-        return alldifferent(list(self))
+        return alldifferent(list(self), *args, **kwargs)
 
     def gcc(self, distribution):
         """Return a Global Cardinality Constraint w.r.t distribution.
@@ -836,71 +872,351 @@ cdef class Array(object):
             if isinstance(c, Variable):
                 card = fd2e(c.__getval())
             if card == 0:
-                raise TypeError(
-                        "Cardinals must be integers, variables or expressions")
+                msg = "Cardinals must be integers, variables or expressions"
+                raise TypeError(msg)
             if not isinstance(v, int):
                 raise TypeError("Values must be integers")
             cards.append(card)
             values.append(v)
             card = 0
 
-        np_cards = np.array(cards)
-        pt_cards = cnp.PyArray_DATA(np_cards)
-        np_values = np.array(values)
-        pt_values = cnp.PyArray_DATA(np_values)
+        cdef array.array _cards = array.array('L', cards)
+        cdef array.array _values = array.array('L', values)
+        cdef long* pt_cards = _cards.data.as_longs
+        cdef long* pt_values = _values.data.as_longs
 
-        value = gcc_cstr(self.mlvalue, <long*> pt_cards, <long*> pt_values, l)
+        value = gcc_cstr(self.mlvalue, pt_cards, pt_values, l)
         return Cstr(value, __SECRET__)
 
-def solve(variables, backtrack=False, heuristic=Heuristic.No):
+
+cdef class Strategy(object):
+    """
+        The last `heuristic` argument let you choose between four strategies for
+        selecting the next variable to explore:
+        - by default, `Heuristic.No` is chosen;
+        - `Heuristic.Min_size` chooses the variable with the smallest domain;
+        - `Heuristic.Min_value` chooses the variable with a minimal smallest
+        value in its domain;
+        - `Heuristic.Min_min` combines the hereabove strategies.
+    """
+    cdef long mlvalue
+
+    def __dealloc__(self):
+        fcl_destroy(self.mlvalue)
+
+    def __cinit__(self, value, secret):
+        if secret != __SECRET__:
+            raise ValueError("Invalid pointer value")
+        self.mlvalue = value
+
+    def __getval(self):
+        return self.mlvalue
+
+    @classmethod
+    def min_value(cls):
+        return cls(strategy_minvalue(), __SECRET__)
+
+    @classmethod
+    def min_domain(cls):
+        return cls(strategy_mindomain(), __SECRET__)
+
+    @classmethod
+    def min_min(cls):
+        return cls(strategy_minmin(), __SECRET__)
+
+cdef class Goal(object):
+
+    cdef long mlvalue
+    cdef object _variables
+
+    def __dealloc__(self):
+        fcl_destroy(self.mlvalue)
+
+    def __cinit__(self, value, secret):
+        if secret != __SECRET__:
+            raise ValueError("Invalid pointer value")
+        self.mlvalue = value
+
+    def __getval(self):
+        return self.mlvalue
+
+    def __and__(Goal c1, Goal c2):
+        """`&` (and) operator on goals.
+
+        """
+        res = Goal(goals_and(c1.__getval(), c2.__getval()), __SECRET__)
+        res.variables = c1.variables + c2.variables
+        return res
+
+    def __or__(Goal c1, Goal c2):
+        """`|` (or) operator on goals.
+
+        """
+        res = Goal(goals_or(c1.__getval(), c2.__getval()), __SECRET__)
+        res.variables = c1.variables + c2.variables
+        return res
+
+    @property
+    def variables(self):
+        return self._variables
+
+    @variables.setter
+    def variables(self, v):
+        self._variables = v
+
+    @classmethod
+    def fail(cls):
+        res = cls(goals_fail(), __SECRET__)
+        res.variables = []
+        return res
+
+    @classmethod
+    def success(cls):
+        res = cls(goals_success(), __SECRET__)
+        res.variables = []
+        return res
+
+    @classmethod
+    def atomic(cls, callback):
+        try:
+            __ml_callbacks[callback.id] = callback
+            set_atomic_callback(callback.id, atomic_callback)
+        except AttributeError:
+            msg = "Use the @facile.callback decorator around your callbacks"
+            raise TypeError(msg)
+        else:
+            res = cls(goals_atomic(callback.id), __SECRET__)
+            res.variables = []
+            return res
+
+    @classmethod
+    def forall(cls, variables, strategy=None):
+        cdef long length
+        cdef long* pt_vars
+        cdef array.array _vars
+
+        if isinstance(variables, collections.Iterable):
+            variables = list(variables)
+            length = len(variables)
+
+            for v in variables:
+                msg = "All arguments must be variables"
+                assert isinstance(v, Variable), msg
+
+            _vars = array.array('L', [v.__getval() for v in variables])
+            pt_vars = _vars.data.as_longs
+
+            if length < 1:
+                raise TypeError("The argument list must be non empty")
+            if strategy is None:
+                res = cls(goals_forall(0, <long*> pt_vars, length), __SECRET__)
+            else:
+                msg = "The second argument is a strategy"
+                assert isinstance(strategy, Strategy), msg
+                res = cls(goals_forall(strategy.__getval(),
+                    pt_vars, length), __SECRET__)
+            res.variables = [variables]
+            return res
+
+        raise TypeError("The argument must be iterable")
+
+    @classmethod
+    def minimize(cls, goal, expr, keep, *args):
+        if not isinstance(goal, Goal):
+            goal = Goal.forall(goal, *args)
+        if isinstance(expr, Arith):
+            expr = Variable(e2fd(expr.__getval()), __SECRET__)
+        if not isinstance(expr, Variable):
+            raise SyntaxError
+
+        __ml_callbacks[keep.id] = keep
+        set_onsol_callback(keep.id, on_solution_callback)
+        obj = goals_minimize(goal.__getval(), expr.__getval(), keep.id)
+
+        res = cls(obj, __SECRET__)
+        res.variables = goal.variables
+        return res
+
+
+class Solution(dict):
+
+    @staticmethod
+    def __pretty_print(item):
+        key, _ = item
+        pretty_print = {
+                "solved": "Resolution status",
+                "time"  : "Resolution time",
+                "backtrack": "Backtracks",
+                "evaluation": "Current evaluation",
+                "solution": "Current solution",
+                }
+        try:
+            return pretty_print[key]
+        except KeyError:
+            return key
+
+    def __getattr__(self, p):
+        return self[p]
+
+    def __bool__(self):
+        return self['solved']
+
+    def __nonzero__(self):
+        return self['solved']
+
+    def __repr__(self):
+        return repr(self['solved'])
+
+    def __str__(self):
+        res = ""
+        for item in sorted(self.items(), key=self.__pretty_print):
+            k, v = item
+            k = self.__pretty_print(item).capitalize()
+            if k == "Resolution time":
+                msg = "{:<30}: {:.2g}s"
+            else:
+                msg = "{:<30}: {}"
+            res += msg.format(k, v) + "\n"
+        return res
+
+
+cdef object __ml_callbacks = {}
+
+cdef void on_backtrack_callback(int i, int n):
+    __ml_callbacks[i](n)
+
+cdef void atomic_callback(int i):
+    __ml_callbacks[i]()
+
+cdef void on_solution_callback(int i, int n):
+    __ml_callbacks[i](n)
+
+def interrupt():
+    fcl_interrupt()
+
+def solve(objective, *args, time=True, backtrack=False, on_backtrack=None,
+        all_solutions=False, minimize=None, on_solution=None, **kwargs):
     """Solves the current CSP problem.
 
     The `solve` function solves the problem defined by all posted constraints
     on variables passed in parameter.
 
-    It returns True if the problem has a solution and False otherwise.
+    The objective is a Goal to meet by the solver. You may also pass an iterable
+    structure of 
 
-    If `backtrack` is set to True, it returns two arguments: the first one is
-    the boolean introduced above, the second is the number of backtracks made
-    until the first solution was hit.
+    The `time` parameter, if set to True (default), embeds the time spent on
+    resolution in the solution display structure.
 
-    The last `heuristic` argument let you choose between four strategies for
-    selecting the next variable to explore:
-    - by default, `Heuristic.No` is chosen;
-    - `Heuristic.Min_size` chooses the variable with the smallest domain;
-    - `Heuristic.Min_value` chooses the variable with a minimal smallest
-    value in its domain;
-    - `Heuristic.Min_min` combines the hereabove strategies.
+    The `backtrack` parameter, if set to True, embeds the number of backtracks
+    performed during the resolution in the solution display structure.
 
-    The `solve` function raises TypeError if `variables` is not iterable.
+    The `on_backtrack` parameter accepts a callback to be called each time the
+    solver backtracks. The callback must be a Python function wrapped by the
+    @facile.callback decorator.
+
+    The most basic usage of the solve function comes as follows:
 
     >>> a = variable(0, 1)
     >>> b = variable(0, 1)
     >>> constraint(a != b)
-    >>> solve([a, b])
-    True
+    >>> assert solve([a, b])
     >>> a.value(), b.value()
     (0, 1)
-    """
-    cdef long length
-    cdef long bt
-    if cpython.PySequence_Check(variables):
-        variables = [x for x in variables] ## quickfix for segfault with Array
-        for v in variables:
-            assert isinstance(v, Variable), "All arguments must be variables"
-        npvars = np.array([v.__getval() for v in variables])
-        pt_vars = cnp.PyArray_DATA(npvars)
-        length = len(variables)
-        if length < 1:
-            return TypeError("The argument list must be non empty")
-        if (not backtrack):
-            return goals_array_solve(<long*> pt_vars, length, heuristic) == 1
-        else:
-            res = goals_array_solve_bt(<long*> pt_vars, length, heuristic, &bt)
-            return (res, bt)
-    raise TypeError("The argument must be iterable")
 
-def solve_all(variables):
+    """
+
+    global __ml_callbacks
+
+    if not isinstance(objective, Goal):
+        objective = Goal.forall(objective, *args, **kwargs)
+    else:
+        if len(args) > 0:
+            raise Exception("name your parameters")
+
+    sol = Solution()
+
+    cdef int i = 0
+
+    if on_backtrack is None:
+        def mute(n): pass
+        on_backtrack = callback(mute)
+
+    if on_solution is None:
+        def mute(n): pass
+        on_solution = callback(mute)
+
+    if backtrack:
+        def stack_backtrack(n):
+            on_backtrack(n)
+            sol['backtrack'] = n
+        # tricky one: bind the id of stack_backtrack to the id of on_backtrack
+        __ml_callbacks[on_backtrack.id] = stack_backtrack
+    else:
+        try:
+            __ml_callbacks[on_backtrack.id] = on_backtrack
+        except AttributeError:
+            msg = "Use the @facile.callback decorator around your callbacks"
+            raise TypeError(msg)
+
+    set_backtrack_callback(on_backtrack.id, on_backtrack_callback)
+
+    if time:
+        import time
+        start = time.perf_counter()
+
+    if minimize is not None:
+
+        @callback
+        def keep(value):
+            sol['solved'] = False
+            sol['evaluation'] = value
+            sol['solution'] = [x.value() for sub in objective.variables
+                    for x in sub]
+            if time:
+                sol['time'] = time.perf_counter() - start
+
+            on_solution(Solution(sol))
+
+        obj = Goal.minimize(objective, minimize, keep)
+        obj = obj | Goal.success()
+        _ = goals_solve(on_backtrack.id, obj.__getval()) == 1
+        sol['solved'] = True
+        sol['time'] = time.perf_counter() - start
+        return sol
+
+    if all_solutions:
+        res = []
+
+        @callback
+        def keep():
+            sol['solved'] = True
+            sol['solution'] = [x.value() for sub in objective.variables
+                    for x in sub]
+            if time:
+                sol['time'] = time.perf_counter() - start
+
+            on_solution(Solution(sol))
+            res.append(Solution(sol))
+
+        obj = (objective & Goal.atomic(keep) & Goal.fail()) | Goal.success()
+        sol['solved'] = goals_solve(on_backtrack.id, obj.__getval()) == 1
+        sol['time'] = time.perf_counter() - start
+        sol['solution'] = None
+        res.append(sol)
+
+        return res
+
+    # else
+    sol['solved'] = goals_solve(on_backtrack.id, objective.__getval()) == 1
+
+    if time:
+        sol['time'] = time.perf_counter() - start
+
+    sol['solution'] = [x.value() for sub in objective.variables for x in sub]
+
+    return sol
+
+def solve_all(*args, **kwargs):
     """Solves the CSP problem and yields all solutions.
 
     The `solve_all` function solves the problem defined by all posted
@@ -908,40 +1224,18 @@ def solve_all(variables):
 
     It returns all possible solutions to the problem.
 
-    The `solve_all` function raises TypeError if `variables` is not
-    iterable.
+    The last solution is None as it may contain the resolution time and
+    number of backtracks until the end of the exploration of the search space.
 
     >>> a = variable(0, 1)
     >>> b = variable(0, 1)
     >>> constraint(a != b)
-    >>> solve_all([a, b])
+    >>> [s.solution for s in solve_all([a, b]) if s.solution is not None]
     [[0, 1], [1, 0]]
     """
-    cdef long length
-    cdef long res
-    cdef long* pt_res_i
-    if cpython.PySequence_Check(variables):
-        variables = [x for x in variables] ## quickfix for segfault with Array
-        for v in variables:
-            assert isinstance(v, Variable), "All arguments must be variables"
-        npvars = np.array([v.__getval() for v in variables])
-        pt_vars = cnp.PyArray_DATA(npvars)
-        length = len(variables)
-        if length < 1:
-            return TypeError("The argument list must be non empty")
-        res = goals_array_solve_all(<long*> pt_vars, length)
-        sols = []
-        res_np = np.empty(length, dtype=int)
-        pt_res_np = <long*> cnp.PyArray_DATA(res_np)
-        res = parse_array(res, pt_res_np)
-        while res != 0:
-            # Avoid returning np.int64 type objects
-            sols.insert(0, [int(x) for x in res_np])
-            res = parse_array(res, pt_res_np)
-        return sols
-    raise TypeError("The argument must be iterable")
+    return solve(*args, all_solutions=True, **kwargs)
 
-def minimize(variables, expr):
+def minimize(goal, expr, *args, **kwargs):
     """
     The `minimize` function solves the problem defined by all posted
     constraints on variables passed in parameter, and minimizes the
@@ -957,33 +1251,14 @@ def minimize(variables, expr):
     >>> a = variable(0, 10)
     >>> b = variable(0, 10)
     >>> constraint(a + b == 10)
-    >>> minimize([a, b], a*a + b*b)
-    (50, array([5, 5]))
+    >>> res = minimize([a, b], a*a + b*b)
+    >>> res.solution
+    [5, 5]
+    >>> res.evaluation
+    50
     """
-    cdef long length
-    cdef long optimal
-    if isinstance(expr, Variable):
-        expr = Arith(fd2e(expr.__getval()), __SECRET__)
-    if not isinstance(expr, Arith):
-        raise SyntaxError
-    if cpython.PySequence_Check(variables):
-        variables = [x for x in variables] ## quickfix for segfault with Array
-        for v in variables:
-            assert isinstance(v, Variable), "All arguments must be variables"
-        npvars = np.array([v.__getval() for v in variables])
-        pt_vars = cnp.PyArray_DATA(npvars)
-        length = len(variables)
-        if length < 1:
-            return TypeError("The argument list must be non empty")
-        sol = np.zeros(length, long)
-        pt_sol = cnp.PyArray_DATA(sol)
-        if goals_minimize(<long*> pt_vars, length, expr.__getval(),
-                          <long*> pt_sol, &optimal) == 1 :
-            return (optimal, sol)
-        else:
-            return []
-    raise TypeError("The argument must be iterable")
-
+    res = solve(goal, *args, minimize=expr, **kwargs)
+    return res
 
 def constraint(cstr):
     """
@@ -1009,12 +1284,15 @@ def constraint(cstr):
         raise TypeError("The argument must be a (non-reified) constraint")
     cstr.post()
 
-
-def alldifferent(variables):
+def alldifferent(variables, on_refine=False):
     """ Creates an alldifferent constraint (non-reifiable).
 
     `alldifferent` raises a TypeError if `variables` is not iterable and if
     variables does not contain more than two variables.
+
+    When `on_refine` is True, the consistency of the constraint is not only
+    checked when a new variable is instantiated, but also when its domain is
+    refined.
 
     >>> a = variable(0, 1)
     >>> b = variable(0, 1)
@@ -1029,25 +1307,27 @@ def alldifferent(variables):
 
     cdef long length
     cdef long* pt_vars
-    if cpython.PySequence_Check(variables):
-        variables = [x for x in variables] ## quickfix for segfault with Array
+    cdef array.array _vars
+    cdef int _onrefine = 0
+    if on_refine: _onrefine = 1
+    if isinstance(variables, collections.Iterable):
+        variables = list(variables)
         length = len(variables)
         if length < 2:
             raise TypeError("The argument list must be non empty")
-        npvars = np.empty(length, dtype=long)
+        _vars = array.array('L', range(length))
         for i in range(length):
             if isinstance(variables[i], Variable):
-                npvars[i] = variables[i].__getval()
+                _vars[i] = variables[i].__getval()
             elif isinstance(variables[i], Arith):
-                npvars[i] = e2fd(variables[i].__getval())
+                _vars[i] = e2fd(variables[i].__getval())
             else:
                 raise TypeError("Arguments must be variables or expressions")
-        pt_vars = <long*> cnp.PyArray_DATA(npvars)
-        length = len(variables)
-        return Cstr(cstr_alldiff(pt_vars, length), __SECRET__)
+        pt_vars = _vars.data.as_longs
+        return Cstr(cstr_alldiff(pt_vars, length, _onrefine), __SECRET__)
     raise TypeError("The argument must be iterable")
 
-def variable(min_val, max_val):
+def variable(min_val, max_val=None):
     """Creates a Variable taking values on a discrete interval.
 
     The `variable` function creates a variable on a discrete interval, with
@@ -1055,13 +1335,17 @@ def variable(min_val, max_val):
     >>> a = variable(0, 2)
 
     Variables may be summed, subtracted, multiplied with other variables or
-    integers. They may also be compounded into all kind of expressions
+    integers. They may also be combined into all kind of expressions.
     >>> e = a * a + 2 * a + 1
 
     See also: help(Variable)
     """
-    cdef long value = val_interval(min_val, max_val)
-    return Variable(value, __SECRET__)
+
+    if isinstance(min_val, Arith):
+        return min_val.variable()
+    if isinstance(min_val, Cstr):
+        return +min_val
+    return Variable.interval(min_val, max_val)
 
 def array(variables):
     """Creates an Array from an iterable structure.
@@ -1093,21 +1377,23 @@ def array(variables):
     cdef long* pt_vars
     cdef long value
     cdef Variable v
-    if cpython.PySequence_Check(variables):
+    cdef array.array _vars
+    if isinstance(variables, collections.Iterable):
+        variables = list(variables)
         length = len(variables)
         if length < 1:
             raise TypeError("The argument list must be non-empty")
-        npvars = np.empty(length, dtype=long)
+        _vars = array.array('L', range(length))
         for i in range(length):
             if isinstance(variables[i], Variable):
-                npvars[i] = variables[i].__getval()
+                _vars[i] = variables[i].__getval()
             elif isinstance(variables[i], Arith):
-                npvars[i] = e2fd(variables[i].__getval())
+                _vars[i] = e2fd(variables[i].__getval())
             elif isinstance(variables[i], int):
-                npvars[i] = e2fd(i2e(variables[i]))
+                _vars[i] = e2fd(i2e(variables[i]))
             else:
                 raise TypeError("The arguments must be variables or expressions")
-        pt_vars = <long*> cnp.PyArray_DATA(npvars)
+        pt_vars = _vars.data.as_longs
         value = fdarray_create(pt_vars, length)
         return Array(value, length)
     raise TypeError("The argument must be iterable")

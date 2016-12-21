@@ -37,7 +37,7 @@ def tile(sizes, bigsize):
     full_line(xs)
     full_line(ys)
 
-    if facile.solve(xs + ys, heuristic=facile.Heuristic.Min_min):
+    if facile.solve(xs + ys):
         try:
             import matplotlib.pyplot as plt
             import matplotlib.cm as colormap

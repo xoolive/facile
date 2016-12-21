@@ -5,15 +5,11 @@ from Cython.Build import cythonize
 
 import os
 import os.path
+import sys
+import time
 import platform
 import sysconfig
 import distutils
-import sys
-
-import time
-
-def get_requirements():
-    return [line.strip() for line in open("requirements.txt")]
 
 def get_long_description():
     import codecs
@@ -76,16 +72,6 @@ else:
     asmrunlib = ""
 
 try:
-    import numpy
-    INCLUDE.append(numpy.get_include())
-except ImportError:
-    print ("numpy is required")
-    raise
-except:
-    # go safely through the rest and make your bundle
-    assert sys.platform == "win32"
-
-try:
     os.environ['CFLAGS']
 except KeyError:
     os.environ['CFLAGS'] = ""
@@ -97,7 +83,7 @@ try:
 except:
     pass
 
-# Flag for numpy
+# Flag for array
 os.environ['CFLAGS'] += " -Wno-unused-function"
 # Mute the ugly trick for value/value*
 os.environ['CFLAGS'] += " -Wno-int-conversion"
@@ -195,7 +181,7 @@ cmdclass['clean'] = clean
 cmdclass['cross'] = cross
 
 setup(name="facile",
-      version="1.3",
+      version="1.4",
       author="Xavier Olive",
       author_email="xo.olive@gmail.com",
       description="Python constraint programming library",
@@ -204,6 +190,5 @@ setup(name="facile",
       url="https://github.com/xoolive/facile",
       cmdclass=cmdclass,
       ext_modules=cythonize(extensions),
-      install_requires=get_requirements(),
       test_suite="doctests",
       )

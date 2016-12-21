@@ -1,11 +1,5 @@
 #include <caml/mlvalues.h>
 
-typedef enum h {
-  NO_HEURISTIC,
-  MIN_SIZE,
-  MIN_VALUE,
-  MIN_MIN } heuristic;
-
 void init();
 void fcl_destroy(value*);
 
@@ -48,11 +42,26 @@ value* cstr_or(value*, value*);
 value* cstr_and(value*, value*);
 value* cstr_xor(value*, value*);
 value* cstr_not(value*);
-value* cstr_alldiff(value**, long);
+value* cstr_alldiff(value**, long, int);
 value* cstr_boolean(value*);
 
-int goals_array_solve(value**, long, heuristic);
-value* goals_array_solve_all(value**, long);
+value* strategy_minvalue();
+value* strategy_mindomain();
+value* strategy_minmin();
+
+value* goals_success();
+value* goals_fail();
+value* goals_or(value*, value*);
+value* goals_and(value*, value*);
+value* goals_atomic(int i);
+value* goals_forall(value*, value**, long);
+value* goals_minimize(value* goal, value* expr, int i);
+int goals_solve(int, value*);
+
+void fcl_interrupt(void);
+
+void set_backtrack_callback(int i, void(*fct)(int, int));
+void set_atomic_callback(int, void(*fct)(int));
+void set_onsol_callback(int i, void(*fct)(int, int));
+
 value* parse_array(value*, long*);
-int goals_array_solve_bt(value**, long, heuristic, long*);
-int goals_minimize(value**, long, value*, long*, long*);

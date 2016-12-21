@@ -12,6 +12,19 @@
   if (closure == NULL)\
     closure = caml_named_value(A);
 
+#define Val_none Val_int(0)
+#define Some_val(v) Field(v, 0)
+static value Val_some( value v )
+{
+  CAMLparam1( v );
+  CAMLlocal1( some );
+  some = caml_alloc(1, 0);
+  Store_field( some, 0, v );
+  CAMLreturn( some );
+}
+
+void* callbacks[1024];
+
 /* Let's keep it for later... */
 /* #include <caml/address_class.h> */
 int is_proper_value(value* v)
@@ -240,7 +253,7 @@ value* cstr_not(value* in)
   return fcl_wrap(a);
 }
 
-value* cstr_alldiff(value** val, long len)
+value* cstr_alldiff(value** val, long len, int b)
 {
   value array, a;
   size_t i = 0;
@@ -249,7 +262,7 @@ value* cstr_alldiff(value** val, long len)
   array = caml_alloc(len, 0);
   for(; i< len; ++i)
     Store_field(array, i, val[i][0]);
-  a = caml_callback(*closure, array);
+  a = caml_callback2(*closure, Val_int(b), array);
   return fcl_wrap(a);
 }
 
@@ -325,29 +338,133 @@ value* fdarray_get(value* in1, value* in2)
   return fcl_wrap(a);
 }
 
-int goals_array_solve(value** val, long len, heuristic h)
+value* strategy_minvalue()
 {
-  value array;
-  size_t i = 0;
-  CLOSURE("Goals.Array.solve");
-  // À la barbare
-  array = caml_alloc(len, 0);
-  for(; i < len; ++i)
-    Store_field(array, i, val[i][0]);
-  return Bool_val(caml_callback2(*closure, array, Val_int(h)));
+  CLOSURE("Strategy.min_value");
+  return fcl_wrap(*closure);
 }
 
-value* goals_array_solve_all(value** val, long len)
+value* strategy_mindomain()
 {
-  value array, all;
+  CLOSURE("Strategy.min_domain");
+  return fcl_wrap(*closure);
+}
+
+value* strategy_minmin()
+{
+  CLOSURE("Strategy.min_min");
+  return fcl_wrap(*closure);
+}
+
+value* goals_success()
+{
+  CLOSURE("Goals.success");
+  return fcl_wrap(*closure);
+}
+
+value* goals_fail()
+{
+  CLOSURE("Goals.fail");
+  return fcl_wrap(*closure);
+}
+
+value* goals_or(value* in1, value* in2)
+{
+  value a;
+  CLOSURE ("Goals.or");
+  a = caml_callback2(*closure, *in1, *in2);
+  return fcl_wrap(a);
+}
+
+value* goals_and(value* in1, value* in2)
+{
+  value a;
+  CLOSURE ("Goals.and");
+  a = caml_callback2(*closure, *in1, *in2);
+  return fcl_wrap(a);
+}
+
+value* goals_indomain()
+{
+  CLOSURE("Goals.indomain");
+  return closure;
+}
+
+value* goals_atomic(int i)
+{
+  value a;
+  CLOSURE("Goals.atomic");
+  a = caml_callback(*closure, Val_int(i));
+  return fcl_wrap(a);
+}
+
+value* goals_forall(value* s, value** val, long len)
+{
+  value array;
+  value select;
   size_t i = 0;
-  CLOSURE("Gools.Array.solve_all");
+  value* indomain = goals_indomain();
+  CLOSURE("Goals.forall");
   // À la barbare
   array = caml_alloc(len, 0);
   for(; i < len; ++i)
     Store_field(array, i, val[i][0]);
-  all = caml_callback(*closure, array);
-  return fcl_wrap(all);
+  select = (s==0 ? Val_none : Val_some(*s));
+  return fcl_wrap(caml_callback3(*closure, select, *indomain, array));
+}
+
+value* goals_minimize(value* goal, value* expr, int i)
+{
+  CLOSURE("Goals.minimize");
+  return fcl_wrap(caml_callback3(*closure, *goal, *expr, Val_int(i)));
+}
+
+int goals_solve(int i, value* goal)
+{
+  CLOSURE("Goals.solve");
+  return Bool_val(caml_callback2(*closure, Val_int(i), *goal));
+}
+
+void set_backtrack_callback(int i, void(*fct)(int, int)) {
+  callbacks[i] = fct;
+}
+
+void set_atomic_callback(int i, void(*fct)(int)) {
+  callbacks[i] = fct;
+}
+
+void set_onsol_callback(int i, void(*fct)(int, int)) {
+  callbacks[i] = fct;
+}
+
+value ml_backtrack_callback(value v_i, value v_n)
+{
+  CAMLparam2(v_i, v_n);
+  void (*c_backtrack_callback)(int, int) = (void (*)(int)) callbacks[Int_val(v_i)];
+  c_backtrack_callback(Int_val(v_i), Int_val(v_n));
+  CAMLreturn(Val_unit);
+}
+
+value ml_atomic_callback(value v_i)
+{
+  CAMLparam1(v_i);
+  void (*c_atomic_callback)(int) = (void (*)()) callbacks[Int_val(v_i)];
+  c_atomic_callback(Int_val(v_i));
+  CAMLreturn(Val_unit);
+}
+
+value ml_onsol_callback(value v_i, value v_n)
+{
+  CAMLparam2(v_i, v_n);
+  void (*c_onsol_callback)(int, int) = (void (*)(int)) callbacks[Int_val(v_i)];
+  c_onsol_callback(Int_val(v_i), Int_val(v_n));
+  CAMLreturn(Val_unit);
+}
+
+void fcl_interrupt(void)
+{
+  CLOSURE("Fcl.interrupt");
+  caml_callback(*closure, Val_unit);
 }
 
 value* parse_array(value* list, long* res)
@@ -368,39 +485,4 @@ value* parse_array(value* list, long* res)
   fcl_destroy(tmp);
   return list;
 }
-
-int goals_array_solve_bt(value** val, long len, heuristic h, long* bt)
-{
-  value array, v;
-  size_t i = 0;
-  CLOSURE("Goals.Array.solve_bt");
-  // À la barbare
-  array = caml_alloc(len, 0);
-  for(; i < len; ++i)
-    Store_field(array, i, val[i][0]);
-  v = caml_callback2(*closure, array, Val_int(h));
-  *bt = Int_val(Field(v, 1));
-  return Bool_val(Field(v, 0));
-}
-
-
-int goals_minimize(value** val, long len, value* expr, long* solution,
-                   long* optimal)
-{
-  value array, res;
-  size_t i = 0;
-  CLOSURE("Goals.minimize");
-  // À la barbare
-  array = caml_alloc(len, 0);
-  for(; i < len; ++i)
-    Store_field(array, i, val[i][0]);
-  res = caml_callback2(*closure, array, *expr);
-  if (res == Val_int(0))
-    return 0;
-  for (i=0; i < Wosize_val(Field(Field(res, 0), 1)); ++i)
-    solution[i] = Int_val(Field(Field(Field(res,0), 1), i));
-  *optimal = Int_val(Field(Field(res,0), 0));
-  return 1;
-}
-
 
