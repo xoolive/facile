@@ -40,6 +40,7 @@ See also (resolution):
 """
 
 import array
+import numbers
 import collections
 
 cimport cpython
@@ -174,7 +175,7 @@ cdef class Variable(object):
         if isinstance(fd, Variable):
             c = cstr_lt(fd2e(self.__getval()), fd2e(fd.__getval()))
             return Cstr(c, __SECRET__)
-        if isinstance(fd, int):
+        if isinstance(fd, numbers.Integral):
             c = cstr_lt(fd2e(self.__getval()), i2e(fd))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
@@ -189,7 +190,7 @@ cdef class Variable(object):
         if isinstance(fd, Variable):
             c = cstr_le(fd2e(self.__getval()), fd2e(fd.__getval()))
             return Cstr(c, __SECRET__)
-        if isinstance(fd, int):
+        if isinstance(fd, numbers.Integral):
             c = cstr_le(fd2e(self.__getval()), i2e(fd))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
@@ -204,7 +205,7 @@ cdef class Variable(object):
         if isinstance(fd, Variable):
             c = cstr_eq(fd2e(self.__getval()), fd2e(fd.__getval()))
             return Cstr(c, __SECRET__)
-        if isinstance(fd, int):
+        if isinstance(fd, numbers.Integral):
             c = cstr_eq(fd2e(self.__getval()), i2e(fd))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
@@ -219,7 +220,7 @@ cdef class Variable(object):
         if isinstance(fd, Variable):
             c = cstr_ne(fd2e(self.__getval()), fd2e(fd.__getval()))
             return Cstr(c, __SECRET__)
-        if isinstance(fd, int):
+        if isinstance(fd, numbers.Integral):
             c = cstr_ne(fd2e(self.__getval()), i2e(fd))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
@@ -234,7 +235,7 @@ cdef class Variable(object):
         if isinstance(fd, Variable):
             c = cstr_gt(fd2e(self.__getval()), fd2e(fd.__getval()))
             return Cstr(c, __SECRET__)
-        if isinstance(fd, int):
+        if isinstance(fd, numbers.Integral):
             c = cstr_gt(fd2e(self.__getval()), i2e(fd))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
@@ -249,13 +250,13 @@ cdef class Variable(object):
         if isinstance(fd, Variable):
             c = cstr_ge(fd2e(self.__getval()), fd2e(fd.__getval()))
             return Cstr(c, __SECRET__)
-        if isinstance(fd, int):
+        if isinstance(fd, numbers.Integral):
             c = cstr_ge(fd2e(self.__getval()), i2e(fd))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __add__(a, b):
-        if isinstance(a, int):
+        if isinstance(a, numbers.Integral):
             c = arith_add(i2e(a), fd2e(b.__getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
@@ -264,7 +265,7 @@ cdef class Variable(object):
         if isinstance(b, Variable):
             c = arith_add(fd2e(a.__getval()), fd2e(b.__getval()))
             return Arith(c, __SECRET__)
-        if isinstance(b, int):
+        if isinstance(b, numbers.Integral):
             c = arith_add(fd2e(a.__getval()), i2e(b))
             return Arith(c, __SECRET__)
         if isinstance(b, Cstr):
@@ -272,7 +273,7 @@ cdef class Variable(object):
         return NotImplemented
 
     def __sub__(a, b):
-        if isinstance(a, int):
+        if isinstance(a, numbers.Integral):
             c = arith_sub(i2e(a), fd2e(b.__getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
@@ -281,13 +282,13 @@ cdef class Variable(object):
         if isinstance(b, Variable):
             c = arith_sub(fd2e(a.__getval()), fd2e(b.__getval()))
             return Arith(c, __SECRET__)
-        if isinstance(b, int):
+        if isinstance(b, numbers.Integral):
             c = arith_sub(fd2e(a.__getval()), i2e(b))
             return Arith(c, __SECRET__)
         return NotImplemented
 
     def __mul__(a, b):
-        if isinstance(a, int):
+        if isinstance(a, numbers.Integral):
             c = arith_mul(i2e(a), fd2e(b.__getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
@@ -296,7 +297,7 @@ cdef class Variable(object):
         if isinstance(b, Variable):
             c = arith_mul(fd2e(a.__getval()), fd2e(b.__getval()))
             return Arith(c, __SECRET__)
-        if isinstance(b, int):
+        if isinstance(b, numbers.Integral):
             c = arith_mul(fd2e(a.__getval()), i2e(b))
             return Arith(c, __SECRET__)
         return NotImplemented
@@ -370,7 +371,7 @@ cdef class Arith(object):
         if isinstance(value, Variable):
             c = cstr_lt(self.__getval(), fd2e(value.__getval()))
             return Cstr(c, __SECRET__)
-        if isinstance(value, int):
+        if isinstance(value, numbers.Integral):
             c = cstr_lt(self.__getval(), i2e(value))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
@@ -385,7 +386,7 @@ cdef class Arith(object):
         if isinstance(value, Variable):
             c = cstr_le(self.__getval(), fd2e(value.__getval()))
             return Cstr(c, __SECRET__)
-        if isinstance(value, int):
+        if isinstance(value, numbers.Integral):
             c = cstr_le(self.__getval(), i2e(value))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
@@ -400,7 +401,7 @@ cdef class Arith(object):
         if isinstance(value, Variable):
             c = cstr_eq(self.__getval(), fd2e(value.__getval()))
             return Cstr(c, __SECRET__)
-        if isinstance(value, int):
+        if isinstance(value, numbers.Integral):
             c = cstr_eq(self.__getval(), i2e(value))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
@@ -415,7 +416,7 @@ cdef class Arith(object):
         if isinstance(value, Variable):
             c = cstr_ne(self.__getval(), fd2e(value.__getval()))
             return Cstr(c, __SECRET__)
-        if isinstance(value, int):
+        if isinstance(value, numbers.Integral):
             c = cstr_ne(self.__getval(), i2e(value))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
@@ -430,7 +431,7 @@ cdef class Arith(object):
         if isinstance(value, Variable):
             c = cstr_gt(self.__getval(), fd2e(value.__getval()))
             return Cstr(c, __SECRET__)
-        if isinstance(value, int):
+        if isinstance(value, numbers.Integral):
             c = cstr_gt(self.__getval(), i2e(value))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
@@ -445,13 +446,13 @@ cdef class Arith(object):
         if isinstance(value, Variable):
             c = cstr_ge(self.__getval(), fd2e(value.__getval()))
             return Cstr(c, __SECRET__)
-        if isinstance(value, int):
+        if isinstance(value, numbers.Integral):
             c = cstr_ge(self.__getval(), i2e(value))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __add__(a, b):
-        if isinstance(a, int):
+        if isinstance(a, numbers.Integral):
             c = arith_add(i2e(a), b.__getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
@@ -460,7 +461,7 @@ cdef class Arith(object):
         if isinstance(b, Variable):
             c = arith_add(a.__getval(), fd2e(b.__getval()))
             return Arith(c, __SECRET__)
-        if isinstance(b, int):
+        if isinstance(b, numbers.Integral):
             c = arith_add(a.__getval(), i2e(b))
             return Arith(c, __SECRET__)
         if isinstance(b, Cstr):
@@ -468,7 +469,7 @@ cdef class Arith(object):
         return NotImplemented
 
     def __sub__(a, b):
-        if isinstance(a, int):
+        if isinstance(a, numbers.Integral):
             c = arith_sub(i2e(a), b.__getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
@@ -477,13 +478,13 @@ cdef class Arith(object):
         if isinstance(b, Variable):
             c = arith_sub(a.__getval(), fd2e(b.__getval()))
             return Arith(c, __SECRET__)
-        if isinstance(b, int):
+        if isinstance(b, numbers.Integral):
             c = arith_sub(a.__getval(), i2e(b))
             return Arith(c, __SECRET__)
         return NotImplemented
 
     def __mul__(a, b):
-        if isinstance(a, int):
+        if isinstance(a, numbers.Integral):
             c = arith_mul(i2e(a), b.__getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
@@ -492,7 +493,7 @@ cdef class Arith(object):
         if isinstance(b, Variable):
             c = arith_mul(a.__getval(), fd2e(b.__getval()))
             return Arith(c, __SECRET__)
-        if isinstance(b, int):
+        if isinstance(b, numbers.Integral):
             c = arith_mul(a.__getval(), i2e(b))
             return Arith(c, __SECRET__)
         return NotImplemented
@@ -745,7 +746,7 @@ cdef class Array(object):
             value = fdarray_get(self.mlvalue, key.__getval())
         elif isinstance(key, Arith):
             value = fdarray_get(self.mlvalue, e2fd(key.__getval()))
-        elif isinstance(key, int):
+        elif isinstance(key, numbers.Integral):
             value = fdarray_get(self.mlvalue, e2fd(i2e(key)))
         else:
             raise TypeError("Index should be integer, variable or expression")
@@ -865,7 +866,7 @@ cdef class Array(object):
         cards = []
         values = []
         for (c, v) in distribution:
-            if isinstance(c, int):
+            if isinstance(c, numbers.Integral):
                 card = i2e(c)
             if isinstance(c, Arith):
                 card = c.__getval()
@@ -874,7 +875,7 @@ cdef class Array(object):
             if card == 0:
                 msg = "Cardinals must be integers, variables or expressions"
                 raise TypeError(msg)
-            if not isinstance(v, int):
+            if not isinstance(v, numbers.Integral):
                 raise TypeError("Values must be integers")
             cards.append(card)
             values.append(v)
@@ -1389,7 +1390,7 @@ def array(variables):
                 _vars[i] = variables[i].__getval()
             elif isinstance(variables[i], Arith):
                 _vars[i] = e2fd(variables[i].__getval())
-            elif isinstance(variables[i], int):
+            elif isinstance(variables[i], numbers.Integral):
                 _vars[i] = e2fd(i2e(variables[i]))
             else:
                 raise TypeError("The arguments must be variables or expressions")
