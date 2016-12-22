@@ -339,11 +339,8 @@ cdef class Arith(object):
     def __getval(self):
         return self.mlvalue
 
-    def variable(self):
-        return Variable(e2fd(self.mlvalue), __SECRET__)
-
     def __repr__(self):
-        return self.variable().__repr__()
+        return repr(Variable(e2fd(self.mlvalue), __SECRET__))
 
     def __richcmp__(self, value, op):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
@@ -1343,7 +1340,7 @@ def variable(min_val, max_val=None):
     """
 
     if isinstance(min_val, Arith):
-        return min_val.variable()
+        return Variable(e2fd(min_val.__getval()), __SECRET__)
     if isinstance(min_val, Cstr):
         return +min_val
     return Variable.interval(min_val, max_val)

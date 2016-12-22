@@ -24,7 +24,7 @@ def coins(values, maxval):
     return minimize(nb_min_coins, sum(nb_min_coins))
 
 if __name__ == "__main__":
-    total, nb_coins = coins([1, 2, 5, 10, 20], 100)
-    for nb, val in zip(nb_coins, [1, 2, 5, 10, 20]):
+    sol = coins([1, 2, 5, 10, 20], 100)
+    for nb, val in zip(sol.solution, [1, 2, 5, 10, 20]):
         print ("%d coin(s) of value %d" % (nb, val))
-    print ("Total of %d coins" % total)
+    print ("Total of %d coins" % sol.evaluation)
