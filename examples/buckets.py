@@ -1,3 +1,5 @@
+# flake8: noqa: E226
+
 from facile import variable, constraint, solve
 
 # Number of buckets
@@ -7,7 +9,7 @@ steps = 8
 # The capacity of each bucket
 capacity = [8, 5, 3]
 
-buckets = [ [variable(0, capacity[b]) for b in range(nb)] for i in range(steps)]
+buckets = [[variable(0, capacity[b]) for b in range(nb)] for i in range(steps)]
 
 constraint(buckets[0][0] == 8)
 constraint(buckets[0][1] == 0)
@@ -19,7 +21,7 @@ constraint(buckets[steps - 1][2] == 0)
 
 for i in range(steps - 1):
     # we change the contents of two buckets at a time
-    constraint( sum([buckets[i][b] != buckets[i+1][b] for b in range(nb)]) == 2)
+    constraint(sum([buckets[i][b] != buckets[i+1][b] for b in range(nb)]) == 2)
     # we play with a constant amount of water
     constraint(sum([buckets[i][b] for b in range(nb)]) == 8)
     for b1 in range(nb):

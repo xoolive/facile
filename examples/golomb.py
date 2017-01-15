@@ -8,6 +8,7 @@
 
 import facile
 
+
 def golomb(n):
 
     # On peut majorer la taille de la règle par 2 ** n. En effet, si
@@ -23,12 +24,12 @@ def golomb(n):
     facile.constraint(ticks[0] == 0)
 
     # Ticks are ordered
-    for i in range(n-1):
-        facile.constraint(ticks[i] < ticks[i+1])
+    for i in range(n - 1):
+        facile.constraint(ticks[i] < ticks[i + 1])
 
     # All distances
     distances = []
-    for i in range(n-1):
+    for i in range(n - 1):
         for j in range(i + 1, n):
             distances.append(facile.variable(ticks[j] - ticks[i]))
     facile.constraint(facile.alldifferent(distances, on_refine=True))
@@ -39,8 +40,9 @@ def golomb(n):
     # Breaking the symmetry
     facile.constraint(distances[-1] > distances[0])
 
-    return (facile.minimize(ticks, ticks[n-1], backtrack=True,
-        on_solution=print))
+    return (facile.minimize(ticks, ticks[n - 1], backtrack=True,
+                            on_solution=print))
+
 
 if __name__ == "__main__":
     import sys
@@ -48,5 +50,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         n = int(sys.argv[1])
         if n > 11:
-            print ("With due respect, n=11 may be time-consuming enough...")
-    print (golomb(n))
+            print("With due respect, n=11 may be time-consuming enough...")
+    print(golomb(n))
