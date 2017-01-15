@@ -58,10 +58,11 @@ class gc_list(object):
 
     def __init__(self, h):
         self._h = h
-        self._c = iter(itertools.count())
+        # Starting from 0 seems confusing sometimes when debugging
+        self._c = iter(itertools.count(1))
 
     def push(self, p):
-        return heapq.heappush(self._h, p)
+        heapq.heappush(self._h, p)
 
     def pop(self):
         """Return the smallest number in h or a bigger number"""
@@ -78,11 +79,13 @@ class callback(object):
     def __init__(self, f):
         self.f = f
         self.id = self.h.pop()
+        if self.id >= 1024:
+            raise RuntimeError("Too many callbacks built and not released")
         # minimalistic @functools.wraps
         self.__doc__ = f.__doc__
 
     def __call__(self, *args, **kwargs):
-        self.f(*args, **kwargs)
+        return self.f(*args, **kwargs)
 
     def __del__(self):
         self.h.push(self.id)
@@ -90,6 +93,37 @@ class callback(object):
 
 # Prevent end-user using constructors
 cdef object __SECRET__ = object()
+
+cdef class Domain(object):
+
+    cdef long mlvalue
+
+    def __dealloc__(self):
+        fcl_destroy(self.mlvalue)
+
+    def __cinit__ (self, value, secret):
+        if secret != __SECRET__:
+            raise ValueError("Invalid secret")
+        self.mlvalue = value
+
+    def __getval(self):
+        return self.mlvalue
+
+    def __repr__(self):
+        return "domain: {}".format(self.values())
+
+    def size(self):
+        return domain_size(self.mlvalue)
+
+    def values(self):
+        cdef array.array values = array.array('i', range(self.size()))
+        cdef int* pt_vals = values.data.as_ints
+        domain_values(self.mlvalue, pt_vals)
+        return values.tolist()
+
+    def remove(self, int value):
+        return Domain(domain_remove(value, self.mlvalue), __SECRET__)
+
 
 cdef class Variable(object):
     """The Variable is the core element for CSP problems.
@@ -113,8 +147,6 @@ cdef class Variable(object):
             raise ValueError("Use facile.variable function")
         if value == 0:
             raise ValueError("Non reifiable constraint")
-        if not is_proper_value(value):
-            raise RuntimeError("Invalid pointer value")
         self.mlvalue = value
 
     def __repr__(self):
@@ -129,6 +161,16 @@ cdef class Variable(object):
     def __getval(self):
         return self.mlvalue
 
+    def min(self):
+        cdef int vmin, vmax
+        val_minmax(self.mlvalue, &vmin, &vmax)
+        return vmin
+
+    def max(self):
+        cdef int vmin, vmax
+        val_minmax(self.mlvalue, &vmin, &vmax)
+        return vmax
+
     def value(self):
         """ Return the numerical value of the variable.
         Return None if no solution has been found. """
@@ -138,6 +180,12 @@ cdef class Variable(object):
             return vmin
         else:
             return None
+
+    def domain(self):
+        return Domain(val_domain(self.mlvalue), __SECRET__)
+
+    def refine(self, Domain d):
+        val_refine(self.mlvalue, d.__getval())
 
     def in_interval(self, int inf, int sup):
         cdef long res
@@ -710,8 +758,6 @@ cdef class Array(object):
         fcl_destroy(self.mlvalue)
 
     def __cinit__(self, value, length):
-        if not is_proper_value(value):
-            raise RuntimeError("Invalid pointer value")
         self.mlvalue = value
         self.length = length
 
@@ -922,18 +968,25 @@ cdef class Strategy(object):
     def min_min(cls):
         return cls(strategy_minmin(), __SECRET__)
 
+from cpython cimport Py_INCREF, Py_DECREF
+
 cdef class Goal(object):
 
     cdef long mlvalue
     cdef object _variables
+    cdef object _toclean
 
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
+        # IMPORTANT! Free memory
+        for i in self._toclean:
+            del __ml_callbacks[i]
 
     def __cinit__(self, value, secret):
         if secret != __SECRET__:
             raise ValueError("Invalid pointer value")
         self.mlvalue = value
+        self._toclean = []
 
     def __getval(self):
         return self.mlvalue
@@ -944,6 +997,9 @@ cdef class Goal(object):
         """
         res = Goal(goals_and(c1.__getval(), c2.__getval()), __SECRET__)
         res.variables = c1.variables + c2.variables
+        res._toclean = c1._toclean + c2._toclean
+        c1._toclean.clear()
+        c2._toclean.clear()
         return res
 
     def __or__(Goal c1, Goal c2):
@@ -952,7 +1008,13 @@ cdef class Goal(object):
         """
         res = Goal(goals_or(c1.__getval(), c2.__getval()), __SECRET__)
         res.variables = c1.variables + c2.variables
+        res._toclean = c1._toclean + c2._toclean
+        c1._toclean.clear()
+        c2._toclean.clear()
         return res
+
+    def toclean(self, p):
+        self._toclean.append(p)
 
     @property
     def variables(self):
@@ -985,17 +1047,29 @@ cdef class Goal(object):
         else:
             res = cls(goals_atomic(callback.id), __SECRET__)
             res.variables = []
+            res.toclean(callback.id)
             return res
 
     @classmethod
-    def forall(cls, variables, strategy=None):
+    def unify(cls, Variable var, int i):
+        print ("unify {} {}".format(var, i))
+        res = cls(goals_unify(var.__getval(), i), __SECRET__)
+        res.variables = [[var]]  # does it make sense?
+        return res
+
+    @classmethod
+    def forall(cls, variables, strategy=None, goal_var=None):
         cdef long length
         cdef long* pt_vars
         cdef array.array _vars
 
+        cdef long c_goal_forvar = 0 # default to indomain
+        cdef long c_strategy = 0 # default to no strategy
+
         if isinstance(variables, collections.Iterable):
             variables = list(variables)
             length = len(variables)
+            toclean = []
 
             for v in variables:
                 msg = "All arguments must be variables"
@@ -1004,16 +1078,29 @@ cdef class Goal(object):
             _vars = array.array('L', [v.__getval() for v in variables])
             pt_vars = _vars.data.as_longs
 
-            if length < 1:
-                raise TypeError("The argument list must be non empty")
-            if strategy is None:
-                res = cls(goals_forall(0, <long*> pt_vars, length), __SECRET__)
-            else:
+            if strategy is not None:
                 msg = "The second argument is a strategy"
                 assert isinstance(strategy, Strategy), msg
-                res = cls(goals_forall(strategy.__getval(),
-                    pt_vars, length), __SECRET__)
+                c_strategy = strategy.__getval()
+
+            # Should we use __annotations__ to check for types ?
+            if goal_var is not None:
+                try:
+                    __ml_callbacks[goal_var.id] = goal_var
+                    set_goal_forvar_callback(goal_var.id, goal_forvar_callback)
+                    c_goal_forvar = goals_forvar(goal_var.id)
+                    toclean.append(goal_var.id)
+                except AttributeError:
+                    msg = "Use the @facile.callback decorator around your callbacks"
+                    raise TypeError(msg)
+
+            if length < 1:
+                raise TypeError("The argument list must be non empty")
+
+            res = cls(goals_forall(c_strategy, pt_vars, length, c_goal_forvar), __SECRET__)
             res.variables = [variables]
+            if goal_var is not None:
+                res.toclean(goal_var.id)
             return res
 
         raise TypeError("The argument must be iterable")
@@ -1029,10 +1116,12 @@ cdef class Goal(object):
 
         __ml_callbacks[keep.id] = keep
         set_onsol_callback(keep.id, on_solution_callback)
+
         obj = goals_minimize(goal.__getval(), expr.__getval(), keep.id)
 
         res = cls(obj, __SECRET__)
         res.variables = goal.variables
+        res.toclean(keep.id)
         return res
 
 
@@ -1089,6 +1178,14 @@ cdef void atomic_callback(int i):
 cdef void on_solution_callback(int i, int n):
     __ml_callbacks[i](n)
 
+cdef long goal_forvar_callback(int i, long a, long b):
+    self = Goal(a, __SECRET__)
+    var = Variable(b, __SECRET__)
+    goal = __ml_callbacks[i](self, var)
+    if not isinstance(goal, Goal):
+        raise TypeError ("Must return a goal")
+    return goal.__getval()
+
 def interrupt():
     fcl_interrupt()
 
@@ -1124,6 +1221,10 @@ def solve(objective, *args, time=True, backtrack=False, on_backtrack=None,
     """
 
     global __ml_callbacks
+
+    cdef long length
+    cdef long* pt_vars
+    cdef array.array _vars
 
     if not isinstance(objective, Goal):
         objective = Goal.forall(objective, *args, **kwargs)
@@ -1180,6 +1281,10 @@ def solve(objective, *args, time=True, backtrack=False, on_backtrack=None,
         _ = goals_solve(on_backtrack.id, obj.__getval()) == 1
         sol['solved'] = True
         sol['time'] = time.perf_counter() - start
+
+        # IMPORTANT! Free memory
+        del __ml_callbacks[on_backtrack.id]
+
         return sol
 
     if all_solutions:
@@ -1202,10 +1307,16 @@ def solve(objective, *args, time=True, backtrack=False, on_backtrack=None,
         sol['solution'] = None
         res.append(sol)
 
+        # IMPORTANT! Free memory
+        del __ml_callbacks[on_backtrack.id]
+
         return res
 
     # else
     sol['solved'] = goals_solve(on_backtrack.id, objective.__getval()) == 1
+
+    # IMPORTANT! Free memory
+    del __ml_callbacks[on_backtrack.id]
 
     if time:
         sol['time'] = time.perf_counter() - start

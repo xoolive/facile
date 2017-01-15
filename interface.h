@@ -3,12 +3,16 @@
 void init();
 void fcl_destroy(value*);
 
-int is_proper_value(value*);
-
 value* val_interval(int i, int j);
 char* val_name(value* in);
 int val_isbound(value* in);
 void val_minmax(value* in, int* min, int* max);
+
+void val_refine(value* var, value* domain);
+value* val_domain(value* var);
+int domain_size(value* domain);
+void domain_values(value* domain, int* values);
+value* domain_remove(int element, value* domain);
 
 value* interval_ismember(value* in, int inf, int sup);
 value* sorting_sort(value* in);
@@ -54,14 +58,22 @@ value* goals_fail();
 value* goals_or(value*, value*);
 value* goals_and(value*, value*);
 value* goals_atomic(int i);
-value* goals_forall(value*, value**, long);
+value* goals_unify(value* v, int i);
+value* goals_forall(value*, value**, long, value*);
 value* goals_minimize(value* goal, value* expr, int i);
 int goals_solve(int, value*);
+
+value* goals_forvar(int);
 
 void fcl_interrupt(void);
 
 void set_backtrack_callback(int i, void(*fct)(int, int));
 void set_atomic_callback(int, void(*fct)(int));
 void set_onsol_callback(int i, void(*fct)(int, int));
+
+// too complicated without typedef
+typedef value* (*g_fv)(int, value*, value*);
+// void set_goal_forvar_callback(int i, (value*)(*fct)(int, value*, value*));
+void set_goal_forvar_callback(int i, g_fv fct);
 
 value* parse_array(value*, long*);

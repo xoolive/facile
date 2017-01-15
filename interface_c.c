@@ -9,8 +9,9 @@
 
 #define CLOSURE(A)\
   static value * closure = NULL;\
-  if (closure == NULL)\
-    closure = caml_named_value(A);
+  if (closure == NULL) {\
+    closure = caml_named_value(A);\
+  }
 
 #define Val_none Val_int(0)
 #define Some_val(v) Field(v, 0)
@@ -24,14 +25,6 @@ static value Val_some( value v )
 }
 
 void* callbacks[1024];
-
-/* Let's keep it for later... */
-/* #include <caml/address_class.h> */
-int is_proper_value(value* v)
-{
-  return 1;
-/*   return Is_in_value_area(*v); */
-}
 
 void init() {
   static char* argv[2] = { "python", NULL };
@@ -82,6 +75,50 @@ int val_isbound(value* in)
   CLOSURE ("Fd.is_bound");
   // PAS dangerous !! ^^
   return Bool_val(caml_callback(*closure, *in));
+}
+
+void val_refine(value* var, value* domain)
+{
+  CLOSURE ("Fd.refine");
+  caml_callback2(*closure, *var, *domain);
+}
+
+value* val_domain(value* var)
+{
+  value v;
+  CLOSURE ("Fd.dom");
+  v = caml_callback(*closure, *var);
+  return fcl_wrap(v);
+}
+
+int domain_size(value* domain)
+{
+  value v;
+  CLOSURE ("Domain.size");
+  v = caml_callback(*closure, *domain);
+  return Int_val(v);
+}
+
+void domain_values(value* domain, int* values)
+{
+  value v;
+  size_t i = 0;
+  CLOSURE ("Domain.values");
+  v = caml_callback(*closure, *domain);
+  while ( v != Val_emptylist )
+  {
+    values[i] = Int_val(Field(v, 0));  /* accessing the head */
+    v = Field(v, 1);  /* point to the tail for next loop */
+    ++i;
+  }
+}
+
+value* domain_remove(int element, value* domain)
+{
+  value v;
+  CLOSURE ("Domain.remove");
+  v = caml_callback2(*closure, Val_int(element), *domain);
+  return fcl_wrap(v);
 }
 
 value* interval_ismember(value* in, int inf, int sup)
@@ -260,7 +297,7 @@ value* cstr_alldiff(value** val, long len, int b)
   CLOSURE("Cstr.alldiff");
   // À la barbare
   array = caml_alloc(len, 0);
-  for(; i< len; ++i)
+  for(; i < len; ++i)
     Store_field(array, i, val[i][0]);
   a = caml_callback2(*closure, Val_int(b), array);
   return fcl_wrap(a);
@@ -277,7 +314,8 @@ value* cstr_boolean(value* cstr)
 
 value* gcc_cstr(value* array, value** cards, long* values, long len)
 {
-  value a, distribution;
+  CAMLlocal1(distribution);
+  value a;
   size_t i = 0;
   CLOSURE("Gcc.cstr");
   distribution = caml_alloc(len, 0);
@@ -384,10 +422,12 @@ value* goals_and(value* in1, value* in2)
   return fcl_wrap(a);
 }
 
-value* goals_indomain()
+value* goals_forvar(int i)
 {
-  CLOSURE("Goals.indomain");
-  return closure;
+  value a;
+  CLOSURE("Goals.create_on_var");
+  a = caml_callback(*closure, Val_int(i));
+  return fcl_wrap(a);
 }
 
 value* goals_atomic(int i)
@@ -398,25 +438,37 @@ value* goals_atomic(int i)
   return fcl_wrap(a);
 }
 
-value* goals_forall(value* s, value** val, long len)
+value* goals_unify(value* v, int i)
+{
+  value a;
+  CLOSURE("Goals.unify");
+  a = caml_callback2(*closure, *v, Val_int(i));
+  return fcl_wrap(a);
+}
+
+value* goals_forall(value* s, value** val, long len, value* goal_forvar)
 {
   value array;
   value select;
+  value res;
   size_t i = 0;
-  value* indomain = goals_indomain();
-  CLOSURE("Goals.forall");
-  // À la barbare
-  array = caml_alloc(len, 0);
-  for(; i < len; ++i)
-    Store_field(array, i, val[i][0]);
+  if (goal_forvar == 0)
+    goal_forvar = caml_named_value("Goals.indomain");
   select = (s==0 ? Val_none : Val_some(*s));
-  return fcl_wrap(caml_callback3(*closure, select, *indomain, array));
+  CLOSURE("Goals.forall");
+  array = caml_alloc(len, 0);
+  for(; i < (size_t) len; ++i)
+    Store_field(array, i, val[i][0]);
+  res = caml_callback3(*closure, select, *goal_forvar, array);
+  return fcl_wrap(res);
 }
 
 value* goals_minimize(value* goal, value* expr, int i)
 {
+  value res;
   CLOSURE("Goals.minimize");
-  return fcl_wrap(caml_callback3(*closure, *goal, *expr, Val_int(i)));
+  res = caml_callback3(*closure, *goal, *expr, Val_int(i));
+  return fcl_wrap(res);
 }
 
 int goals_solve(int i, value* goal)
@@ -437,10 +489,15 @@ void set_onsol_callback(int i, void(*fct)(int, int)) {
   callbacks[i] = fct;
 }
 
+/* void set_goal_forvar_callback(int i, (value*)(*fct)(int, value*, value*)) { */
+void set_goal_forvar_callback(int i, g_fv fct) {
+  callbacks[i] = fct;
+}
+
 value ml_backtrack_callback(value v_i, value v_n)
 {
   CAMLparam2(v_i, v_n);
-  void (*c_backtrack_callback)(int, int) = (void (*)(int)) callbacks[Int_val(v_i)];
+  void (*c_backtrack_callback)(int, int) = (void (*)(int, int)) callbacks[Int_val(v_i)];
   c_backtrack_callback(Int_val(v_i), Int_val(v_n));
   CAMLreturn(Val_unit);
 }
@@ -456,9 +513,18 @@ value ml_atomic_callback(value v_i)
 value ml_onsol_callback(value v_i, value v_n)
 {
   CAMLparam2(v_i, v_n);
-  void (*c_onsol_callback)(int, int) = (void (*)(int)) callbacks[Int_val(v_i)];
+  void (*c_onsol_callback)(int, int) = (void (*)(int, int)) callbacks[Int_val(v_i)];
   c_onsol_callback(Int_val(v_i), Int_val(v_n));
   CAMLreturn(Val_unit);
+}
+
+value ml_goal_forvar_callback(value v_i, value v_goal, value v_var)
+{
+  CAMLparam3(v_i, v_goal, v_var);
+  value (*c_create_goal)(int, value*, value*) =
+    (value (*)(int, value*, value*)) callbacks[Int_val(v_i)];
+  // No memory leak, covered by goal_forvar_callback in facile.pyx
+  CAMLreturn(c_create_goal(Int_val(v_i), fcl_wrap(v_goal), fcl_wrap(v_var)));
 }
 
 void fcl_interrupt(void)
