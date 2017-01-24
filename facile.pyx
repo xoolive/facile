@@ -1217,6 +1217,11 @@ cdef class Goal(object):
         if not isinstance(expr, Variable):
             raise SyntaxError
 
+        msg = "The expression you want should be part of your goal"
+        values = [x.__getval() for sub in goal.variables for x in sub]
+        if expr.__getval() not in values:
+            raise ValueError(msg)
+
         __ml_callbacks[keep.id] = keep
         set_onsol_callback(keep.id, on_solution_callback)
 

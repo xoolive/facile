@@ -42,4 +42,3 @@ for m in range(n):
 if solve(list(wife) + list(husband)):
     for i in range(n):
         print("%s <=> %s" % (men[i], women[wife[i].value()]))
-
