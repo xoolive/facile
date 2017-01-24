@@ -14,12 +14,12 @@ from facile import *
 n = 3
 agatha, butler, charles = 0, 1, 2
 
-killer = variable(0, 2)
-victim = variable(0, 2)
+killer = variable(range(3))
+victim = variable(range(3))
 
 # flattened
-hates  = array(variable(0, 1) for i in range(n) for j in range(n))
-richer = array(variable(0, 1) for i in range(n) for j in range(n))
+hates  = array(Variable.binary() for i in range(n) for j in range(n))
+richer = array(Variable.binary() for i in range(n) for j in range(n))
 
 # Agatha, the butler, and Charles live in Dreadsbury Mansion, and
 # are the only ones to live there.

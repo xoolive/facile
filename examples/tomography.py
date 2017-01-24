@@ -16,7 +16,7 @@ col_sums = [0, 0, 7, 1, 6, 3, 4, 5, 2, 7, 0, 0]
 rows = len(row_sums)
 cols = len(col_sums)
 
-x = [[variable(0, 1) for j in col_sums] for i in row_sums]
+x = [[Variable.binary() for j in col_sums] for i in row_sums]
 
 for i in range(rows):
     constraint(sum(x[i][j] for j in range(cols)) == row_sums[i])

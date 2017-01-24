@@ -12,7 +12,7 @@ def arithmetic(puzzle="SEND+MORE=MONEY", base=10):
     problem = list(filter(lambda w: len(w) > 0, problem))
 
     # letters
-    letters = {l: fcl.variable(0, base - 1) for l in set("".join(problem))}
+    letters = {l: fcl.variable(range(base)) for l in set("".join(problem))}
 
     # expressions
     expr_pb = [[letters[a] for a in word] for word in problem]

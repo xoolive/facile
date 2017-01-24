@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Basic examples of CSP problems:
     - a ≠ b
@@ -8,17 +6,17 @@ Basic examples of CSP problems:
 
 from facile import variable, constraint, solve, alldifferent
 
-a = variable(0, 1)
-b = variable(0, 1)
+a = variable(range(2))
+b = variable(range(2))
 
 constraint(a != b)
 
 if solve([a, b]):
     print("Solution found a=%d and b=%d" % (a.value(), b.value()))
 
-a = variable(0, 2)
-b = variable(0, 2)
-c = variable(0, 2)
+a = variable(range(3))
+b = variable(range(3))
+c = variable(range(3))
 
 constraint(alldifferent([a, b, c]))
 constraint(a + b <= 2 * c)

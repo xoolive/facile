@@ -1,21 +1,21 @@
 from facile import *
 
 
-colors = [variable(1, 5) for i in range(5)]
+colors = [variable(range(1, 6)) for i in range(5)]
 red, green, yellow, blue, ivory = colors
 
-people = [variable(1, 5) for i in range(5)]
+people = [variable(range(1, 6)) for i in range(5)]
 englishman, spaniard, japanese, ukrainian, norwegian = people
 
 names = ["Englishman", "Spaniard", "Japanese", "Ukrainian", "Norwegian"]
 
-animals = [variable(1, 5) for i in range(5)]
+animals = [variable(range(1, 6)) for i in range(5)]
 dog, snails, fox, zebra, horse = animals
 
-drinks = [variable(1, 5) for i in range(5)]
+drinks = [variable(range(1, 6)) for i in range(5)]
 tea, coffee, water, milk, fruit_juice = drinks
 
-cigarettes = [variable(1, 5) for i in range(5)]
+cigarettes = [variable(range(1, 6)) for i in range(5)]
 old_gold, kools, chesterfields, lucky_strike, parliaments = cigarettes
 
 constraint(alldifferent(colors))

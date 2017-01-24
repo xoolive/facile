@@ -1,6 +1,3 @@
-# coding: utf-8
-
-from __future__ import division
 import facile
 
 # A Golf Tournament (from http://www.icparc.ic.ac.uk/~cg6/conjunto.html)
@@ -28,7 +25,7 @@ nb_weeks = 5
 # every golfer every week
 
 groups = [ facile.array(
-    [facile.variable(0, nb_groups-1) for i in range(nb_golfers)]
+    [facile.variable(range(nb_groups)) for i in range(nb_golfers)]
     ) for j in range(nb_weeks)]
 
 # For each week, exactly size_group golfers in each group:
@@ -40,6 +37,7 @@ for i in range(nb_weeks):
         facile.constraint(s[j] == j//size_group)
 
     # [2] Use a Global Cardinality Constraint (redundant with [1])
+    # TODO segfault with GCC
     gcc = groups[i].gcc([(size_group, i) for i in range(nb_groups)])
     facile.constraint(gcc)
 

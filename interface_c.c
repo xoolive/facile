@@ -33,7 +33,7 @@ void init() {
 
 value* fcl_wrap(value v)
 {
-  value* res = malloc(sizeof(value*));
+  value* res = (value*) malloc(sizeof(value));
   *res = v;
   caml_register_global_root(res);
   return res;
@@ -51,6 +51,14 @@ value* val_interval(int i, int j)
   CLOSURE("Fd.interval");
   v = caml_callback2(*closure, Val_int(i), Val_int(j));
   return fcl_wrap(v);
+}
+
+value* val_create(value* v)
+{
+  value a;
+  CLOSURE("Fd.create");
+  a = caml_callback(*closure, *v);
+  return fcl_wrap(a);
 }
 
 char* val_name(value* in)
@@ -77,12 +85,6 @@ int val_isbound(value* in)
   return Bool_val(caml_callback(*closure, *in));
 }
 
-void val_refine(value* var, value* domain)
-{
-  CLOSURE ("Fd.refine");
-  caml_callback2(*closure, *var, *domain);
-}
-
 value* val_domain(value* var)
 {
   value v;
@@ -105,6 +107,7 @@ void domain_values(value* domain, int* values)
   size_t i = 0;
   CLOSURE ("Domain.values");
   v = caml_callback(*closure, *domain);
+  // TODO change to array !!
   while ( v != Val_emptylist )
   {
     values[i] = Int_val(Field(v, 0));  /* accessing the head */
@@ -113,11 +116,16 @@ void domain_values(value* domain, int* values)
   }
 }
 
-value* domain_remove(int element, value* domain)
+value* domain_create(int* val, long len)
 {
-  value v;
-  CLOSURE ("Domain.remove");
-  v = caml_callback2(*closure, Val_int(element), *domain);
+  value v, array;
+  size_t i = 0;
+  CLOSURE("Domain.create");
+  // À la barbare
+  array = caml_alloc(len, 0);
+  for(; i < len; ++i)
+    Store_field(array, i, Val_int(val[i]));
+  v = caml_callback(*closure, array);
   return fcl_wrap(v);
 }
 
@@ -314,15 +322,14 @@ value* cstr_boolean(value* cstr)
 
 value* gcc_cstr(value* array, value** cards, long* values, long len)
 {
-  CAMLlocal1(distribution);
   value a;
   size_t i = 0;
   CLOSURE("Gcc.cstr");
-  distribution = caml_alloc(len, 0);
-  for(; i<len; ++i)
+  value distribution = caml_alloc(len, 0);
+  for(; i < len; ++i)
   {
     value b = caml_alloc(2, 0);
-    Store_field(b, 0, cards[i]);
+    Store_field(b, 0, cards[i][0]);
     Store_field(b, 1, Val_long(values[i]));
 
     Store_field(distribution, i, b);
@@ -376,9 +383,9 @@ value* fdarray_get(value* in1, value* in2)
   return fcl_wrap(a);
 }
 
-value* strategy_minvalue()
+value* strategy_queen()
 {
-  CLOSURE("Strategy.min_value");
+  CLOSURE("Strategy.queen");
   return fcl_wrap(*closure);
 }
 
@@ -422,14 +429,6 @@ value* goals_and(value* in1, value* in2)
   return fcl_wrap(a);
 }
 
-value* goals_forvar(int i)
-{
-  value a;
-  CLOSURE("Goals.create_on_var");
-  a = caml_callback(*closure, Val_int(i));
-  return fcl_wrap(a);
-}
-
 value* goals_atomic(int i)
 {
   value a;
@@ -446,20 +445,60 @@ value* goals_unify(value* v, int i)
   return fcl_wrap(a);
 }
 
-value* goals_forall(value* s, value** val, long len, value* goal_forvar)
+value* assignation_indomain()
+{
+  CLOSURE("Assignation.indomain");
+  return fcl_wrap(*closure);
+}
+
+value* assignation_assign()
+{
+  CLOSURE("Assignation.assign");
+  return fcl_wrap(*closure);
+}
+
+value* assignation_dichotomic()
+{
+  CLOSURE("Assignation.dichotomic");
+  return fcl_wrap(*closure);
+}
+
+value* assignation_atomic(int i)
+{
+  value a;
+  CLOSURE("Assignation.atomic");
+  a = caml_callback(*closure, Val_int(i));
+  return fcl_wrap(a);
+}
+
+value* assignation_and(value* v1, value* v2)
+{
+  value a;
+  CLOSURE("Assignation.and");
+  a = caml_callback2(*closure, *v1, *v2);
+  return fcl_wrap(a);
+}
+
+value* assignation_or(value* v1, value* v2)
+{
+  value a;
+  CLOSURE("Assignation.or");
+  a = caml_callback2(*closure, *v1, *v2);
+  return fcl_wrap(a);
+}
+
+value* goals_forall(value* s, value** val, long len, value* labelling)
 {
   value array;
   value select;
   value res;
   size_t i = 0;
-  if (goal_forvar == 0)
-    goal_forvar = caml_named_value("Goals.indomain");
   select = (s==0 ? Val_none : Val_some(*s));
   CLOSURE("Goals.forall");
   array = caml_alloc(len, 0);
   for(; i < (size_t) len; ++i)
     Store_field(array, i, val[i][0]);
-  res = caml_callback3(*closure, select, *goal_forvar, array);
+  res = caml_callback3(*closure, select, *labelling, array);
   return fcl_wrap(res);
 }
 
@@ -489,8 +528,7 @@ void set_onsol_callback(int i, void(*fct)(int, int)) {
   callbacks[i] = fct;
 }
 
-/* void set_goal_forvar_callback(int i, (value*)(*fct)(int, value*, value*)) { */
-void set_goal_forvar_callback(int i, g_fv fct) {
+void set_assign_callback(int i, void(*fct)(int, value*)) {
   callbacks[i] = fct;
 }
 
@@ -518,13 +556,12 @@ value ml_onsol_callback(value v_i, value v_n)
   CAMLreturn(Val_unit);
 }
 
-value ml_goal_forvar_callback(value v_i, value v_goal, value v_var)
+value ml_assign_atomic(value v_i, value v)
 {
-  CAMLparam3(v_i, v_goal, v_var);
-  value (*c_create_goal)(int, value*, value*) =
-    (value (*)(int, value*, value*)) callbacks[Int_val(v_i)];
-  // No memory leak, covered by goal_forvar_callback in facile.pyx
-  CAMLreturn(c_create_goal(Int_val(v_i), fcl_wrap(v_goal), fcl_wrap(v_var)));
+  CAMLparam2(v_i, v);
+  void (*c_assign_callback)(int, value*) = (void (*)(int, value*)) callbacks[Int_val(v_i)];
+  c_assign_callback(Int_val(v_i), fcl_wrap(v)); // fcl_wrap actually useless but for compatibility reason!
+  CAMLreturn(Val_unit);
 }
 
 void fcl_interrupt(void)

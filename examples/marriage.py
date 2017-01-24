@@ -1,6 +1,4 @@
-# coding: utf-8
-
-from facile import *
+from facile import array, variable, constraint, solve
 
 n = 5
 men = ["Richard", "James", "John", "Hugh", "Greg"]
@@ -18,8 +16,8 @@ rank_men = [[5, 1, 2, 4, 3],
             [1, 5, 4, 3, 2],
             [4, 3, 2, 1, 5]]
 
-wife = array([variable(0, n-1) for i in range(n)])
-husband = array([variable(0, n-1) for i in range(n)])
+wife = array([variable(range(n)) for i in range(n)])
+husband = array([variable(range(n)) for i in range(n)])
 
 # You are your wife's husband, and conversely
 for m in range(n):
@@ -34,14 +32,14 @@ for m in range(n):
         # w prefers her husband to this man
         c2 = array(rank_women[w])[husband[w]] < rank_women[w][m]
         # alias for c1 => c2
-        constraint( c1 <= c2 )
+        constraint(c1 <= c2)
         # w prefers this man to her husband
         c3 = rank_women[w][m] < array(rank_women[w])[husband[w]]
         # m prefers his wife to this woman
         c4 = array(rank_men[m])[wife[m]] < rank_men[m][w]
-        constraint( c3 <= c4 )
+        constraint(c3 <= c4)
 
 if solve(list(wife) + list(husband)):
     for i in range(n):
-        print ("%s <=> %s" % (men[i], women[wife[i].value()]))
+        print("%s <=> %s" % (men[i], women[wife[i].value()]))
 

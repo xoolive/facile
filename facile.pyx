@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # distutils: language = c
 # cython: embedsignature=True
 
@@ -9,17 +8,17 @@ Constraint Programming problems.
 
 Example: Find two variables a and b taking values on {0, 1} so that their
 values are different.
->>> a = variable(0, 1)
->>> b = variable(0, 1)
+>>> a = variable([0, 1])
+>>> b = variable([0, 1])
 >>> constraint(a != b)
 >>> assert solve([a, b])
 >>> a.value(), b.value()
 (0, 1)
 
 Some global constraints, like alldifferent, are also implemented.
->>> a = variable(0, 2)
->>> b = variable(0, 2)
->>> c = variable(0, 2)
+>>> a = variable(range(3))
+>>> b = variable(range(3))
+>>> c = variable(range(3))
 >>> constraint(alldifferent([a, b, c]))
 >>> constraint(a + b <= 2 * c)
 >>> assert solve([a, b, c])
@@ -40,7 +39,10 @@ See also (resolution):
 """
 
 import array
+import heapq
 import numbers
+import reprlib
+import itertools
 import collections
 
 cimport cpython
@@ -51,8 +53,6 @@ from cpython cimport array
 # Initialize OCaml
 init()
 
-import heapq
-import itertools
 
 class gc_list(object):
 
@@ -110,7 +110,25 @@ cdef class Domain(object):
         return self.mlvalue
 
     def __repr__(self):
-        return "domain: {}".format(self.values())
+        values = self.values()
+        domain = reprlib.repr(values)
+        find = domain.find("...")
+        if find == -1:
+            return domain
+        # remove the ', ...' if you missed only one element
+        plus = -2 if len(values) == reprlib.aRepr.maxlist + 1 else 3
+        # add last value
+        domain = domain[:find + plus] + ", {}]".format(values[-1])
+        return domain
+
+    def __getitem__(self, i):
+        return self.values()[i]
+
+    def __len__(self):
+        return len(self.values())
+
+    def __str__(self):
+        return repr(self.values())
 
     def size(self):
         return domain_size(self.mlvalue)
@@ -121,16 +139,23 @@ cdef class Domain(object):
         domain_values(self.mlvalue, pt_vals)
         return values.tolist()
 
-    def remove(self, int value):
-        return Domain(domain_remove(value, self.mlvalue), __SECRET__)
+    @classmethod
+    def create(cls, p):
+        cdef array.array values = array.array('i', p)
+        cdef int* pt_vals = values.data.as_ints
+        cdef long value = domain_create(pt_vals, len(values))
+        return cls(value, __SECRET__)
 
+from collections import defaultdict
+name_register = defaultdict(str)
+name_counter = defaultdict(int)
 
 cdef class Variable(object):
     """The Variable is the core element for CSP problems.
 
     This class **shall not be directly instanciated**, but through the
     `variable` function instead.
-    >>> a = variable(0, 1)
+    >>> a = variable([0, 1])
 
     Variables may be summed, subtracted, multiplied with other variables or
     integers. They may also be compounded into all kind of expressions
@@ -138,8 +163,14 @@ cdef class Variable(object):
     """
 
     cdef long mlvalue
+    cdef object name
 
     def __dealloc__(self):
+        mlname = self.mlname()
+        name_counter[mlname] -= 1
+        if name_counter[mlname] == 0:
+            del name_counter[mlname]
+            del name_register[mlname]
         fcl_destroy(self.mlvalue)
 
     def __cinit__ (self, value, secret):
@@ -148,44 +179,38 @@ cdef class Variable(object):
         if value == 0:
             raise ValueError("Non reifiable constraint")
         self.mlvalue = value
+        self.name = name_register[self.mlname()]
+        name_counter[self.mlname()] += 1
 
     def __repr__(self):
         cdef int vmin, vmax
-        val_minmax(self.mlvalue, &vmin, &vmax)
-        if (val_isbound(self.mlvalue) == 1) :
-            return " = %d" % (vmin)
-        else:
-            t = ((<bytes> val_name(self.mlvalue)).decode(), vmin, vmax)
-            return "%s in [%d,%d]" % t
+        fmt = "<Variable {} ({})>"
+        return fmt.format(self.name, self.mlname())
 
     def __getval(self):
         return self.mlvalue
 
-    def min(self):
-        cdef int vmin, vmax
-        val_minmax(self.mlvalue, &vmin, &vmax)
-        return vmin
+    def set_name(self, n):
+        self.name = n
+        name_register[self.mlname()] = n
 
-    def max(self):
-        cdef int vmin, vmax
-        val_minmax(self.mlvalue, &vmin, &vmax)
-        return vmax
+    @property
+    def name(self):
+        return self.name
+
+    def mlname(self):
+        return (<bytes> val_name(self.mlvalue)).decode()
 
     def value(self):
         """ Return the numerical value of the variable.
         Return None if no solution has been found. """
-        cdef int vmin, vmax
-        val_minmax(self.mlvalue, &vmin, &vmax)
-        if (val_isbound(self.mlvalue)==1):
-            return vmin
+        if (val_isbound(self.mlvalue) == 1):
+            return self.domain()[0]
         else:
             return None
 
     def domain(self):
         return Domain(val_domain(self.mlvalue), __SECRET__)
-
-    def refine(self, Domain d):
-        val_refine(self.mlvalue, d.__getval())
 
     def in_interval(self, int inf, int sup):
         cdef long res
@@ -193,9 +218,28 @@ cdef class Variable(object):
         return Variable(res, __SECRET__)
 
     @classmethod
-    def interval(cls, int min_val, int max_val):
+    def interval(cls, int min_val, int max_val, name=None):
         cdef long value = val_interval(min_val, max_val)
-        return cls(value, __SECRET__)
+        val = cls(value, __SECRET__)
+        if name is not None:
+            val.set_name(name)
+        return val
+
+    @classmethod
+    def create(cls, values, name=None):
+        if isinstance(values, Arith):
+            return cls(e2fd(values.__getval()), __SECRET__)
+        if isinstance(values, Cstr):
+            return +values
+        domain = Domain.create(values)
+        val = cls(val_create(domain.__getval()), __SECRET__)
+        if name is not None:
+            val.set_name(name)
+        return val
+
+    @classmethod
+    def binary(cls, *args, **kwargs):
+        return Variable.create(range(2), *args, **kwargs)
 
     def __richcmp__(self, value, op):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
@@ -907,22 +951,21 @@ cdef class Array(object):
         cdef long card = 0
 
         cards = []
+        do_not_gc = []
         values = []
         for (c, v) in distribution:
             if isinstance(c, numbers.Integral):
-                card = i2e(c)
+                c = Variable.create([c])
             if isinstance(c, Arith):
-                card = c.__getval()
-            if isinstance(c, Variable):
-                card = fd2e(c.__getval())
-            if card == 0:
+                c = Variable(c)
+            if not isinstance(c, Variable):
                 msg = "Cardinals must be integers, variables or expressions"
                 raise TypeError(msg)
             if not isinstance(v, numbers.Integral):
                 raise TypeError("Values must be integers")
-            cards.append(card)
+            do_not_gc.append(c)
+            cards.append(c.__getval())
             values.append(v)
-            card = 0
 
         cdef array.array _cards = array.array('L', cards)
         cdef array.array _values = array.array('L', values)
@@ -935,13 +978,9 @@ cdef class Array(object):
 
 cdef class Strategy(object):
     """
-        The last `heuristic` argument let you choose between four strategies for
-        selecting the next variable to explore:
-        - by default, `Heuristic.No` is chosen;
-        - `Heuristic.Min_size` chooses the variable with the smallest domain;
-        - `Heuristic.Min_value` chooses the variable with a minimal smallest
-        value in its domain;
-        - `Heuristic.Min_min` combines the hereabove strategies.
+        Strategies for the Goal.forall method.
+        min_min, min_domain, queen
+        TODO: pass a callback to be evaluated.
     """
     cdef long mlvalue
 
@@ -957,18 +996,86 @@ cdef class Strategy(object):
         return self.mlvalue
 
     @classmethod
-    def min_value(cls):
-        return cls(strategy_minvalue(), __SECRET__)
+    def min_min(cls):
+        """Favours the value with the minimum minimum value in its domain."""
+        return cls(strategy_minmin(), __SECRET__)
 
     @classmethod
     def min_domain(cls):
+        """Favours the value with the smaller domain."""
         return cls(strategy_mindomain(), __SECRET__)
 
     @classmethod
-    def min_min(cls):
-        return cls(strategy_minmin(), __SECRET__)
+    def queen(cls):
+        """Good strategy for queens: min_domain then min_min."""
+        return cls(strategy_queen(), __SECRET__)
 
-from cpython cimport Py_INCREF, Py_DECREF
+cdef class Assignation(object):
+
+    cdef long mlvalue
+    cdef object _toclean
+
+    def __dealloc__(self):
+        fcl_destroy(self.mlvalue)
+        # IMPORTANT! Free memory
+        for i in self._toclean:
+            del __ml_callbacks[i]
+
+    def __cinit__(self, value, secret):
+        if secret != __SECRET__:
+            raise ValueError("Invalid pointer value")
+        self.mlvalue = value
+        self._toclean = []
+
+    def __getval(self):
+        return self.mlvalue
+
+    def toclean(self, p):
+        self._toclean.append(p)
+
+    @classmethod
+    def indomain(cls):
+        return cls(assignation_indomain(), __SECRET__)
+
+    @classmethod
+    def assign(cls):
+        return cls(assignation_assign(), __SECRET__)
+
+    @classmethod
+    def dichotomic(cls):
+        return cls(assignation_dichotomic(), __SECRET__)
+
+    @classmethod
+    def atomic(cls, f):
+        @callback
+        def atomic_callback(value):
+            variable = Variable(value, __SECRET__)
+            f(variable)
+        __ml_callbacks[atomic_callback.id] = atomic_callback
+        set_assign_callback(atomic_callback.id, on_assign_callback)
+        res = cls(assignation_atomic(atomic_callback.id), __SECRET__)
+        res.toclean(atomic_callback.id)
+        return res
+
+    def __and__(Assignation c1, Assignation c2):
+        """`&` (and) operator on assignation.
+
+        """
+        res = Assignation(assignation_and(c1.__getval(), c2.__getval()), __SECRET__)
+        res._toclean = c1._toclean + c2._toclean
+        c1._toclean.clear()
+        c2._toclean.clear()
+        return res
+
+    def __or__(Assignation c1, Assignation c2):
+        """`|` (or) operator on assignation.
+
+        """
+        res = Assignation(assignation_or(c1.__getval(), c2.__getval()), __SECRET__)
+        res._toclean = c1._toclean + c2._toclean
+        c1._toclean.clear()
+        c2._toclean.clear()
+        return res
 
 cdef class Goal(object):
 
@@ -987,6 +1094,7 @@ cdef class Goal(object):
             raise ValueError("Invalid pointer value")
         self.mlvalue = value
         self._toclean = []
+        self.variables = []
 
     def __getval(self):
         return self.mlvalue
@@ -1027,13 +1135,11 @@ cdef class Goal(object):
     @classmethod
     def fail(cls):
         res = cls(goals_fail(), __SECRET__)
-        res.variables = []
         return res
 
     @classmethod
     def success(cls):
         res = cls(goals_success(), __SECRET__)
-        res.variables = []
         return res
 
     @classmethod
@@ -1046,7 +1152,6 @@ cdef class Goal(object):
             raise TypeError(msg)
         else:
             res = cls(goals_atomic(callback.id), __SECRET__)
-            res.variables = []
             res.toclean(callback.id)
             return res
 
@@ -1058,13 +1163,21 @@ cdef class Goal(object):
         return res
 
     @classmethod
-    def forall(cls, variables, strategy=None, goal_var=None):
+    def forall(cls, variables, strategy=None, assign=Assignation.indomain()):
         cdef long length
         cdef long* pt_vars
         cdef array.array _vars
 
-        cdef long c_goal_forvar = 0 # default to indomain
+        cdef long c_assign = 0
         cdef long c_strategy = 0 # default to no strategy
+
+        if isinstance(assign, str):
+            assign = eval("Assignation." + assign + "()")
+
+        if not isinstance(assign, Assignation):
+            raise ValueError("assign must refer to a valid Assignation")
+
+        c_assign = assign.__getval() # default to indomain
 
         if isinstance(variables, collections.Iterable):
             variables = list(variables)
@@ -1079,28 +1192,18 @@ cdef class Goal(object):
             pt_vars = _vars.data.as_longs
 
             if strategy is not None:
+                if isinstance(strategy, str):
+                    strategy = eval("Strategy." + strategy + "()")
+
                 msg = "The second argument is a strategy"
                 assert isinstance(strategy, Strategy), msg
                 c_strategy = strategy.__getval()
 
-            # Should we use __annotations__ to check for types ?
-            if goal_var is not None:
-                try:
-                    __ml_callbacks[goal_var.id] = goal_var
-                    set_goal_forvar_callback(goal_var.id, goal_forvar_callback)
-                    c_goal_forvar = goals_forvar(goal_var.id)
-                    toclean.append(goal_var.id)
-                except AttributeError:
-                    msg = "Use the @facile.callback decorator around your callbacks"
-                    raise TypeError(msg)
-
             if length < 1:
                 raise TypeError("The argument list must be non empty")
 
-            res = cls(goals_forall(c_strategy, pt_vars, length, c_goal_forvar), __SECRET__)
+            res = cls(goals_forall(c_strategy, pt_vars, length, c_assign), __SECRET__)
             res.variables = [variables]
-            if goal_var is not None:
-                res.toclean(goal_var.id)
             return res
 
         raise TypeError("The argument must be iterable")
@@ -1163,7 +1266,10 @@ class Solution(dict):
                 msg = "{:<30}: {:.2g}s"
             else:
                 msg = "{:<30}: {}"
-            res += msg.format(k, v) + "\n"
+            if k == "Current solution":
+                res += msg.format(k, reprlib.repr(v)) + "\n"
+            else:
+                res += msg.format(k, v) + "\n"
         return res
 
 
@@ -1178,13 +1284,8 @@ cdef void atomic_callback(int i):
 cdef void on_solution_callback(int i, int n):
     __ml_callbacks[i](n)
 
-cdef long goal_forvar_callback(int i, long a, long b):
-    self = Goal(a, __SECRET__)
-    var = Variable(b, __SECRET__)
-    goal = __ml_callbacks[i](self, var)
-    if not isinstance(goal, Goal):
-        raise TypeError ("Must return a goal")
-    return goal.__getval()
+cdef void on_assign_callback(int i, long v):
+    __ml_callbacks[i](v)
 
 def interrupt():
     fcl_interrupt()
@@ -1239,10 +1340,14 @@ def solve(objective, *args, time=True, backtrack=False, on_backtrack=None,
     if on_backtrack is None:
         def mute(n): pass
         on_backtrack = callback(mute)
+    else:
+        on_backtrack = callback(on_backtrack)
 
     if on_solution is None:
         def mute(n): pass
         on_solution = callback(mute)
+    else:
+        on_solution = callback(on_solution)
 
     if backtrack:
         def stack_backtrack(n):
@@ -1393,7 +1498,7 @@ def constraint(cstr):
         raise TypeError("The argument must be a (non-reified) constraint")
     cstr.post()
 
-def alldifferent(variables, on_refine=False):
+def alldifferent(variables, lazy=False):
     """ Creates an alldifferent constraint (non-reifiable).
 
     `alldifferent` raises a TypeError if `variables` is not iterable and if
@@ -1417,8 +1522,8 @@ def alldifferent(variables, on_refine=False):
     cdef long length
     cdef long* pt_vars
     cdef array.array _vars
-    cdef int _onrefine = 0
-    if on_refine: _onrefine = 1
+    cdef int _lazy = 1
+    if lazy: _lazy = 0
     if isinstance(variables, collections.Iterable):
         variables = list(variables)
         length = len(variables)
@@ -1433,10 +1538,10 @@ def alldifferent(variables, on_refine=False):
             else:
                 raise TypeError("Arguments must be variables or expressions")
         pt_vars = _vars.data.as_longs
-        return Cstr(cstr_alldiff(pt_vars, length, _onrefine), __SECRET__)
+        return Cstr(cstr_alldiff(pt_vars, length, _lazy), __SECRET__)
     raise TypeError("The argument must be iterable")
 
-def variable(min_val, max_val=None):
+def variable(min_val, max_val=None, *args, **kwargs):
     """Creates a Variable taking values on a discrete interval.
 
     The `variable` function creates a variable on a discrete interval, with
@@ -1451,10 +1556,15 @@ def variable(min_val, max_val=None):
     """
 
     if isinstance(min_val, Arith):
-        return Variable(e2fd(min_val.__getval()), __SECRET__)
+        return Variable.create(min_val, *args, **kwargs)
     if isinstance(min_val, Cstr):
-        return +min_val
-    return Variable.interval(min_val, max_val)
+        return Variable.create(min_val, *args, **kwargs)
+    if isinstance(min_val, collections.Iterable):
+        return Variable.create(min_val, *args, **kwargs)
+    print ("Usage deprecated, prefer variable([list of values])")
+    if max_val < min_val:
+        raise ValueError("The upper bound should exceed the lower bound")
+    return Variable.interval(min_val, max_val, *args, **kwargs)
 
 def array(variables):
     """Creates an Array from an iterable structure.

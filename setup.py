@@ -7,9 +7,8 @@ import os
 import os.path
 import sys
 import time
-import platform
 import sysconfig
-import distutils
+
 
 def get_long_description():
     import codecs
@@ -21,12 +20,14 @@ def get_long_description():
     except ImportError:
         return ""
 
+
 def ocaml_config(prefix="", bpath=None):
 
     if bpath is None:
         # I know, it's bad! Feel free to improve...
         bpath = "build/temp.%s-%s.%s" % (sysconfig.get_platform(),
-                sys.version_info[0], sys.version_info[1])
+                                         sys.version_info[0],
+                                         sys.version_info[1])
 
     if not os.path.exists("build"):
         os.mkdir("build")
@@ -42,22 +43,24 @@ def ocaml_config(prefix="", bpath=None):
     asmrunlib = ocamlpath + "/libasmrun.a"
 
     # Rely on ocamlfind to find facile, but you can add some hints if need be
-    facilepath = os.popen("%socamlfind query facile" % prefix).readline().strip()
+    facilepath = os.popen("%socamlfind query facile" % prefix).readline()
+    facilepath = facilepath.strip()
     if facilepath == "":
         raise SystemError("%socamlfind or facile not found" % prefix)
 
     # Check timestamps for OCaml file
     exists = not os.path.exists(mlobject)
     if exists or os.path.getmtime("interface.ml") > os.path.getmtime(mlobject):
-        print ("Compiling interface.ml")
+        print("Compiling interface.ml")
         cmd = ("%socamlfind ocamlopt -package facile -linkpkg -output-obj" +
-            " -o %s interface.ml") % (prefix, mlobject)
-        print (cmd)
+               " -o %s interface.ml") % (prefix, mlobject)
+        print(cmd)
         os.system(cmd)
         now = time.time()
         os.utime("facile.pyx", (now, now))
 
     return ocamlpath, mlobject, asmrunlib
+
 
 if sys.platform != "win32":
     ocamlpath, mlobject, asmrunlib = ocaml_config()
@@ -67,7 +70,7 @@ else:
     # cross-compiled so whatever: fill everything with nonsense...
     INCLUDE = ""
     compiler = ""
-    compileargs = []
+    compileargs = [""]  # ["-g"]
     mlobject = ""
     asmrunlib = ""
 
@@ -77,7 +80,6 @@ except KeyError:
     os.environ['CFLAGS'] = ""
 
 try:
-    import sysconfig
     compiler = sysconfig.get_config_vars()['CC']
     compiler = os.environ['CC']
 except:
@@ -107,6 +109,7 @@ extensions = [
               extra_link_args=[mlobject, asmrunlib, ]
               )
 ]
+
 
 class clean(Command):
     description = "Custom clean command for OCaml objects"
@@ -146,19 +149,19 @@ class cross(Command):
         ocamlpath, mlobject, asmrunlib = config
 
         cmd = ("i686-w64-mingw32-gcc %s -c facile.c -o %s/facile.o " +
-                "-I cross-compile/win32-py%s.%s/include -I %s") % \
-                (os.environ['CFLAGS'], self.tmp, sys.version_info[0],
-                        sys.version_info[1], ocamlpath)
+               "-I cross-compile/win32-py%s.%s/include -I %s") % \
+            (os.environ['CFLAGS'], self.tmp, sys.version_info[0],
+             sys.version_info[1], ocamlpath)
 
-        print (cmd)
+        print(cmd)
         os.system(cmd)
 
-        cmd = ("i686-w64-mingw32-gcc %s -c interface_c.c -o %s/interface_c.o " +
-                "-I cross-compile/win32-py%s.%s/include -I %s") % \
-                (os.environ['CFLAGS'], self.tmp, sys.version_info[0],
-                        sys.version_info[1], ocamlpath)
+        cmd = ("i686-w64-mingw32-gcc %s -c interface_c.c -o %s/interface_c.o" +
+               " -I cross-compile/win32-py%s.%s/include -I %s") % \
+            (os.environ['CFLAGS'], self.tmp, sys.version_info[0],
+             sys.version_info[1], ocamlpath)
 
-        print (cmd)
+        print(cmd)
         os.system(cmd)
 
         pyd_file = "facile.pyd"
@@ -166,13 +169,13 @@ class cross(Command):
             pyd_file = "facile.cp%s%s-win32.pyd" % sys.version_info[:2]
 
         cmd = ("flexlink -maindll -chain mingw %s/facile.o %s/interface_c.o " +
-                "%s/interface_ml.o -o %s/%s %s " +
-                "cross-compile/win32-py%s.%s/libpython%s%s.a -- -static-libgcc")
-        cmd = cmd % (self.tmp, self.tmp, self.tmp, self.lib, pyd_file, asmrunlib,
-                sys.version_info[0], sys.version_info[1],
-                sys.version_info[0], sys.version_info[1])
+               "%s/interface_ml.o -o %s/%s %s " +
+               "cross-compile/win32-py%s.%s/libpython%s%s.a -- -static-libgcc")
+        cmd = cmd % (self.tmp, self.tmp, self.tmp, self.lib, pyd_file,
+                     asmrunlib, sys.version_info[0], sys.version_info[1],
+                     sys.version_info[0], sys.version_info[1])
 
-        print (cmd)
+        print(cmd)
         os.system(cmd)
 
 

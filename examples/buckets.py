@@ -9,7 +9,8 @@ steps = 8
 # The capacity of each bucket
 capacity = [8, 5, 3]
 
-buckets = [[variable(0, capacity[b]) for b in range(nb)] for i in range(steps)]
+buckets = [[variable(range(capacity[b] + 1)) for b in range(nb)]
+           for i in range(steps)]
 
 constraint(buckets[0][0] == 8)
 constraint(buckets[0][1] == 0)

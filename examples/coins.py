@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from facile import variable, constraint, minimize
 
 
@@ -11,11 +9,11 @@ def coins(values, maxval):
 
     # How many coin types
     nb_vals = len(values)
-    nb_min_coins = [variable(0, maxval / values[i]) for i in range(nb_vals)]
+    nb_min_coins = [variable(range(maxval // values[i])) for i in range(nb_vals)]
 
     for val in range(maxval):
         # How many coins per type
-        nb_coins = [variable(0, maxval / values[i]) for i in range(nb_vals)]
+        nb_coins = [variable(range(maxval // values[i])) for i in range(nb_vals)]
         mysum = sum([x[0] * x[1] for x in zip(values, nb_coins)])
         constraint(mysum == val)
         for j in range(len(nb_coins)):

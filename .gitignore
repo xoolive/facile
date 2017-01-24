@@ -1,5 +1,8 @@
 build/
 dist/
 *.cm*
+*.o
 facile.c
 cross*
+.*.sw*
+*-egg.info
