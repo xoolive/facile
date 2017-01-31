@@ -40,6 +40,7 @@ See also (resolution):
 
 import array
 import heapq
+import types
 import numbers
 import reprlib
 import itertools
@@ -983,17 +984,25 @@ cdef class Strategy(object):
         TODO: pass a callback to be evaluated.
     """
     cdef long mlvalue
+    cdef object _toclean
 
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
+        # IMPORTANT! Free memory
+        for i in self._toclean:
+            del __ml_callbacks[i]
 
     def __cinit__(self, value, secret):
         if secret != __SECRET__:
             raise ValueError("Invalid pointer value")
         self.mlvalue = value
+        self._toclean = []
 
     def __getval(self):
         return self.mlvalue
+
+    def toclean(self, p):
+        self._toclean.append(p)
 
     @classmethod
     def min_min(cls):
@@ -1009,6 +1018,23 @@ cdef class Strategy(object):
     def queen(cls):
         """Good strategy for queens: min_domain then min_min."""
         return cls(strategy_queen(), __SECRET__)
+
+
+    @classmethod
+    def custom(cls, cb):
+        """Custom strategy from Python callback."""
+        @callback
+        def custom_callback(v1, v2):
+            var1 = Variable(v1, __SECRET__)
+            var2 = Variable(v2, __SECRET__)
+            res = 1 if cb(var1, var2) else 0
+            return res
+        __ml_callbacks[custom_callback.id] = custom_callback
+        set_strategy_callback(custom_callback.id, strategy_cb)
+        strategy = cls(strategy_callback(custom_callback.id), __SECRET__)
+        strategy.toclean(custom_callback.id)
+        return strategy
+
 
 cdef class Assignation(object):
 
@@ -1082,6 +1108,7 @@ cdef class Goal(object):
     cdef long mlvalue
     cdef object _variables
     cdef object _toclean
+    cdef object _keep
 
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
@@ -1095,6 +1122,7 @@ cdef class Goal(object):
         self.mlvalue = value
         self._toclean = []
         self.variables = []
+        self._keep = []
 
     def __getval(self):
         return self.mlvalue
@@ -1106,6 +1134,7 @@ cdef class Goal(object):
         res = Goal(goals_and(c1.__getval(), c2.__getval()), __SECRET__)
         res.variables = c1.variables + c2.variables
         res._toclean = c1._toclean + c2._toclean
+        res._keep = c1._keep + c2._keep
         c1._toclean.clear()
         c2._toclean.clear()
         return res
@@ -1117,12 +1146,16 @@ cdef class Goal(object):
         res = Goal(goals_or(c1.__getval(), c2.__getval()), __SECRET__)
         res.variables = c1.variables + c2.variables
         res._toclean = c1._toclean + c2._toclean
+        res._keep = c1._keep + c2._keep
         c1._toclean.clear()
         c2._toclean.clear()
         return res
 
     def toclean(self, p):
         self._toclean.append(p)
+
+    def keep(self, p):
+        self._keep.append(p)
 
     @property
     def variables(self):
@@ -1164,7 +1197,7 @@ cdef class Goal(object):
 
     @classmethod
     def forall(cls, variables, strategy=None, assign=Assignation.indomain()):
-        cdef long length
+        cdef long length = 0
         cdef long* pt_vars
         cdef array.array _vars
 
@@ -1182,7 +1215,6 @@ cdef class Goal(object):
         if isinstance(variables, collections.Iterable):
             variables = list(variables)
             length = len(variables)
-            toclean = []
 
             for v in variables:
                 msg = "All arguments must be variables"
@@ -1195,6 +1227,9 @@ cdef class Goal(object):
                 if isinstance(strategy, str):
                     strategy = eval("Strategy." + strategy + "()")
 
+                if isinstance(strategy, types.FunctionType):
+                    strategy = Strategy.custom(strategy)
+
                 msg = "The second argument is a strategy"
                 assert isinstance(strategy, Strategy), msg
                 c_strategy = strategy.__getval()
@@ -1204,6 +1239,7 @@ cdef class Goal(object):
 
             res = cls(goals_forall(c_strategy, pt_vars, length, c_assign), __SECRET__)
             res.variables = [variables]
+            res.keep([strategy, assign])
             return res
 
         raise TypeError("The argument must be iterable")
@@ -1291,6 +1327,9 @@ cdef void on_solution_callback(int i, int n):
 
 cdef void on_assign_callback(int i, long v):
     __ml_callbacks[i](v)
+
+cdef int strategy_cb(int i, long v1, long v2):
+    return __ml_callbacks[i](v1, v2)
 
 def interrupt():
     fcl_interrupt()

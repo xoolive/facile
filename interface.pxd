@@ -51,6 +51,7 @@ cdef extern from "interface.h":
     long strategy_minmin()
     long strategy_mindomain()
     long strategy_queen()
+    long strategy_callback(int)
 
     long goals_success()
     long goals_fail()
@@ -75,5 +76,6 @@ cdef extern from "interface.h":
     void set_atomic_callback(int, void(*fct)(int))
     void set_onsol_callback(int, void(*fct)(int, int))
     void set_assign_callback(int, void(*fct)(int, long))
+    void set_strategy_callback(int i, int(*fct)(int, long, long))
 
     long parse_array(long, long*)

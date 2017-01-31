@@ -51,6 +51,7 @@ value* cstr_boolean(value*);
 value* strategy_minmin();
 value* strategy_mindomain();
 value* strategy_queen();
+value* strategy_callback(int);
 
 value* goals_success();
 value* goals_fail();
@@ -75,5 +76,6 @@ void set_backtrack_callback(int i, void(*fct)(int, int));
 void set_atomic_callback(int, void(*fct)(int));
 void set_onsol_callback(int i, void(*fct)(int, int));
 void set_assign_callback(int i, void(*fct)(int, value*));
+void set_strategy_callback(int i, int(*fct)(int, value*, value*));
 
 value* parse_array(value*, long*);

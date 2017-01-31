@@ -401,6 +401,14 @@ value* strategy_minmin()
   return fcl_wrap(*closure);
 }
 
+value* strategy_callback(int i)
+{
+  value res;
+  CLOSURE("Strategy.callback");
+  res = caml_callback(*closure, Val_int(i));
+  return fcl_wrap(res);
+}
+
 value* goals_success()
 {
   CLOSURE("Goals.success");
@@ -532,6 +540,10 @@ void set_assign_callback(int i, void(*fct)(int, value*)) {
   callbacks[i] = fct;
 }
 
+void set_strategy_callback(int i, int(*fct)(int, value*, value*)) {
+  callbacks[i] = fct;
+}
+
 value ml_backtrack_callback(value v_i, value v_n)
 {
   CAMLparam2(v_i, v_n);
@@ -543,7 +555,7 @@ value ml_backtrack_callback(value v_i, value v_n)
 value ml_atomic_callback(value v_i)
 {
   CAMLparam1(v_i);
-  void (*c_atomic_callback)(int) = (void (*)()) callbacks[Int_val(v_i)];
+  void (*c_atomic_callback)(int) = (void (*)(int)) callbacks[Int_val(v_i)];
   c_atomic_callback(Int_val(v_i));
   CAMLreturn(Val_unit);
 }
@@ -562,6 +574,14 @@ value ml_assign_atomic(value v_i, value v)
   void (*c_assign_callback)(int, value*) = (void (*)(int, value*)) callbacks[Int_val(v_i)];
   c_assign_callback(Int_val(v_i), fcl_wrap(v)); // fcl_wrap actually useless but for compatibility reason!
   CAMLreturn(Val_unit);
+}
+
+value ml_strategy_cb(value v_i, value v1, value v2)
+{
+  CAMLparam3(v_i, v1, v2);
+  int (*c_strategy)(int, value*, value*) = (int (*)(int, value*, value*)) callbacks[Int_val(v_i)];
+  int res = c_strategy(Int_val(v_i), fcl_wrap(v1), fcl_wrap(v2));
+  CAMLreturn(Val_bool(res));
 }
 
 void fcl_interrupt(void)

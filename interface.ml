@@ -10,6 +10,8 @@ external on_backtrack: int -> int -> unit = "ml_backtrack_callback"
 external goal_atomic: int -> unit -> unit = "ml_atomic_callback"
 external on_solution: int -> int -> unit = "ml_onsol_callback"
 external assign_atomic: int -> Facile.Var.Fd.t -> unit = "ml_assign_atomic"
+external strategy_cb: int -> Facile.Var.Fd.t -> Facile.Var.Fd.t -> bool =
+  "ml_strategy_cb"
 
 let _ =
 
@@ -121,5 +123,8 @@ let _ =
   Callback.register "Strategy.queen"
     (let h a = (Fd.size a, Fd.min a) in
       Goals.Array.choose_index (fun a1 a2 -> h a1 < h a2));
+
+  Callback.register "Strategy.callback"
+    (fun i -> Goals.Array.choose_index (strategy_cb i));
 
   ()

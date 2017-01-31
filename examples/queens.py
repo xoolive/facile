@@ -1,6 +1,12 @@
 from facile import variable, constraint, alldifferent, solve
 
 
+def queen_strategy(v1, v2):
+    d1 = v1.domain()
+    d2 = v2.domain()
+    return ((len(d1), d1[0]) < (len(d2), d2[0]))
+
+
 def n_queen(n):
     """Solves the n-queen problem. """
 
@@ -15,7 +21,7 @@ def n_queen(n):
     constraint(alldifferent(queens[i] - i for i in range(n)))
     constraint(alldifferent(queens[i] + i for i in range(n)))
 
-    return solve(queens, strategy="queen", backtrack=True)
+    return solve(queens, strategy=queen_strategy, backtrack=True)
 
 
 def print_line(val, n):
