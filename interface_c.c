@@ -453,44 +453,44 @@ value* goals_unify(value* v, int i)
   return fcl_wrap(a);
 }
 
-value* assignation_indomain()
+value* assignment_indomain()
 {
-  CLOSURE("Assignation.indomain");
+  CLOSURE("Assignment.indomain");
   return fcl_wrap(*closure);
 }
 
-value* assignation_assign()
+value* assignment_assign()
 {
-  CLOSURE("Assignation.assign");
+  CLOSURE("Assignment.assign");
   return fcl_wrap(*closure);
 }
 
-value* assignation_dichotomic()
+value* assignment_dichotomic()
 {
-  CLOSURE("Assignation.dichotomic");
+  CLOSURE("Assignment.dichotomic");
   return fcl_wrap(*closure);
 }
 
-value* assignation_atomic(int i)
+value* assignment_atomic(int i)
 {
   value a;
-  CLOSURE("Assignation.atomic");
+  CLOSURE("Assignment.atomic");
   a = caml_callback(*closure, Val_int(i));
   return fcl_wrap(a);
 }
 
-value* assignation_and(value* v1, value* v2)
+value* assignment_and(value* v1, value* v2)
 {
   value a;
-  CLOSURE("Assignation.and");
+  CLOSURE("Assignment.and");
   a = caml_callback2(*closure, *v1, *v2);
   return fcl_wrap(a);
 }
 
-value* assignation_or(value* v1, value* v2)
+value* assignment_or(value* v1, value* v2)
 {
   value a;
-  CLOSURE("Assignation.or");
+  CLOSURE("Assignment.or");
   a = caml_callback2(*closure, *v1, *v2);
   return fcl_wrap(a);
 }

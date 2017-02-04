@@ -63,12 +63,12 @@ value* goals_forall(value*, value**, long, value*);
 value* goals_minimize(value* goal, value* expr, int i);
 int goals_solve(int, value*);
 
-value* assignation_indomain();
-value* assignation_assign();
-value* assignation_dichotomic();
-value* assignation_atomic(int i);
-value* assignation_and(value*, value*);
-value* assignation_or(value*, value*);
+value* assignment_indomain();
+value* assignment_assign();
+value* assignment_dichotomic();
+value* assignment_atomic(int i);
+value* assignment_and(value*, value*);
+value* assignment_or(value*, value*);
 
 void fcl_interrupt(void);
 

@@ -63,12 +63,12 @@ cdef extern from "interface.h":
     long goals_minimize(long goal, long expr, int i)
     int goals_solve(int, long)
 
-    long assignation_indomain()
-    long assignation_assign()
-    long assignation_dichotomic()
-    long assignation_atomic(int i)
-    long assignation_and(long, long)
-    long assignation_or(long, long)
+    long assignment_indomain()
+    long assignment_assign()
+    long assignment_dichotomic()
+    long assignment_atomic(int i)
+    long assignment_and(long, long)
+    long assignment_or(long, long)
 
     void fcl_interrupt()
 

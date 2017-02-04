@@ -1036,7 +1036,7 @@ cdef class Strategy(object):
         return strategy
 
 
-cdef class Assignation(object):
+cdef class Assignment(object):
 
     cdef long mlvalue
     cdef object _toclean
@@ -1061,15 +1061,15 @@ cdef class Assignation(object):
 
     @classmethod
     def indomain(cls):
-        return cls(assignation_indomain(), __SECRET__)
+        return cls(assignment_indomain(), __SECRET__)
 
     @classmethod
     def assign(cls):
-        return cls(assignation_assign(), __SECRET__)
+        return cls(assignment_assign(), __SECRET__)
 
     @classmethod
     def dichotomic(cls):
-        return cls(assignation_dichotomic(), __SECRET__)
+        return cls(assignment_dichotomic(), __SECRET__)
 
     @classmethod
     def atomic(cls, f):
@@ -1079,25 +1079,25 @@ cdef class Assignation(object):
             f(variable)
         __ml_callbacks[atomic_callback.id] = atomic_callback
         set_assign_callback(atomic_callback.id, on_assign_callback)
-        res = cls(assignation_atomic(atomic_callback.id), __SECRET__)
+        res = cls(assignment_atomic(atomic_callback.id), __SECRET__)
         res.toclean(atomic_callback.id)
         return res
 
-    def __and__(Assignation c1, Assignation c2):
-        """`&` (and) operator on assignation.
+    def __and__(Assignment c1, Assignment c2):
+        """`&` (and) operator on assignment.
 
         """
-        res = Assignation(assignation_and(c1.__getval(), c2.__getval()), __SECRET__)
+        res = Assignment(assignment_and(c1.__getval(), c2.__getval()), __SECRET__)
         res._toclean = c1._toclean + c2._toclean
         c1._toclean.clear()
         c2._toclean.clear()
         return res
 
-    def __or__(Assignation c1, Assignation c2):
-        """`|` (or) operator on assignation.
+    def __or__(Assignment c1, Assignment c2):
+        """`|` (or) operator on assignment.
 
         """
-        res = Assignation(assignation_or(c1.__getval(), c2.__getval()), __SECRET__)
+        res = Assignment(assignment_or(c1.__getval(), c2.__getval()), __SECRET__)
         res._toclean = c1._toclean + c2._toclean
         c1._toclean.clear()
         c2._toclean.clear()
@@ -1196,7 +1196,7 @@ cdef class Goal(object):
         return res
 
     @classmethod
-    def forall(cls, variables, strategy=None, assign=Assignation.indomain()):
+    def forall(cls, variables, strategy=None, assign=Assignment.indomain()):
         cdef long length = 0
         cdef long* pt_vars
         cdef array.array _vars
@@ -1205,10 +1205,10 @@ cdef class Goal(object):
         cdef long c_strategy = 0 # default to no strategy
 
         if isinstance(assign, str):
-            assign = eval("Assignation." + assign + "()")
+            assign = eval("Assignment." + assign + "()")
 
-        if not isinstance(assign, Assignation):
-            raise ValueError("assign must refer to a valid Assignation")
+        if not isinstance(assign, Assignment):
+            raise ValueError("assign must refer to a valid Assignment")
 
         c_assign = assign.__getval() # default to indomain
 

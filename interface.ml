@@ -94,19 +94,19 @@ let _ =
 
   (* Generic goal creation on variables *)
 
-  Callback.register "Assignation.indomain" Goals.indomain;
+  Callback.register "Assignment.indomain" Goals.indomain;
 
-  Callback.register "Assignation.assign" (fun v -> Goals.assign v);
+  Callback.register "Assignment.assign" (fun v -> Goals.assign v);
 
-  Callback.register "Assignation.dichotomic" Goals.dichotomic;
+  Callback.register "Assignment.dichotomic" Goals.dichotomic;
 
-  Callback.register "Assignation.atomic"
+  Callback.register "Assignment.atomic"
     (fun i -> fun v -> Goals.atomic (fun () -> assign_atomic i v));
 
-  Callback.register "Assignation.or"
+  Callback.register "Assignment.or"
     (fun a1 a2 -> (fun (v: Facile.Var.Fd.t) -> (a1 v) ||~ (a2 v)));
 
-  Callback.register "Assignation.and"
+  Callback.register "Assignment.and"
     (fun a1 a2 -> (fun (v: Facile.Var.Fd.t) -> (a1 v) &&~ (a2 v)));
 
 
