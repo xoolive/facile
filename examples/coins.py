@@ -21,7 +21,7 @@ def coins(values, maxval):
 
     total = variable(sum(nb_min_coins))
 
-    return minimize(nb_min_coins + [total], total)
+    return minimize(nb_min_coins, total)
 
 
 if __name__ == "__main__":
