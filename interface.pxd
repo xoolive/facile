@@ -24,6 +24,8 @@ cdef extern from "interface.h":
     long arith_add(long, long)
     long arith_sub(long, long)
     long arith_mul(long, long)
+    long arith_div(long, long)
+    long arith_mod(long, long)
     long arith_abs(long)
 
     long cstr_lt(long, long)

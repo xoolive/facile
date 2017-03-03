@@ -20,6 +20,16 @@ def get_long_description():
     except ImportError:
         return ""
 
+# from distutils._msvccompiler import MSVCCompiler
+# class FlexlinkCompiler(MSVCCompiler):
+#     def initialize(self):
+#         MSVCCompiler.initialize(self)
+#         print("********* new linker")
+#         self.linker = self.find_exe("flexlink.exe")
+# c = FlexlinkCompiler
+# from distutils.ccompiler import new_compiler
+# new_compiler(plat="nt", compiler=c)
+
 
 def ocaml_config(prefix="", bpath=None):
 
@@ -68,11 +78,10 @@ if sys.platform != "win32":
     INCLUDE = [ocamlpath]
 else:
     # cross-compiled so whatever: fill everything with nonsense...
-    INCLUDE = ""
     compiler = ""
     compileargs = [""]  # ["-g"]
-    mlobject = ""
-    asmrunlib = ""
+    ocamlpath, mlobject, asmrunlib = ocaml_config()
+    INCLUDE = [ocamlpath]
 
 try:
     os.environ['CFLAGS']

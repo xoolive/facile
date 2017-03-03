@@ -193,6 +193,22 @@ value* arith_mul(value* val1, value* val2)
   return fcl_wrap(a);
 }
 
+value* arith_div(value* val1, value* val2)
+{
+  value a;
+  CLOSURE("arith_div");
+  a = caml_callback2(*closure, *val1, *val2);
+  return fcl_wrap(a);
+}
+
+value* arith_mod(value* val1, value* val2)
+{
+  value a;
+  CLOSURE("arith_mod");
+  a = caml_callback2(*closure, *val1, *val2);
+  return fcl_wrap(a);
+}
+
 value* arith_abs(value* val1)
 {
   value a;

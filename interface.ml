@@ -50,6 +50,8 @@ let _ =
   Callback.register "arith_add" ( +~ );
   Callback.register "arith_sub" ( -~ );
   Callback.register "arith_mul" ( *~ );
+  Callback.register "arith_div" ( /~ );
+  Callback.register "arith_mod" ( %~ );
   Callback.register "arith_abs" Arith.abs;
 
   Callback.register "FdArray.get" FdArray.get;

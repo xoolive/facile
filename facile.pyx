@@ -395,6 +395,36 @@ cdef class Variable(object):
             return Arith(c, __SECRET__)
         return NotImplemented
 
+    def __floordiv__(a, b):
+        if isinstance(a, numbers.Integral):
+            c = arith_div(i2e(a), fd2e(b.__getval()))
+            return Arith(c, __SECRET__)
+        if isinstance(b, Arith):
+            c = arith_div(fd2e(a.__getval()), b.__getval())
+            return Arith(c, __SECRET__)
+        if isinstance(b, Variable):
+            c = arith_div(fd2e(a.__getval()), fd2e(b.__getval()))
+            return Arith(c, __SECRET__)
+        if isinstance(b, numbers.Integral):
+            c = arith_div(fd2e(a.__getval()), i2e(b))
+            return Arith(c, __SECRET__)
+        return NotImplemented
+
+    def __mod__(a, b):
+        if isinstance(a, numbers.Integral):
+            c = arith_mod(i2e(a), fd2e(b.__getval()))
+            return Arith(c, __SECRET__)
+        if isinstance(b, Arith):
+            c = arith_mod(fd2e(a.__getval()), b.__getval())
+            return Arith(c, __SECRET__)
+        if isinstance(b, Variable):
+            c = arith_mod(fd2e(a.__getval()), fd2e(b.__getval()))
+            return Arith(c, __SECRET__)
+        if isinstance(b, numbers.Integral):
+            c = arith_mod(fd2e(a.__getval()), i2e(b))
+            return Arith(c, __SECRET__)
+        return NotImplemented
+
     def __pos__(a):
         return a
 
@@ -588,6 +618,36 @@ cdef class Arith(object):
             return Arith(c, __SECRET__)
         return NotImplemented
 
+    def __floordiv__(a, b):
+        if isinstance(a, numbers.Integral):
+            c = arith_div(i2e(a), b.__getval())
+            return Arith(c, __SECRET__)
+        if isinstance(b, Arith):
+            c = arith_div(a.__getval(), b.__getval())
+            return Arith(c, __SECRET__)
+        if isinstance(b, Variable):
+            c = arith_div(a.__getval(), fd2e(b.__getval()))
+            return Arith(c, __SECRET__)
+        if isinstance(b, numbers.Integral):
+            c = arith_div(a.__getval(), i2e(b))
+            return Arith(c, __SECRET__)
+        return NotImplemented
+
+    def __mod__(a, b):
+        if isinstance(a, numbers.Integral):
+            c = arith_mod(i2e(a), b.__getval())
+            return Arith(c, __SECRET__)
+        if isinstance(b, Arith):
+            c = arith_mod(a.__getval(), b.__getval())
+            return Arith(c, __SECRET__)
+        if isinstance(b, Variable):
+            c = arith_mod(a.__getval(), fd2e(b.__getval()))
+            return Arith(c, __SECRET__)
+        if isinstance(b, numbers.Integral):
+            c = arith_mod(a.__getval(), i2e(b))
+            return Arith(c, __SECRET__)
+        return NotImplemented
+
     def __pos__(a):
         return a
 
@@ -597,6 +657,10 @@ cdef class Arith(object):
     def __abs__(a):
         c = arith_abs(a.__getval())
         return Arith(c, __SECRET__)
+
+    def value(self):
+        v = Variable.create(self)
+        return self.value()
 
 cdef class Cstr(object):
     """The Cstr is a way to build relations on expressions or variables.
@@ -813,7 +877,7 @@ cdef class Array(object):
         return self.length
 
     def __iter__(self):
-        cdef array.array values = array.array('L', range(self.length))
+        cdef array.array values = array.array('Q', range(self.length))
         cdef long* pt_vals = values.data.as_longs
         fdarray_read(self.mlvalue, pt_vals)
         for i in range(self.length):
@@ -968,8 +1032,8 @@ cdef class Array(object):
             cards.append(c.__getval())
             values.append(v)
 
-        cdef array.array _cards = array.array('L', cards)
-        cdef array.array _values = array.array('L', values)
+        cdef array.array _cards = array.array('Q', cards)
+        cdef array.array _values = array.array('Q', values)
         cdef long* pt_cards = _cards.data.as_longs
         cdef long* pt_values = _values.data.as_longs
 
@@ -1215,12 +1279,11 @@ cdef class Goal(object):
         if isinstance(variables, collections.Iterable):
             variables = list(variables)
             length = len(variables)
-
             for v in variables:
                 msg = "All arguments must be variables"
                 assert isinstance(v, Variable), msg
 
-            _vars = array.array('L', [v.__getval() for v in variables])
+            _vars = array.array('Q', [v.__getval() for v in variables])
             pt_vars = _vars.data.as_longs
 
             if strategy is not None:
@@ -1236,7 +1299,6 @@ cdef class Goal(object):
 
             if length < 1:
                 raise TypeError("The argument list must be non empty")
-
             res = cls(goals_forall(c_strategy, pt_vars, length, c_assign), __SECRET__)
             res.variables = [variables]
             res.keep([strategy, assign])
@@ -1570,7 +1632,7 @@ def alldifferent(variables, lazy=False):
         length = len(variables)
         if length < 2:
             raise TypeError("The argument list must be non empty")
-        _vars = array.array('L', range(length))
+        _vars = array.array('Q', range(length))
         for i in range(length):
             if isinstance(variables[i], Variable):
                 _vars[i] = variables[i].__getval()
@@ -1643,7 +1705,7 @@ def array(variables):
         length = len(variables)
         if length < 1:
             raise TypeError("The argument list must be non-empty")
-        _vars = array.array('L', range(length))
+        _vars = array.array('Q', range(length))
         for i in range(length):
             if isinstance(variables[i], Variable):
                 _vars[i] = variables[i].__getval()

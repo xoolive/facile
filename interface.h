@@ -24,6 +24,8 @@ value* i2e(int in);
 value* arith_add(value*, value*);
 value* arith_sub(value*, value*);
 value* arith_mul(value*, value*);
+value* arith_div(value*, value*);
+value* arith_mod(value*, value*);
 value* arith_abs(value*);
 
 value* cstr_lt(value* in1, value* in2);
