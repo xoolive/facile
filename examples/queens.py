@@ -1,10 +1,17 @@
 from facile import variable, constraint, alldifferent, solve
 
 
-def queen_strategy(v1, v2):
-    d1 = v1.domain()
-    d2 = v2.domain()
-    return ((len(d1), d1[0]) < (len(d2), d2[0]))
+def queen_strategy(queens):
+    """Implements the optimal strategy for n-queen.
+
+    The strategy selects first the queen with the smallest domain;
+    then the smallest min value in the domain. """
+    if len([q.value() for q in queens if q.value() is None]) == 0:
+        return -1
+    else:
+        min_ = min((len(q.domain()), q.min(), i)
+                   for i, q in enumerate(queens) if q.value() is None)
+        return min_[-1]  # argmin is the last element in the tuple
 
 
 def n_queen(n):

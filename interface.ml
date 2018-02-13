@@ -10,14 +10,24 @@ external on_backtrack: int -> int -> unit = "ml_backtrack_callback"
 external goal_atomic: int -> unit -> unit = "ml_atomic_callback"
 external on_solution: int -> int -> unit = "ml_onsol_callback"
 external assign_atomic: int -> Facile.Var.Fd.t -> unit = "ml_assign_atomic"
-external strategy_cb: int -> Facile.Var.Fd.t -> Facile.Var.Fd.t -> bool =
-  "ml_strategy_cb"
+external strategy_cb: int -> Facile.Var.Fd.t array -> int = "ml_strategy_cb"
+external update_cb: int -> int -> int = "ml_update_cb"
+external delay_cb: int -> Facile.Cstr.t -> unit = "ml_delay_cb"
+
+external selector_select: int -> 'a array -> int = "ml_selector_select"
+external selector_labelling: int -> int -> Facile.Goals.t =
+  "ml_selector_labelling"
+external goal_creator: int -> unit -> Facile.Goals.t =
+  "ml_goal_creator"
 
 let _ =
 
   (**
    * All callback registrations
    *)
+
+  Callback.register_exception "Facile.Stak.Fail"
+    (Facile.Stak.Fail "Python callback");
 
   (* Variable instantiation *)
 
@@ -26,6 +36,11 @@ let _ =
   (* Retrocompatibility *)
   Callback.register "Fd.name" (fun v -> try Fd.name v with Failure _ -> "");
   Callback.register "Fd.is_bound" Fd.is_bound;
+  Callback.register "Fd.min" Fd.min;
+  Callback.register "Fd.max" Fd.max;
+  Callback.register "Fd.refine" Fd.refine;
+  Callback.register "Fd.delay" (fun event_list var cstr ->
+      Fd.delay (Array.to_list event_list) var cstr);
 
   (* Domains *)
 
@@ -33,6 +48,15 @@ let _ =
   Callback.register "Domain.size" Domain.size;
   Callback.register "Domain.values" Domain.values;
   Callback.register "Domain.create" (fun a -> Domain.create (Array.to_list a));
+  Callback.register "Domain.remove_low" Domain.remove_low;
+  Callback.register "Domain.remove_up" Domain.remove_up;
+
+  (* Events *)
+
+  Callback.register "Fd.on_max" Fd.on_max;
+  Callback.register "Fd.on_min" Fd.on_min;
+  Callback.register "Fd.on_refine" Fd.on_refine;
+  Callback.register "Fd.on_subst" Fd.on_subst;
 
   (* Arithmetic *)
 
@@ -76,23 +100,48 @@ let _ =
   Callback.register "Sorting.sort" Sorting.sort;
   Callback.register "Gcc.cstr" (Gcc.cstr ~level:Gcc.High);
 
-  (* Goal expression *)
+  Callback.register "Cstr.create" (fun update delay ->
+      let update_stak x =
+        match update_cb update x with
+        | 0 -> false
+        | 1 -> true
+        | _ -> raise (Stak.Fail "Python update callback") in
+      Cstr.create ~priority:Cstr.later update_stak (delay_cb delay)
+    );
 
-  Callback.register "Fcl.interrupt"
-    (fun _ -> Stak.fail "Manual interruption from Python interface");
+  (* Goal expression *)
 
   Callback.register "Goals.solve"
     (fun i x -> Goals.solve ~control:(on_backtrack i) x);
 
+  Callback.register "Goals.create"
+    (fun x -> Goals.create (goal_creator x) ());
   Callback.register "Goals.atomic" (fun x -> Goals.atomic (goal_atomic x));
   Callback.register "Goals.unify" Goals.unify;
   Callback.register "Goals.success" Goals.success;
   Callback.register "Goals.fail" Goals.fail;
   Callback.register "Goals.and" (fun a b -> a &&~ b);
   Callback.register "Goals.or" (fun a b -> a ||~ b);
-  Callback.register "Goals.forall" Goals.Array.forall ;
+  Callback.register "Goals.forall" Goals.Array.forall;
   Callback.register "Goals.minimize"
-    (fun goal criteria i -> Goals.minimize goal criteria (on_solution i));
+    (fun mode goal criteria i ->
+       Goals.minimize ~mode goal criteria (on_solution i));
+
+  Callback.register "Goals.continue" Goals.Continue;
+  Callback.register "Goals.restart" Goals.Restart;
+  Callback.register "Goals.dicho" Goals.Dicho;
+
+
+  (* Selectors *)
+
+  Callback.register "Goals.selector.labelling"
+    (fun i -> selector_labelling i);
+
+  Callback.register "Goals.selector.select"
+    (fun i a -> let p = selector_select i a in
+      match p with
+      -1 -> raise Not_found
+      | _ -> p);
 
   (* Generic goal creation on variables *)
 
@@ -126,7 +175,19 @@ let _ =
     (let h a = (Fd.size a, Fd.min a) in
       Goals.Array.choose_index (fun a1 a2 -> h a1 < h a2));
 
-  Callback.register "Strategy.callback"
-    (fun i -> Goals.Array.choose_index (strategy_cb i));
+  Callback.register "Strategy.callback" (fun i a ->
+      match strategy_cb i a with
+      | -1 -> raise Not_found
+      | n -> n);
+
+
+  (* Stack references *)
+
+  Callback.register "Stak.ref" (fun (b: bool) -> Facile.Stak.ref b);
+  Callback.register "Stak.set" (fun r (b: bool) -> Facile.Stak.set r b);
+  Callback.register "Stak.get"
+    (fun (r: bool Facile.Stak.ref) -> Facile.Stak.get r);
+
+  Callback.register "Stak.trail" (fun i -> (Stak.trail (goal_atomic i)));
 
   ()

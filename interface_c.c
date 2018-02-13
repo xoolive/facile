@@ -3,6 +3,7 @@
 #include <caml/callback.h>
 #include <caml/alloc.h>
 #include <caml/memory.h>
+#include <caml/fail.h>
 #include <stdio.h>
 
 #include "interface.h"
@@ -24,11 +25,16 @@ static value Val_some( value v )
   CAMLreturn( some );
 }
 
-void* callbacks[1024];
+void* callbacks[204800];
 
 void init() {
   static char* argv[2] = { "python", NULL };
   caml_startup(argv);
+}
+
+void stak_fail() {
+  CLOSURE("Facile.Stak.Fail");
+  caml_raise_with_string(*closure, "Python closure");
 }
 
 value* fcl_wrap(value v)
@@ -66,6 +72,42 @@ char* val_name(value* in)
   CLOSURE ("Fd.name");
   // dangerous !! ^^
   return String_val(caml_callback(*closure, *in));
+}
+
+int val_min(value* in)
+{
+  value a;
+  CLOSURE("Fd.min");
+  a = caml_callback(*closure, *in);
+  return Int_val(a);
+}
+
+int val_max(value* in)
+{
+  value a;
+  CLOSURE("Fd.max");
+  a = caml_callback(*closure, *in);
+  return Int_val(a);
+}
+
+int val_refine(value* val, value* domain)
+{
+  value v;
+  CLOSURE("Fd.refine");
+  v = caml_callback2_exn(*closure, *val, *domain);
+  return Is_exception_result(v);
+}
+
+void val_delay(value* val, value** events, int len, value* cstr)
+{
+  value array;
+  size_t i = 0;
+  CLOSURE("Fd.delay")
+  array = caml_alloc(len, 0);
+  for(; i < len; ++i)
+    Store_field(array, i, events[i][0]);
+  caml_callback3(*closure, array, *val, *cstr);
+  return;
 }
 
 void val_minmax(value* in, int* min, int* max)
@@ -127,6 +169,46 @@ value* domain_create(int* val, long len)
     Store_field(array, i, Val_int(val[i]));
   v = caml_callback(*closure, array);
   return fcl_wrap(v);
+}
+
+value* domain_removelow(int lb, value* domain)
+{
+  value v;
+  CLOSURE("Domain.remove_low");
+  v = caml_callback2(*closure, Val_int(lb), *domain);
+  return fcl_wrap(v);
+}
+
+value* domain_removeup(int ub, value* domain)
+{
+  value v;
+  CLOSURE("Domain.remove_up");
+  v = caml_callback2(*closure, Val_int(ub), *domain);
+  return fcl_wrap(v);
+}
+
+value* fd_onmax()
+{
+  CLOSURE("Fd.on_max");
+  return closure;
+}
+
+value* fd_onmin()
+{
+  CLOSURE("Fd.on_min");
+  return closure;
+}
+
+value* fd_onrefine()
+{
+  CLOSURE("Fd.on_refine");
+  return closure;
+}
+
+value* fd_onsubst()
+{
+  CLOSURE("Fd.on_subst");
+  return closure;
 }
 
 value* interval_ismember(value* in, int inf, int sup)
@@ -354,6 +436,14 @@ value* gcc_cstr(value* array, value** cards, long* values, long len)
   return fcl_wrap(a);
 }
 
+value* cstr_create(int update, int delay)
+{
+  value a;
+  CLOSURE("Cstr.create");
+  a = caml_callback2(*closure, Val_int(update), Val_int(delay));
+  return fcl_wrap(a);
+}
+
 value* fdarray_create(value** val, long len)
 {
   value array;
@@ -461,6 +551,14 @@ value* goals_atomic(int i)
   return fcl_wrap(a);
 }
 
+value* goals_create(int i)
+{
+  value a;
+  CLOSURE("Goals.create");
+  a = caml_callback(*closure, Val_int(i));
+  return fcl_wrap(a);
+}
+
 value* goals_unify(value* v, int i)
 {
   value a;
@@ -526,11 +624,64 @@ value* goals_forall(value* s, value** val, long len, value* labelling)
   return fcl_wrap(res);
 }
 
-value* goals_minimize(value* goal, value* expr, int i)
+value* goals_selector_labelling(int i) {
+  value v;
+  CLOSURE("Goals.selector.labelling");
+  v = caml_callback(*closure, Val_int(i));
+  return fcl_wrap(v);
+}
+
+value* goals_selector_select(int i) {
+  value v;
+  CLOSURE("Goals.selector.select");
+  v = caml_callback(*closure, Val_int(i));
+  return fcl_wrap(v);
+}
+
+value* goals_selector_forall(long sel, long len, int labelling)
+{
+  value array;
+  value res;
+  value select = Val_none;
+  size_t i = 0;
+  CLOSURE("Goals.forall");
+  array = caml_alloc(len, 0);
+  for(; i < (size_t) len; ++i)
+    Store_field(array, i, Val_int(i));
+/*   value *s = goals_selector_select(sel); */
+  if (sel != -1)
+    select = Val_some(*goals_selector_select(sel));
+  value *l = goals_selector_labelling(labelling);
+  res = caml_callback3(*closure, select, *l, array);
+/*   fcl_destroy(s); */
+  fcl_destroy(l);
+  return fcl_wrap(res);
+}
+
+value* mode_continue()
+{
+  CLOSURE("Goals.continue");
+  return closure;
+}
+
+value* mode_restart()
+{
+  CLOSURE("Goals.restart");
+  return closure;
+}
+
+value* mode_dicho()
+{
+  CLOSURE("Goals.dicho");
+  return closure;
+}
+
+value* goals_minimize(value* mode, value* goal, value* expr, int i)
 {
   value res;
   CLOSURE("Goals.minimize");
-  res = caml_callback3(*closure, *goal, *expr, Val_int(i));
+  value array[4] = { *mode, *goal, *expr, Val_int(i) };
+  res = caml_callbackN(*closure, 4, array );
   return fcl_wrap(res);
 }
 
@@ -541,23 +692,43 @@ int goals_solve(int i, value* goal)
 }
 
 void set_backtrack_callback(int i, void(*fct)(int, int)) {
-  callbacks[i] = fct;
+  callbacks[i] = (void*) fct;
 }
 
-void set_atomic_callback(int i, void(*fct)(int)) {
-  callbacks[i] = fct;
+void set_atomic_callback(int i, int(*fct)(int)) {
+  callbacks[i] = (void*) fct;
 }
 
 void set_onsol_callback(int i, void(*fct)(int, int)) {
-  callbacks[i] = fct;
+  callbacks[i] = (void*) fct;
 }
 
 void set_assign_callback(int i, void(*fct)(int, value*)) {
-  callbacks[i] = fct;
+  callbacks[i] = (void*) fct;
 }
 
-void set_strategy_callback(int i, int(*fct)(int, value*, value*)) {
-  callbacks[i] = fct;
+void set_strategy_callback(int i, int(*fct)(int, value**, int)) {
+  callbacks[i] = (void*) fct;
+}
+
+void set_update_callback(int i, int (*fct)(int, int)) {
+  callbacks[i] = (void*) fct;
+}
+
+void set_delay_callback(int i, void (*fct)(int, value*)) {
+  callbacks[i] = (void*) fct;
+}
+
+void set_selector_select_callback(int i, int (*fct)(int)) {
+  callbacks[i] = (void*) fct;
+}
+
+void set_selector_labelling_callback(int i, long(*fct)(int, int)) {
+  callbacks[i] = (void*) fct;
+}
+
+void set_goal_creator_callback(int i, long(*fct)(int)) {
+  callbacks[i] = (void*) fct;
 }
 
 value ml_backtrack_callback(value v_i, value v_n)
@@ -568,11 +739,12 @@ value ml_backtrack_callback(value v_i, value v_n)
   CAMLreturn(Val_unit);
 }
 
-value ml_atomic_callback(value v_i)
+value ml_atomic_callback(value v_i, value unit)
 {
-  CAMLparam1(v_i);
-  void (*c_atomic_callback)(int) = (void (*)(int)) callbacks[Int_val(v_i)];
-  c_atomic_callback(Int_val(v_i));
+  CAMLparam2(v_i, unit);
+  int (*c_atomic_callback)(int) = (int (*)(int)) callbacks[Int_val(v_i)];
+  int x = c_atomic_callback(Int_val(v_i));
+  if (x == -1) stak_fail();
   CAMLreturn(Val_unit);
 }
 
@@ -592,18 +764,89 @@ value ml_assign_atomic(value v_i, value v)
   CAMLreturn(Val_unit);
 }
 
-value ml_strategy_cb(value v_i, value v1, value v2)
+value ml_strategy_cb(value v_i, value v1) // Var.Fd.t array
 {
-  CAMLparam3(v_i, v1, v2);
-  int (*c_strategy)(int, value*, value*) = (int (*)(int, value*, value*)) callbacks[Int_val(v_i)];
-  int res = c_strategy(Int_val(v_i), fcl_wrap(v1), fcl_wrap(v2));
-  CAMLreturn(Val_bool(res));
+  CAMLparam2(v_i, v1);
+  int len = Wosize_val(v1);
+  int (*cb_strategy)(int, value**, int) =
+    (int (*)(int, value**, int)) callbacks[Int_val(v_i)];
+
+  value** v2 = (value**) malloc(len*sizeof(value*));
+
+  for (int i = 0; i<len;++i)
+    v2[i] = fcl_wrap(Field(v1, i));
+  int res = cb_strategy(Int_val(v_i), v2, len);
+
+  free(v2);
+  CAMLreturn(Val_int(res));
 }
 
-void fcl_interrupt(void)
+value ml_update_cb(value v_i, value v_)
 {
-  CLOSURE("Fcl.interrupt");
-  caml_callback(*closure, Val_unit);
+  CAMLparam2(v_i, v_);
+  int (*update_cb)(int, int) = (int (*)(int, int)) callbacks[Int_val(v_i)];
+  int res = update_cb(Int_val(v_i), Int_val(v_));
+  CAMLreturn(Val_int(res));
+}
+
+value ml_delay_cb(value v_i, value v_c)
+{
+  CAMLparam2(v_i, v_c);
+  void (*delay_cb)(int, value*) = (void (*)(int, value*)) callbacks[Int_val(v_i)];
+  delay_cb(Int_val(v_i), fcl_wrap(v_c));
+  CAMLreturn(Val_unit);
+}
+
+value ml_selector_select(value v_i, value v_)
+{
+  CAMLparam2(v_i, v_);
+  int (*select)(int) = (int (*)(int)) callbacks[Int_val(v_i)];
+  int res = select(Int_val(v_i));
+  CAMLreturn(Val_int(res));
+}
+
+value ml_selector_labelling(value v_i, value v_l)
+{
+  CAMLparam2(v_i, v_l);
+  value* (*labelling)(int, int) =
+    (long (*)(int, int)) callbacks[Int_val(v_i)];
+  value* res = (value*) labelling(Int_val(v_i), Int_val(v_l));
+  CAMLreturn(*res);
+}
+
+value ml_goal_creator(value v_i, value v_unit)
+{
+  CAMLparam2(v_i, v_unit);
+  value* (*creator)(int) = (long (*)(int)) callbacks[Int_val(v_i)];
+  value* res = (value*) creator(Int_val(v_i));
+  if (res == 0) stak_fail();
+  CAMLreturn(*res);
+}
+
+value* stak_bool_ref(int b)
+{
+  value v;
+  CLOSURE("Stak.ref");
+  v = caml_callback(*closure, Val_bool(b));
+  return fcl_wrap(v);
+}
+
+int stak_bool_get(value* v)
+{
+  CLOSURE("Stak.get");
+  return Bool_val(caml_callback(*closure, *v));
+}
+
+void stak_bool_set(value* v, int b)
+{
+  CLOSURE("Stak.set");
+  caml_callback2(*closure, *v, Val_bool(b));
+}
+
+void stak_trail_i(int i)
+{
+  CLOSURE("Stak.trail");
+  caml_callback(*closure, Val_int(i));
 }
 
 value* parse_array(value* list, long* res)

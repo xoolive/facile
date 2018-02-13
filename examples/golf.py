@@ -24,9 +24,9 @@ nb_weeks = 5
 # An array of nb_weeks * nb_golfers decision variables to choose the group of
 # every golfer every week
 
-groups = [ facile.array(
+groups = [facile.array(
     [facile.variable(range(nb_groups)) for i in range(nb_golfers)]
-    ) for j in range(nb_weeks)]
+) for j in range(nb_weeks)]
 
 # For each week, exactly size_group golfers in each group:
 for i in range(nb_weeks):
@@ -37,7 +37,6 @@ for i in range(nb_weeks):
         facile.constraint(s[j] == j//size_group)
 
     # [2] Use a Global Cardinality Constraint (redundant with [1])
-    # TODO segfault with GCC
     gcc = groups[i].gcc([(size_group, i) for i in range(nb_groups)])
     facile.constraint(gcc)
 

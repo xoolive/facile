@@ -51,9 +51,13 @@ cimport cpython
 from interface cimport *
 from cpython cimport array
 
+from libc.stdint cimport uintptr_t
+
 # Initialize OCaml
 init()
 
+class Stak_Fail(RuntimeError):
+    pass
 
 class gc_list(object):
 
@@ -80,7 +84,7 @@ class callback(object):
     def __init__(self, f):
         self.f = f
         self.id = self.h.pop()
-        if self.id >= 1024:
+        if self.id >= 204800:
             raise RuntimeError("Too many callbacks built and not released")
         # minimalistic @functools.wraps
         self.__doc__ = f.__doc__
@@ -97,7 +101,7 @@ cdef object __SECRET__ = object()
 
 cdef class Domain(object):
 
-    cdef long mlvalue
+    cdef uintptr_t mlvalue
 
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
@@ -140,16 +144,53 @@ cdef class Domain(object):
         domain_values(self.mlvalue, pt_vals)
         return values.tolist()
 
+    def remove_low(self, int x):
+        return Domain(domain_removelow(x, self.mlvalue), __SECRET__)
+
+    def remove_up(self, int x):
+        return Domain(domain_removeup(x, self.mlvalue), __SECRET__)
+
     @classmethod
     def create(cls, p):
         cdef array.array values = array.array('i', p)
         cdef int* pt_vals = values.data.as_ints
-        cdef long value = domain_create(pt_vals, len(values))
+        cdef uintptr_t value = domain_create(pt_vals, len(values))
         return cls(value, __SECRET__)
 
 from collections import defaultdict
 name_register = defaultdict(str)
 name_counter = defaultdict(int)
+
+cdef class Event(object):
+
+    cdef uintptr_t mlvalue
+    cdef object name
+
+    def __dealloc__(self):
+        # nope: returning caml_named_value which is already a root!
+        # fcl_destroy(self.mlvalue)
+        pass
+
+    def __getval(self):
+        return self.mlvalue
+
+    def __cinit__(self, value, secret):
+        if secret != __SECRET__:
+            raise ValueError("Do not use this!")
+        self.mlvalue = value
+
+    @classmethod
+    def on(cls, name):
+        if name == "max":
+            return cls(fd_onmax(), __SECRET__)
+        if name == "min":
+            return cls(fd_onmin(), __SECRET__)
+        if name == "refine":
+            return cls(fd_onrefine(), __SECRET__)
+        if name == "subst":
+            return cls(fd_onsubst(), __SECRET__)
+        raise ValueError("Unknown event")
+
 
 cdef class Variable(object):
     """The Variable is the core element for CSP problems.
@@ -163,7 +204,7 @@ cdef class Variable(object):
     >>> c = a * a + 2 * a + 1
     """
 
-    cdef long mlvalue
+    cdef uintptr_t mlvalue
     cdef object name
 
     def __dealloc__(self):
@@ -206,21 +247,37 @@ cdef class Variable(object):
         """ Return the numerical value of the variable.
         Return None if no solution has been found. """
         if (val_isbound(self.mlvalue) == 1):
-            return self.domain()[0]
+            return self.min()
         else:
             return None
+
+    def min(self):
+        return val_min(self.mlvalue)
+
+    def max(self):
+        return val_max(self.mlvalue)
 
     def domain(self):
         return Domain(val_domain(self.mlvalue), __SECRET__)
 
+    def refine(self, Domain d):
+        if val_refine(self.mlvalue, d.mlvalue) == 1:
+            raise Stak_Fail
+
+    def delay(self, events, Cstr c):
+        events_val = [e.__getval() for e in events]
+        cdef array.array _events = array.array('Q', events_val)
+        cdef uintptr_t* pt_events = <uintptr_t*>_events.data.as_voidptr
+        val_delay(self.mlvalue, pt_events, len(events), c.__getval())
+
     def in_interval(self, int inf, int sup):
-        cdef long res
+        cdef uintptr_t res
         res = interval_ismember(self.mlvalue, inf, sup)
         return Variable(res, __SECRET__)
 
     @classmethod
     def interval(cls, int min_val, int max_val, name=None):
-        cdef long value = val_interval(min_val, max_val)
+        cdef uintptr_t value = val_interval(min_val, max_val)
         val = cls(value, __SECRET__)
         if name is not None:
             val.set_name(name)
@@ -449,7 +506,7 @@ cdef class Arith(object):
     >>> c = e * e + 2 * e + 1
     """
 
-    cdef long mlvalue
+    cdef uintptr_t mlvalue
 
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
@@ -660,7 +717,7 @@ cdef class Arith(object):
 
     def value(self):
         v = Variable.create(self)
-        return self.value()
+        return v.value()
 
 cdef class Cstr(object):
     """The Cstr is a way to build relations on expressions or variables.
@@ -701,7 +758,7 @@ cdef class Cstr(object):
     ValueError: Non reifiable constraint
     """
 
-    cdef long mlvalue
+    cdef uintptr_t mlvalue
 
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
@@ -832,7 +889,7 @@ cdef class Cstr(object):
     def post(self):
         """Constraint posting to the solver."""
         if cstr_post(self.__getval()) == 1:
-            raise ValueError("The problem is overconstrained")
+            raise Stak_Fail
 
     # For Python 2.x
     def __nonzero__(self):
@@ -860,7 +917,7 @@ cdef class Array(object):
     function over an iterable structure instead.
     """
 
-    cdef long mlvalue
+    cdef uintptr_t mlvalue
     cdef long length
 
     def __dealloc__(self):
@@ -878,7 +935,7 @@ cdef class Array(object):
 
     def __iter__(self):
         cdef array.array values = array.array('Q', range(self.length))
-        cdef long* pt_vals = values.data.as_longs
+        cdef uintptr_t* pt_vals = <uintptr_t*>values.data.as_voidptr
         fdarray_read(self.mlvalue, pt_vals)
         for i in range(self.length):
             yield Variable(values[i], __SECRET__)
@@ -893,7 +950,7 @@ cdef class Array(object):
         Warning: An implicit constraint is set on the key so that it takes
         values between 0 and (len-1).
         """
-        cdef long value
+        cdef uintptr_t value
         if isinstance(key, Variable):
             value = fdarray_get(self.mlvalue, key.__getval())
         elif isinstance(key, Arith):
@@ -941,7 +998,7 @@ cdef class Array(object):
         >>> a.value()
         [4, 5, 6]
         """
-        cdef long value
+        cdef uintptr_t value
         value = fdarray_max(self.mlvalue)
         if value == 0:
             raise IndexError("Empty list")
@@ -959,7 +1016,7 @@ cdef class Array(object):
         >>> a.value()
         [4, 5, 6]
         """
-        cdef long value
+        cdef uintptr_t value
         value = fdarray_min(self.mlvalue)
         if value == 0:
             raise IndexError("Empty list")
@@ -967,7 +1024,7 @@ cdef class Array(object):
 
     def sort(self):
         """Return an array of variables sorted in increasing order."""
-        cdef long value
+        cdef uintptr_t value
         value = sorting_sort(self.mlvalue)
         return Array(value, self.length)
 
@@ -1011,7 +1068,7 @@ cdef class Array(object):
         [0, 0, 0, 1, 1]
         """
 
-        cdef long value
+        cdef uintptr_t value
         cdef long l = len(distribution)
         cdef long card = 0
 
@@ -1033,8 +1090,8 @@ cdef class Array(object):
             values.append(v)
 
         cdef array.array _cards = array.array('Q', cards)
-        cdef array.array _values = array.array('Q', values)
-        cdef long* pt_cards = _cards.data.as_longs
+        cdef array.array _values = array.array('l', values)
+        cdef uintptr_t* pt_cards = <uintptr_t*> _cards.data.as_voidptr
         cdef long* pt_values = _values.data.as_longs
 
         value = gcc_cstr(self.mlvalue, pt_cards, pt_values, l)
@@ -1045,9 +1102,8 @@ cdef class Strategy(object):
     """
         Strategies for the Goal.forall method.
         min_min, min_domain, queen
-        TODO: pass a callback to be evaluated.
     """
-    cdef long mlvalue
+    cdef uintptr_t mlvalue
     cdef object _toclean
 
     def __dealloc__(self):
@@ -1083,16 +1139,12 @@ cdef class Strategy(object):
         """Good strategy for queens: min_domain then min_min."""
         return cls(strategy_queen(), __SECRET__)
 
-
     @classmethod
-    def custom(cls, cb):
+    def custom(cls, custom):
         """Custom strategy from Python callback."""
         @callback
-        def custom_callback(v1, v2):
-            var1 = Variable(v1, __SECRET__)
-            var2 = Variable(v2, __SECRET__)
-            res = 1 if cb(var1, var2) else 0
-            return res
+        def custom_callback(values):
+            return custom(values)
         __ml_callbacks[custom_callback.id] = custom_callback
         set_strategy_callback(custom_callback.id, strategy_cb)
         strategy = cls(strategy_callback(custom_callback.id), __SECRET__)
@@ -1102,8 +1154,9 @@ cdef class Strategy(object):
 
 cdef class Assignment(object):
 
-    cdef long mlvalue
+    cdef uintptr_t mlvalue
     cdef object _toclean
+    cdef object _keep
 
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
@@ -1116,12 +1169,16 @@ cdef class Assignment(object):
             raise ValueError("Invalid pointer value")
         self.mlvalue = value
         self._toclean = []
+        self._keep = []
 
     def __getval(self):
         return self.mlvalue
 
     def toclean(self, p):
         self._toclean.append(p)
+
+    def keep(self, p):
+        self._keep.append(p)
 
     @classmethod
     def indomain(cls):
@@ -1138,13 +1195,14 @@ cdef class Assignment(object):
     @classmethod
     def atomic(cls, f):
         @callback
-        def atomic_callback(value):
+        def cb(value):
             variable = Variable(value, __SECRET__)
             f(variable)
-        __ml_callbacks[atomic_callback.id] = atomic_callback
-        set_assign_callback(atomic_callback.id, on_assign_callback)
-        res = cls(assignment_atomic(atomic_callback.id), __SECRET__)
-        res.toclean(atomic_callback.id)
+        __ml_callbacks[cb.id] = atomic_callback
+        set_assign_callback(cb.id, on_assign_callback)
+        res = cls(assignment_atomic(cb.id), __SECRET__)
+        res.keep(cb)
+        res.toclean(cb.id)
         return res
 
     def __and__(Assignment c1, Assignment c2):
@@ -1167,9 +1225,50 @@ cdef class Assignment(object):
         c2._toclean.clear()
         return res
 
+class Selector(object):
+
+    def variables(self):
+        """Returns the variables on which to produce goals."""
+        pass
+
+    def _variables(self):
+        v = self.variables()
+        if not isinstance(v, collections.Iterable):
+            msg = "A selector must return an array of variables"
+            raise NotImplementedError(msg)
+        return len(v)
+
+    def select(self):
+        """Returns an index to next variable on which to produce a goal."""
+        pass
+
+    def _select(self):
+        select = self.select()
+        if not callable(select):
+            return -1
+        select = callback(select)
+        __ml_callbacks[select.id] = select
+        set_selector_select_callback(select.id, selector_select)
+        return select.id
+
+    def __call__(self, i):
+        """Returns a goal for variables()[i]."""
+        pass
+
+    def _labelling(self):
+        @callback
+        def labelling_call(idx):
+            res =  self(idx)
+            assert isinstance(res, Goal)
+            return res
+        __ml_callbacks[labelling_call.id] = labelling_call
+        set_selector_labelling_callback(labelling_call.id, selector_labelling)
+        return labelling_call.id
+
+
 cdef class Goal(object):
 
-    cdef long mlvalue
+    cdef uintptr_t mlvalue
     cdef object _variables
     cdef object _toclean
     cdef object _keep
@@ -1240,17 +1339,23 @@ cdef class Goal(object):
         return res
 
     @classmethod
-    def atomic(cls, callback):
-        try:
-            __ml_callbacks[callback.id] = callback
-            set_atomic_callback(callback.id, atomic_callback)
-        except AttributeError:
-            msg = "Use the @facile.callback decorator around your callbacks"
-            raise TypeError(msg)
-        else:
-            res = cls(goals_atomic(callback.id), __SECRET__)
-            res.toclean(callback.id)
-            return res
+    def atomic(cls, cb):
+        call = callback(cb)
+        __ml_callbacks[call.id] = call
+        set_atomic_callback(call.id, atomic_callback)
+        res = cls(goals_atomic(call.id), __SECRET__)
+#         print("atomic {}".format(call.id))
+#         res.toclean(call.id)
+#         res.keep(call)
+        return res
+
+    @classmethod
+    def create(cls, custom):
+        call = callback(custom)
+        __ml_callbacks[ call.id ] = call
+        set_goal_creator_callback(call.id, goal_creator)
+        res = cls(goals_create(call.id), __SECRET__)
+        return res
 
     @classmethod
     def unify(cls, Variable var, int i):
@@ -1262,11 +1367,19 @@ cdef class Goal(object):
     @classmethod
     def forall(cls, variables, strategy=None, assign=Assignment.indomain()):
         cdef long length = 0
-        cdef long* pt_vars
+        cdef uintptr_t* pt_vars
         cdef array.array _vars
 
-        cdef long c_assign = 0
-        cdef long c_strategy = 0 # default to no strategy
+        cdef uintptr_t c_assign = 0
+        cdef uintptr_t c_strategy = 0 # default to no strategy
+
+        if isinstance(variables, Selector):
+            s = variables._select()
+            v = variables._variables() 
+            l = variables._labelling() 
+            res = cls(goals_selector_forall(s, v, l), __SECRET__)
+            res.keep(variables)
+            return res
 
         if isinstance(assign, str):
             assign = eval("Assignment." + assign + "()")
@@ -1284,13 +1397,14 @@ cdef class Goal(object):
                 assert isinstance(v, Variable), msg
 
             _vars = array.array('Q', [v.__getval() for v in variables])
-            pt_vars = _vars.data.as_longs
+            pt_vars = <uintptr_t*>_vars.data.as_voidptr
 
             if strategy is not None:
                 if isinstance(strategy, str):
                     strategy = eval("Strategy." + strategy + "()")
 
-                if isinstance(strategy, types.FunctionType):
+                # if isinstance(strategy, types.FunctionType):
+                if callable(strategy):
                     strategy = Strategy.custom(strategy)
 
                 msg = "The second argument is a strategy"
@@ -1299,7 +1413,8 @@ cdef class Goal(object):
 
             if length < 1:
                 raise TypeError("The argument list must be non empty")
-            res = cls(goals_forall(c_strategy, pt_vars, length, c_assign), __SECRET__)
+            res = cls(goals_forall(c_strategy, pt_vars, length, c_assign),
+                      __SECRET__)
             res.variables = [variables]
             res.keep([strategy, assign])
             return res
@@ -1307,7 +1422,8 @@ cdef class Goal(object):
         raise TypeError("The argument must be iterable")
 
     @classmethod
-    def minimize(cls, goal, expr, keep, *args):
+    def minimize(cls, goal, expr, keep, mode="continue", *args, **kwargs):
+        cdef Goal g_goal
         if not isinstance(goal, Goal):
             goal = Goal.forall(goal, *args)
         if isinstance(expr, Arith):
@@ -1315,16 +1431,22 @@ cdef class Goal(object):
         if not isinstance(expr, Variable):
             raise SyntaxError
 
-        goal = goal & Goal.forall([expr])
+        g_goal = goal & Goal.forall([expr])
 
         __ml_callbacks[keep.id] = keep
         set_onsol_callback(keep.id, on_solution_callback)
 
-        obj = goals_minimize(goal.__getval(), expr.__getval(), keep.id)
+        d_mode = {'continue': mode_continue(),
+                  'restart': mode_restart(),
+                  'dichotomic': mode_dicho()}
+
+        obj = goals_minimize(d_mode[mode], g_goal.__getval(),
+                             expr.__getval(), keep.id)
 
         res = cls(obj, __SECRET__)
         res.variables = goal.variables
         res.toclean(keep.id)
+        res.keep(g_goal._keep)
         return res
 
 
@@ -1372,26 +1494,86 @@ class Solution(dict):
                 res += msg.format(k, v) + "\n"
         return res
 
+cdef class Stakbool(object):
+
+    cdef uintptr_t mlvalue
+
+    def __dealloc__(self):
+        fcl_destroy(self.mlvalue)
+
+    def __cinit__(self, value, secret):
+        if secret != __SECRET__:
+            raise ValueError("Invalid pointer value")
+        self.mlvalue = value
+
+    @classmethod
+    def ref(cls, bint v):
+        return cls(stak_bool_ref(v), __SECRET__)
+
+    def get(self):
+        return bool(stak_bool_get(self.mlvalue))
+
+    def set(self, bint v):
+        stak_bool_set(self.mlvalue, v)
+
+def stak_trail(fun):
+    fun = callback(fun)
+    __ml_callbacks[fun.id] = fun
+    set_atomic_callback(fun.id, atomic_callback)
+    stak_trail_i(fun.id)
+
 
 cdef object __ml_callbacks = {}
 
 cdef void on_backtrack_callback(int i, int n):
     __ml_callbacks[i](n)
 
-cdef void atomic_callback(int i):
-    __ml_callbacks[i]()
+cdef int atomic_callback(int i):
+    try:
+        __ml_callbacks[i]()
+        return 0
+    except Stak_Fail:
+        return -1
 
 cdef void on_solution_callback(int i, int n):
     __ml_callbacks[i](n)
 
-cdef void on_assign_callback(int i, long v):
+cdef void on_assign_callback(int i, uintptr_t v):
     __ml_callbacks[i](v)
 
-cdef int strategy_cb(int i, long v1, long v2):
-    return __ml_callbacks[i](v1, v2)
+cdef int selector_select(int i):
+    return __ml_callbacks[i]()
 
-def interrupt():
-    fcl_interrupt()
+# TODO
+test_keep_goals = {}
+
+cdef uintptr_t selector_labelling(int i, int l):
+    res = __ml_callbacks[i](l)
+    test_keep_goals[i] = res
+    assert isinstance(res, Goal)
+    return res.__getval()
+
+cdef uintptr_t goal_creator(int i):
+    try:
+        res = __ml_callbacks[i]()
+    except Stak_Fail:
+        return 0
+    test_keep_goals[i] = res
+    assert isinstance(res, Goal)
+    return res.__getval()
+
+cdef int strategy_cb(int i, uintptr_t* v1, int length):
+    return __ml_callbacks[i]([Variable(v1[j], __SECRET__)
+                              for j in range(length)])
+
+cdef int update_cb(int i, int a):
+    try:
+        return __ml_callbacks[i](a)
+    except Stak_Fail:
+        return -1
+
+cdef void delay_cb(int i, uintptr_t c):
+    __ml_callbacks[i](c)
 
 def solve(objective, *args, time=True, backtrack=False, on_backtrack=None,
         all_solutions=False, minimize=None, on_solution=None, **kwargs):
@@ -1401,7 +1583,7 @@ def solve(objective, *args, time=True, backtrack=False, on_backtrack=None,
     on variables passed in parameter.
 
     The objective is a Goal to meet by the solver. You may also pass an iterable
-    structure of 
+    structure of
 
     The `time` parameter, if set to True (default), embeds the time spent on
     resolution in the solution display structure.
@@ -1427,7 +1609,7 @@ def solve(objective, *args, time=True, backtrack=False, on_backtrack=None,
     global __ml_callbacks
 
     cdef long length
-    cdef long* pt_vars
+    cdef uintptr_t* pt_vars
     cdef array.array _vars
 
     if not isinstance(objective, Goal):
@@ -1484,7 +1666,7 @@ def solve(objective, *args, time=True, backtrack=False, on_backtrack=None,
 
             on_solution(Solution(sol))
 
-        obj = Goal.minimize(objective, minimize, keep)
+        obj = Goal.minimize(objective, minimize, keep, *args, **kwargs)
         obj = obj | Goal.success()
         _ = goals_solve(on_backtrack.id, obj.__getval()) == 1
         sol['solved'] = True
@@ -1599,7 +1781,10 @@ def constraint(cstr):
 
     if not isinstance(cstr, Cstr):
         raise TypeError("The argument must be a (non-reified) constraint")
-    cstr.post()
+    try:
+        cstr.post()
+    except Stak_Fail:
+        raise ValueError("The problem is overconstrained")
 
 def alldifferent(variables, lazy=False):
     """ Creates an alldifferent constraint (non-reifiable).
@@ -1623,7 +1808,7 @@ def alldifferent(variables, lazy=False):
     """
 
     cdef long length
-    cdef long* pt_vars
+    cdef uintptr_t* pt_vars
     cdef array.array _vars
     cdef int _lazy = 1
     if lazy: _lazy = 0
@@ -1640,7 +1825,7 @@ def alldifferent(variables, lazy=False):
                 _vars[i] = e2fd(variables[i].__getval())
             else:
                 raise TypeError("Arguments must be variables or expressions")
-        pt_vars = _vars.data.as_longs
+        pt_vars = <uintptr_t*>_vars.data.as_voidptr
         return Cstr(cstr_alldiff(pt_vars, length, _lazy), __SECRET__)
     raise TypeError("The argument must be iterable")
 
@@ -1658,13 +1843,16 @@ def variable(min_val, max_val=None, *args, **kwargs):
     See also: help(Variable)
     """
 
+    if isinstance(min_val, range):
+        if min_val.step == 1:
+            return Variable.interval(min_val.start, min_val.stop - 1,
+                                     *args, **kwargs)
     if isinstance(min_val, Arith):
         return Variable.create(min_val, *args, **kwargs)
     if isinstance(min_val, Cstr):
         return Variable.create(min_val, *args, **kwargs)
     if isinstance(min_val, collections.Iterable):
         return Variable.create(min_val, *args, **kwargs)
-    print ("Usage deprecated, prefer variable([list of values])")
     if max_val < min_val:
         raise ValueError("The upper bound should exceed the lower bound")
     return Variable.interval(min_val, max_val, *args, **kwargs)
@@ -1696,8 +1884,8 @@ def array(variables):
     See also: help(Array)
     """
     cdef long length
-    cdef long* pt_vars
-    cdef long value
+    cdef uintptr_t* pt_vars
+    cdef uintptr_t value
     cdef Variable v
     cdef array.array _vars
     if isinstance(variables, collections.Iterable):
@@ -1715,8 +1903,25 @@ def array(variables):
                 _vars[i] = e2fd(i2e(variables[i]))
             else:
                 raise TypeError("The arguments must be variables or expressions")
-        pt_vars = _vars.data.as_longs
+        pt_vars = <uintptr_t*>_vars.data.as_voidptr
         value = fdarray_create(pt_vars, length)
         return Array(value, length)
     raise TypeError("The argument must be iterable")
+
+def make_constraint(update, delay):
+    @callback
+    def update_callback(int a):
+        return update(a)
+    @callback
+    def delay_callback(c):
+        c = Cstr(c, __SECRET__)
+        delay(c)
+        return
+    __ml_callbacks[update_callback.id] = update_callback
+    set_update_callback(update_callback.id, update_cb)
+    __ml_callbacks[delay_callback.id] = delay_callback
+    set_delay_callback(delay_callback.id, delay_cb)
+    # TODO toclean(delay_callback.id, update_callback.id)
+    return Cstr(cstr_create(update_callback.id, delay_callback.id), __SECRET__)
+
 

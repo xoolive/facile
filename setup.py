@@ -20,16 +20,6 @@ def get_long_description():
     except ImportError:
         return ""
 
-# from distutils._msvccompiler import MSVCCompiler
-# class FlexlinkCompiler(MSVCCompiler):
-#     def initialize(self):
-#         MSVCCompiler.initialize(self)
-#         print("********* new linker")
-#         self.linker = self.find_exe("flexlink.exe")
-# c = FlexlinkCompiler
-# from distutils.ccompiler import new_compiler
-# new_compiler(plat="nt", compiler=c)
-
 
 def ocaml_config(prefix="", bpath=None):
 
@@ -55,8 +45,6 @@ def ocaml_config(prefix="", bpath=None):
     # Rely on ocamlfind to find facile, but you can add some hints if need be
     facilepath = os.popen("%socamlfind query facile" % prefix).readline()
     facilepath = facilepath.strip()
-    if facilepath == "":
-        raise SystemError("%socamlfind or facile not found" % prefix)
 
     # Check timestamps for OCaml file
     exists = not os.path.exists(mlobject)
@@ -77,11 +65,7 @@ if sys.platform != "win32":
     compileargs = ["-fPIC"]
     INCLUDE = [ocamlpath]
 else:
-    # cross-compiled so whatever: fill everything with nonsense...
-    compiler = ""
-    compileargs = [""]  # ["-g"]
-    ocamlpath, mlobject, asmrunlib = ocaml_config()
-    INCLUDE = [ocamlpath]
+    pass
 
 try:
     os.environ['CFLAGS']
@@ -193,7 +177,7 @@ cmdclass['clean'] = clean
 cmdclass['cross'] = cross
 
 setup(name="facile",
-      version="1.4",
+      version="1.4.1",
       author="Xavier Olive",
       author_email="xo.olive@gmail.com",
       description="Python constraint programming library",
