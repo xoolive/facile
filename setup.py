@@ -185,6 +185,6 @@ setup(name="facile",
       license="LGPL 3.0",
       url="https://github.com/xoolive/facile",
       cmdclass=cmdclass,
-      ext_modules=cythonize(extensions),
+      ext_modules=cythonize(extensions, language_level=3),
       test_suite="doctests",
       )
