@@ -38,16 +38,18 @@ def ocaml_config(prefix="", bpath=None):
 
     # Check timestamps for OCaml file
     exists = not os.path.exists(mlobject)
-    if exists or os.path.getmtime("interface.ml") > os.path.getmtime(mlobject):
+    if exists or os.path.getmtime("interface/interface.ml") > os.path.getmtime(
+        mlobject
+    ):
         print("Compiling interface.ml")
         cmd = (
             f"{prefix}ocamlfind ocamlopt -package facile -linkpkg -output-obj"
-            f" -o {mlobject} interface.ml"
+            f" -o {mlobject} interface/interface.ml"
         )
         print(cmd)
         os.system(cmd)
         now = time.time()
-        os.utime("facile.pyx", (now, now))
+        os.utime("facile/core.pyx", (now, now))
 
     return ocamlpath, mlobject, asmrunlib
 
@@ -86,7 +88,7 @@ def build():
     extensions = [
         Extension(
             "facile.core",
-            ["facile/core.pyx", "interface_c.c"],
+            ["facile/core.pyx", "interface/interface_c.c"],
             language="c",
             include_dirs=INCLUDE,
             extra_compile_args=compileargs,

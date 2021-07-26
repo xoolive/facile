@@ -1,6 +1,6 @@
 from libc.stdint cimport uintptr_t
 
-cdef extern from "interface.h":
+cdef extern from "./interface/interface.h":
 
     void init()
     void fcl_destroy(uintptr_t v)
