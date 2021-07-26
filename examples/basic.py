@@ -12,7 +12,7 @@ b = variable(range(2))
 constraint(a != b)
 
 if solve([a, b]):
-    print("Solution found a=%d and b=%d" % (a.value(), b.value()))
+    print(f"Solution found a={a.value()} and b={b.value()}")
 
 a = variable(range(3))
 b = variable(range(3))
@@ -21,5 +21,4 @@ c = variable(range(3))
 constraint(alldifferent([a, b, c]))
 constraint(a + b <= 2 * c)
 if solve([a, b, c]):
-    print("Solution found a=%d, b=%d and c=%d" %
-          (a.value(), b.value(), c.value()))
+    print(f"Solution found a={a.value()} b={b.value()} c={c.value()}")

@@ -4,17 +4,21 @@ n = 5
 men = ["Richard", "James", "John", "Hugh", "Greg"]
 women = ["Helen", "Tracy", "Linda", "Sally", "Wanda"]
 
-rank_women = [[1, 2, 4, 3, 5],
-              [3, 5, 1, 2, 4],
-              [5, 4, 2, 1, 3],
-              [1, 3, 5, 4, 2],
-              [4, 2, 3, 5, 1]]
+rank_women = [
+    [1, 2, 4, 3, 5],
+    [3, 5, 1, 2, 4],
+    [5, 4, 2, 1, 3],
+    [1, 3, 5, 4, 2],
+    [4, 2, 3, 5, 1],
+]
 
-rank_men = [[5, 1, 2, 4, 3],
-            [4, 1, 3, 2, 5],
-            [5, 3, 2, 4, 1],
-            [1, 5, 4, 3, 2],
-            [4, 3, 2, 1, 5]]
+rank_men = [
+    [5, 1, 2, 4, 3],
+    [4, 1, 3, 2, 5],
+    [5, 3, 2, 4, 1],
+    [1, 5, 4, 3, 2],
+    [4, 3, 2, 1, 5],
+]
 
 wife = array([variable(range(n)) for i in range(n)])
 husband = array([variable(range(n)) for i in range(n)])
@@ -41,4 +45,6 @@ for m in range(n):
 
 if solve(list(wife) + list(husband)):
     for i in range(n):
-        print("%s <=> %s" % (men[i], women[wife[i].value()]))
+        wife_value = wife[i].value()
+        assert wife_value is not None
+        print(f"{men[i]} <=> {women[wife_value]}")

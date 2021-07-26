@@ -15,4 +15,5 @@ constraint(a + b + c + d == 711)
 constraint(a * b * c * d == 711000000)
 
 sol = solve([a, b, c, d])
-print ("Solution found a={}, b={}, c={}, d={}".format(*sol.solution))
+assert sol is not None
+print("Solution found a={}, b={}, c={}, d={}".format(*sol.solution))

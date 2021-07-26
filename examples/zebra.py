@@ -1,5 +1,4 @@
-from facile import *
-
+from facile import alldifferent, constraint, solve, variable
 
 colors = [variable(range(1, 6)) for i in range(5)]
 red, green, yellow, blue, ivory = colors
@@ -41,8 +40,8 @@ constraint(abs(norwegian - blue) == 1)
 
 assert solve(colors + people + animals + drinks + cigarettes)
 
-water_drinker = [ n for n, p in zip(names, people) if p.value() == water.value() ]
-zebra_owner = [ n for n, p in zip(names, people) if p.value() == zebra.value() ]
+water_drinker = [n for n, p in zip(names, people) if p.value() == water.value()]
+zebra_owner = [n for n, p in zip(names, people) if p.value() == zebra.value()]
 
 print("The {} drinks water.".format(water_drinker[0]))
 print("The {} owns the zebra.".format(zebra_owner[0]))

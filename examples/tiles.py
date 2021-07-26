@@ -1,16 +1,68 @@
-from facile import variable, constraint, Goal, solve
+import sys
+
+from facile import Goal, constraint, solve, variable
 
 data = [
-    {'sizes': [2, 1, 1, 1, 1, 1],
-     'bigsize': 3},
-    {'sizes': [10, 9, 7, 6, 4, 4, 3, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1],
-     'bigsize': 19},
-    {'sizes': [50, 42, 37, 35, 33, 29, 27, 25, 24, 19, 18, 17, 16, 15, 11, 9,
-               8, 7, 6, 4, 2],
-     'bigsize': 112},
-    {'sizes': [81, 64, 56, 55, 51, 43, 39, 38, 35, 33, 31, 30, 29, 20, 18, 16,
-               14, 9, 8, 5, 4, 3, 2, 1],
-     'bigsize': 175}
+    {"sizes": [2, 1, 1, 1, 1, 1], "bigsize": 3},
+    {
+        "sizes": [10, 9, 7, 6, 4, 4, 3, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1],
+        "bigsize": 19,
+    },
+    {
+        "sizes": [
+            50,
+            42,
+            37,
+            35,
+            33,
+            29,
+            27,
+            25,
+            24,
+            19,
+            18,
+            17,
+            16,
+            15,
+            11,
+            9,
+            8,
+            7,
+            6,
+            4,
+            2,
+        ],
+        "bigsize": 112,
+    },
+    {
+        "sizes": [
+            81,
+            64,
+            56,
+            55,
+            51,
+            43,
+            39,
+            38,
+            35,
+            33,
+            31,
+            30,
+            29,
+            20,
+            18,
+            16,
+            14,
+            9,
+            8,
+            5,
+            4,
+            3,
+            2,
+            1,
+        ],
+        "bigsize": 175,
+    },
 ]
 
 
@@ -31,8 +83,9 @@ def tiles(sizes, bigsize):
     def full_line(xy):
         for i in range(bigsize):
             # equivalent to (xy[j] >= i - sizes[j] + 1) & (xy[j] <= i)
-            intersections = \
-                [xy[j].in_interval(i - sizes[j] + 1, i) for j in range(n)]
+            intersections = [
+                xy[j].in_interval(i - sizes[j] + 1, i) for j in range(n)
+            ]
 
             scal_prod = sum([s * k for s, k in zip(sizes, intersections)])
             constraint(scal_prod == bigsize)
@@ -44,19 +97,23 @@ def tiles(sizes, bigsize):
     gy = Goal.forall(ys, assign="assign", strategy="min_min")
 
     # Now the proper resolution process
-    solution = solve(gx & gy, backtrack=True,)
+    solution = solve(gx & gy, backtrack=True)
     print(solution)
     try:
-        import matplotlib.pyplot as plt
-        import matplotlib.cm as colormap
         from random import random as rand
+
+        import matplotlib.cm as colormap
+        import matplotlib.pyplot as plt
 
         fig = plt.figure()
         ax = fig.gca()
 
         def fill_square(x, y, s):
-            plt.fill([x, x, x + s, x + s], [y, y + s, y + s, y],
-                     color=colormap.Vega20(rand()))
+            plt.fill(
+                [x, x, x + s, x + s],
+                [y, y + s, y + s, y],
+                color=colormap.Vega20(rand()),
+            )
 
         fill_square(0, 0, bigsize)
         for (x, y, s) in zip(xs, ys, sizes):
@@ -78,8 +135,8 @@ def tiles(sizes, bigsize):
             print(x.value(), y.value(), s)
 
 
-if __name__ == '__main__':
-    import sys
+if __name__ == "__main__":
+
     try:
         tiles(**data[int(sys.argv[1])])
     except Exception as e:
