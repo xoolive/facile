@@ -44,7 +44,8 @@ import types
 import numbers
 import reprlib
 import itertools
-import collections
+from collections import defaultdict
+from collections.abc import Iterable
 
 cimport cpython
 
@@ -157,7 +158,6 @@ cdef class Domain(object):
         cdef uintptr_t value = domain_create(pt_vals, len(values))
         return cls(value, __SECRET__)
 
-from collections import defaultdict
 name_register = defaultdict(str)
 name_counter = defaultdict(int)
 
@@ -911,7 +911,7 @@ cdef class Array(object):
     - You can access its max() or min().
     - You can access its sorted version: sort()
     - You can apply an alldifferent constraint: alldifferent()
-    - You can apply a global cardinAlity constraint: gcc()
+    - You can apply a global cardinality constraint: gcc()
 
     This class **shall not be directly instanciated**, but through `array`
     function over an iterable structure instead.
@@ -1233,7 +1233,7 @@ class Selector(object):
 
     def _variables(self):
         v = self.variables()
-        if not isinstance(v, collections.Iterable):
+        if not isinstance(v, Iterable):
             msg = "A selector must return an array of variables"
             raise NotImplementedError(msg)
         return len(v)
@@ -1389,7 +1389,7 @@ cdef class Goal(object):
 
         c_assign = assign.__getval() # default to indomain
 
-        if isinstance(variables, collections.Iterable):
+        if isinstance(variables, Iterable):
             variables = list(variables)
             length = len(variables)
             for v in variables:
@@ -1812,7 +1812,7 @@ def alldifferent(variables, lazy=False):
     cdef array.array _vars
     cdef int _lazy = 1
     if lazy: _lazy = 0
-    if isinstance(variables, collections.Iterable):
+    if isinstance(variables, Iterable):
         variables = list(variables)
         length = len(variables)
         if length < 2:
@@ -1851,7 +1851,7 @@ def variable(min_val, max_val=None, *args, **kwargs):
         return Variable.create(min_val, *args, **kwargs)
     if isinstance(min_val, Cstr):
         return Variable.create(min_val, *args, **kwargs)
-    if isinstance(min_val, collections.Iterable):
+    if isinstance(min_val, Iterable):
         return Variable.create(min_val, *args, **kwargs)
     if max_val < min_val:
         raise ValueError("The upper bound should exceed the lower bound")
@@ -1888,7 +1888,7 @@ def array(variables):
     cdef uintptr_t value
     cdef Variable v
     cdef array.array _vars
-    if isinstance(variables, collections.Iterable):
+    if isinstance(variables, Iterable):
         variables = list(variables)
         length = len(variables)
         if length < 1:
