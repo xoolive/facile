@@ -1,0 +1,66 @@
+name: tests
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # fail-fast: false
+      matrix:
+        os:
+          # - macos-latest
+          - ubuntu-latest
+        ocaml-compiler:
+          - ocaml-base-compiler.4.12.0
+        python-version:
+          - 3.7
+          # - 3.8
+          # - 3.9
+
+    steps:
+      - name: Checkout Python code
+        uses: actions/checkout@v2
+
+      - name: Set up private ssh key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Checkout OCaml facile library
+        run: |
+          ssh-keyscan git.recherche.enac.fr > ~/.ssh/known_hosts
+          git clone git@git.recherche.enac.fr:facile.git facile.ml
+          cd facile.ml
+          git checkout 03a93f9
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1.1.6
+        with:
+          version: 1.1.6
+          virtualenvs-in-project: true
+
+      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+
+      - name: Compile and install facile.ml library
+        working-directory: ./facile.ml
+        run: |
+          opam install ocamlfind ocamlbuild
+          eval $(opam env)
+          cat Makefile
+          make
+          make install
+
+      - name: Install Python facile library
+        run: |
+          poetry install

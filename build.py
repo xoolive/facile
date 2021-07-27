@@ -9,7 +9,7 @@ from distutils.core import Distribution, Extension
 from Cython.Build import cythonize
 
 
-def ocaml_config(prefix="", bpath=None):
+def ocaml_config(bpath=None):
 
     if bpath is None:
         # I know, it's bad! Feel free to improve...
@@ -24,16 +24,16 @@ def ocaml_config(prefix="", bpath=None):
     if not os.path.exists(bpath):
         os.mkdir(bpath)
 
-    mlobject = "%s/interface_ml.o" % bpath
+    mlobject = f"{bpath}/interface_ml.o"
 
-    ocamlpath = os.popen("%socamlopt -where" % prefix).readline().strip()
+    ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
     if ocamlpath == "":
-        raise SystemError("%socamlopt not found" % prefix)
+        raise SystemError("opam exec -- ocamlopt not found")
 
     asmrunlib = ocamlpath + "/libasmrun.a"
 
     # Rely on ocamlfind to find facile, but you can add some hints if need be
-    facilepath = os.popen("%socamlfind query facile" % prefix).readline()
+    facilepath = os.popen("opam exec -- ocamlfind query facile").readline()
     facilepath = facilepath.strip()
 
     # Check timestamps for OCaml file
@@ -43,7 +43,8 @@ def ocaml_config(prefix="", bpath=None):
     ):
         print("Compiling interface.ml")
         cmd = (
-            f"{prefix}ocamlfind ocamlopt -package facile -linkpkg -output-obj"
+            "opam exec -- "
+            "ocamlfind ocamlopt -package facile -linkpkg -output-obj"
             f" -o {mlobject} interface/interface.ml"
         )
         print(cmd)
