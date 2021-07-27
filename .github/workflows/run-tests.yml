@@ -57,7 +57,7 @@ jobs:
         working-directory: ./facile.ml
         run: |
           opam switch create 4.04.2+fPIC
-          eval $(opam env)
+          eval $(opam env --switch=4.04.2+fPIC)
           opam install ocamlfind ocamlbuild
           make
           make install
