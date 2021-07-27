@@ -57,7 +57,7 @@ def ocaml_config(bpath=None):
 
 def build():
     ocamlpath, mlobject, asmrunlib = ocaml_config()
-    compileargs = ["-fPIC"]
+    compileargs = sysconfig.get_config_vars()["CFLAGS"].split()
     INCLUDE = [ocamlpath]
 
     try:
