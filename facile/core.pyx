@@ -40,19 +40,18 @@ See also (resolution):
 
 import array
 import heapq
-import types
+import itertools
 import numbers
 import reprlib
-import itertools
+import types
 from collections import defaultdict
 from collections.abc import Iterable
 
 cimport cpython
+from cpython cimport array
+from libc.stdint cimport uintptr_t
 
 from interface cimport *
-from cpython cimport array
-
-from libc.stdint cimport uintptr_t
 
 # Initialize OCaml
 init()
@@ -1050,7 +1049,7 @@ cdef class Array(object):
         instantiated to v.
         Also, the sum of the cardinals will be equal to the number of variables
         in the array (the corresponding constraint is automatically posted).
-        >>> a = array([variable(0,3) for i in range(5)])
+        >>> a = array([variable(0, 3) for i in range(5)])
         >>> c = constraint(a.gcc([(1, 3), (1, 2), (3, 1)]))
         >>> solve(a)
         True

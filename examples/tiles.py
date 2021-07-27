@@ -1,7 +1,6 @@
 import sys
 from random import random
 
-
 from facile import Goal, constraint, solve, variable
 
 data = [
@@ -63,7 +62,7 @@ def tiles(sizes, bigsize):
     solution = solve(gx & gy, backtrack=True)
     print(solution)
     try:
-        import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt  # type: ignore
 
         fig, ax = plt.subplots(figsize=(7, 7))
 
