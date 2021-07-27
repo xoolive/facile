@@ -55,22 +55,22 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
-      - name: Switch to most recent +fPIC variant
+      - name: Switch to most recent +fPIC variant (Ubuntu only)
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           opam switch create 4.04.2+fPIC
           opam switch 4.04.2+fPIC
+          eval $(opam env --set-switch --switch=4.04.2+fPIC)
 
       - name: Compile and install facile.ml library
         working-directory: ./facile.ml
         run: |
-          eval $(opam env --set-switch --switch=4.04.2+fPIC)
           opam install ocamlfind ocamlbuild
           make
           make install
 
       - name: Install Python facile library
         run: |
-          eval $(opam env --set-switch --switch=4.04.2+fPIC)
           poetry install
 
       - name: Style checking
