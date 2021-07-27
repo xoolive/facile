@@ -67,16 +67,15 @@ jobs:
           make
           make install
 
-       - name: Style checking
-         run: |
-           poetry run flake8 facile examples tests
-           poetry run isort --check-only facile examples tests
-           poetry run black --check facile examples tests
+      - name: Style checking
+        run: |
+          poetry run flake8 facile examples tests
+          poetry run isort --check-only facile examples tests
+          poetry run black --check facile examples tests
 
       - name: Type checking
         run: |
           poetry run mypy facile examples tests
-
 
       - name: Install Python facile library
         run: |
