@@ -67,7 +67,7 @@ jobs:
         run: |
           # eval $(opam env)
           opam install ocamlfind ocamlbuild
-          opem exec -- make
+          opam exec -- make
           opam exec -- make install
           
       - name: Compile and install facile.ml library
