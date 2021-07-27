@@ -161,7 +161,7 @@ def minimize(
 def constraint(cstr: Cstr) -> None: ...
 def alldifferent(variables: Iterable[Union[Variable, Arith]]) -> Cstr: ...
 def variable(
-    min_val: Union[range, Arith, Cstr, Iterable[int]],
+    min_val: Union[int, range, Arith, Cstr, Iterable[int]],
     max_val: Optional[int] = None,
     *args,
     **kwargs,
