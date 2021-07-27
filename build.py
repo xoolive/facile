@@ -43,8 +43,8 @@ def ocaml_config(bpath=None):
     ):
         print("Compiling interface.ml")
         cmd = (
-            "opam exec -- "
-            "ocamlfind ocamlopt -package facile -linkpkg -output-obj"
+            "opam exec -- ocamlfind ocamlopt -runtime-variant _pic"
+            " -package facile -linkpkg -output-obj -verbose"
             f" -o {mlobject} interface/interface.ml"
         )
         print(cmd)
@@ -76,6 +76,8 @@ def build():
     # Mute the ugly trick for value/value*
     os.environ["CFLAGS"] += " -Wno-int-conversion"
     os.environ["CFLAGS"] += " -Wno-incompatible-pointer-types"
+    # assignment discards 'const' qualifier from pointer target type
+    os.environ["CFLAGS"] += " -Wno-discarded-qualifiers"
 
     # Compiler specific
     if compiler == "clang":
@@ -97,7 +99,8 @@ def build():
         )
     ]
     ext_modules = cythonize(
-        extensions, compiler_directives={"binding": True, "language_level": 3}
+        extensions,
+        compiler_directives={"binding": True, "language_level": 3},
     )
 
     distribution = Distribution(
@@ -106,6 +109,7 @@ def build():
     distribution.package_dir = "extended"
 
     cmd = build_ext.build_ext(distribution)
+    cmd.verbose = True
     cmd.ensure_finalized()
     cmd.run()
 

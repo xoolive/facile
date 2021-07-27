@@ -14,7 +14,7 @@ jobs:
           # - macos-latest
           - ubuntu-latest
         ocaml-compiler:
-          - ocaml-base-compiler.4.12.0
+          - 4.04.2+fPIC
         python-version:
           - 3.7
           # - 3.8
@@ -35,6 +35,7 @@ jobs:
           git clone git@git.recherche.enac.fr:facile.git facile.ml
           cd facile.ml
           git checkout 03a93f9
+          sed -i "/BUILD =/ s/$/ -ocamlopt 'ocamlopt -runtime-variant _pic'/" Makefile
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -55,9 +56,8 @@ jobs:
       - name: Compile and install facile.ml library
         working-directory: ./facile.ml
         run: |
-          opam install ocamlfind ocamlbuild
           eval $(opam env)
-          cat Makefile
+          opam install ocamlfind ocamlbuild
           make
           make install
 
