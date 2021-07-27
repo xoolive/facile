@@ -65,31 +65,31 @@ jobs:
         if: ${{ matrix.os != 'ubuntu-latest' }}
         working-directory: ./facile.ml
         run: |
-          eval $(opam env)
+          # eval $(opam env)
           opam install ocamlfind ocamlbuild
-          make
-          make install
+          opem exec -- make
+          opam exec -- make install
           
       - name: Compile and install facile.ml library
         if: ${{ matrix.os == 'ubuntu-latest' }}
         working-directory: ./facile.ml
         run: |
-          eval $(opam env --set-switch --switch=4.04.2+fPIC)
+          # eval $(opam env --set-switch --switch=4.04.2+fPIC)
           opam install ocamlfind ocamlbuild
-          make
-          make install
+          opam exec -- make
+          opam exec -- make install
           
       - name: Install Python facile library
         if: ${{ matrix.os != 'ubuntu-latest' }}
         run: |
-          eval $(opam env)
-          poetry install
+          # eval $(opam env)
+          opam exec -- poetry install
 
       - name: Install Python facile library
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          eval $(opam env --set-switch --switch=4.04.2+fPIC)
-          poetry install
+          # eval $(opam env --set-switch --switch=4.04.2+fPIC)
+          opam exec -- poetry install
 
       - name: Style checking
         run: |
