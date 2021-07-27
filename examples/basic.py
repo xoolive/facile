@@ -4,7 +4,7 @@ Basic examples of CSP problems:
     - alldifferent(a, b, c) and a + b <= 2c
 """
 
-from facile import variable, constraint, solve, alldifferent
+from facile import alldifferent, constraint, solve, variable
 
 a = variable(range(2))
 b = variable(range(2))

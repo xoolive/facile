@@ -1,4 +1,4 @@
-from facile import variable, constraint, solve_all
+from facile import constraint, solve_all, variable
 
 # http://xkcd.com/287/
 

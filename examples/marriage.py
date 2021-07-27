@@ -1,4 +1,4 @@
-from facile import array, variable, constraint, solve
+from facile import array, constraint, solve, variable
 
 n = 5
 men = ["Richard", "James", "John", "Hugh", "Greg"]

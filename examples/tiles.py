@@ -1,4 +1,6 @@
 import sys
+from random import random
+
 
 from facile import Goal, constraint, solve, variable
 
@@ -8,61 +10,22 @@ data = [
         "sizes": [10, 9, 7, 6, 4, 4, 3, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1],
         "bigsize": 19,
     },
+    # fmt: off
     {
         "sizes": [
-            50,
-            42,
-            37,
-            35,
-            33,
-            29,
-            27,
-            25,
-            24,
-            19,
-            18,
-            17,
-            16,
-            15,
-            11,
-            9,
-            8,
-            7,
-            6,
-            4,
-            2,
+            50, 42, 37, 35, 33, 29, 27, 25, 24, 19,
+            18, 17, 16, 15, 11, 9, 8, 7, 6, 4, 2,
         ],
         "bigsize": 112,
     },
     {
         "sizes": [
-            81,
-            64,
-            56,
-            55,
-            51,
-            43,
-            39,
-            38,
-            35,
-            33,
-            31,
-            30,
-            29,
-            20,
-            18,
-            16,
-            14,
-            9,
-            8,
-            5,
-            4,
-            3,
-            2,
-            1,
+            81, 64, 56, 55, 51, 43, 39, 38, 35, 33, 31,
+            30, 29, 20, 18, 16, 14, 9, 8, 5, 4, 3, 2, 1,
         ],
         "bigsize": 175,
     },
+    # fmt: on
 ]
 
 
@@ -100,19 +63,15 @@ def tiles(sizes, bigsize):
     solution = solve(gx & gy, backtrack=True)
     print(solution)
     try:
-        from random import random as rand
-
-        import matplotlib.cm as colormap
         import matplotlib.pyplot as plt
 
-        fig = plt.figure()
-        ax = fig.gca()
+        fig, ax = plt.subplots(figsize=(7, 7))
 
         def fill_square(x, y, s):
             plt.fill(
                 [x, x, x + s, x + s],
                 [y, y + s, y + s, y],
-                color=colormap.Vega20(rand()),
+                color=plt.get_cmap("tab20")(random()),
             )
 
         fill_square(0, 0, bigsize)
@@ -124,7 +83,6 @@ def tiles(sizes, bigsize):
         ax.set_aspect(1)
         ax.set_xticks(range(bigsize + 1))
         ax.set_yticks(range(bigsize + 1))
-        fig.set_size_inches(7, 7)
         ax.set_frame_on(False)
         plt.pause(10)
 

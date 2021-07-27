@@ -1,6 +1,6 @@
 # flake8: noqa: E226
 
-from facile import variable, constraint, solve
+from facile import constraint, solve, variable
 
 # Number of buckets
 nb = 3

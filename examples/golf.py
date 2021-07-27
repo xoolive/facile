@@ -17,16 +17,17 @@ nb_groups = 5
 nb_golfers = 15
 size_group = 3
 
-assert (size_group * nb_groups == nb_golfers)
+assert size_group * nb_groups == nb_golfers
 
 nb_weeks = 5
 
 # An array of nb_weeks * nb_golfers decision variables to choose the group of
 # every golfer every week
 
-groups = [facile.array(
-    [facile.variable(range(nb_groups)) for i in range(nb_golfers)]
-) for j in range(nb_weeks)]
+groups = [
+    facile.array([facile.variable(range(nb_groups)) for i in range(nb_golfers)])
+    for j in range(nb_weeks)
+]
 
 # For each week, exactly size_group golfers in each group:
 for i in range(nb_weeks):
@@ -34,7 +35,7 @@ for i in range(nb_weeks):
     # [1] Use a Sorting Constraint (redundant with [2])
     s = groups[i].sort()
     for j in range(nb_golfers):
-        facile.constraint(s[j] == j//size_group)
+        facile.constraint(s[j] == j // size_group)
 
     # [2] Use a Global Cardinality Constraint (redundant with [1])
     gcc = groups[i].gcc([(size_group, i) for i in range(nb_groups)])
@@ -42,7 +43,7 @@ for i in range(nb_weeks):
 
 # Two golfers do not play in the same group more than once
 for g1 in range(nb_golfers):
-    for g2 in range(g1+1, nb_golfers):
+    for g2 in range(g1 + 1, nb_golfers):
         g1_with_g2 = [groups[w][g1] == groups[w][g2] for w in range(nb_weeks)]
         facile.constraint(sum(g1_with_g2) <= 1)
 
@@ -55,10 +56,10 @@ for w in range(nb_weeks):
         facile.constraint(groups[w][g] <= g)
 
 for g in range(nb_golfers):
-    facile.constraint(groups[0][g] == g//size_group)
+    facile.constraint(groups[0][g] == g // size_group)
 
-if (not facile.solve([v for k in groups for v in k ])):
-    print ("No solution found")
+if not facile.solve([v for k in groups for v in k]):
+    print("No solution found")
 else:
-    for v in groups: print (v.value())
-
+    for v in groups:
+        print(v.value())

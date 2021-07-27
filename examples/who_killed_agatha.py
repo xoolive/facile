@@ -9,7 +9,7 @@
 #   Seventy-five problems for testing automatic theorem provers.
 #   Journal of Automated Reasoning, 2: 216, 1986.
 
-from facile import Variable, array, constraint, variable, solve
+from facile import Variable, array, constraint, solve, variable
 
 # TODO 2D arrays
 

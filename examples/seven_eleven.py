@@ -4,7 +4,7 @@
 Find four numbers such that their sum is 711 and their product is 711000000
 """
 
-from facile import variable, constraint, solve
+from facile import constraint, solve, variable
 
 a = variable(range(0, 330))
 b = variable(range(0, 160))

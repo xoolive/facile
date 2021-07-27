@@ -1,5 +1,6 @@
 import sys
 from typing import Optional
+
 from facile import Solution, alldifferent, constraint, solve, variable
 
 
