@@ -43,7 +43,7 @@ def ocaml_config(bpath=None):
     ):
         print("Compiling interface.ml")
         cmd = (
-            "opam exec -- ocamlfind ocamlopt -runtime-variant _pic"
+            "opam exec -- ocamlfind ocamlopt"  # " -runtime-variant _pic"
             " -package facile -linkpkg -output-obj -verbose"
             f" -o {mlobject} interface/interface.ml"
         )
@@ -57,44 +57,25 @@ def ocaml_config(bpath=None):
 
 def build():
     ocamlpath, mlobject, asmrunlib = ocaml_config()
-    compileargs = sysconfig.get_config_vars()["CFLAGS"].split()
-    INCLUDE = [ocamlpath]
 
-    try:
-        os.environ["CFLAGS"]
-    except KeyError:
-        os.environ["CFLAGS"] = ""
-
-    try:
-        compiler = sysconfig.get_config_vars()["CC"]
-        compiler = os.environ["CC"]
-    except Exception:
-        compiler = ""
+    compiler = sysconfig.get_config_var("CC", "")
+    compileargs = sysconfig.get_config_var("CFLAGS", "")
 
     # Flag for array
-    os.environ["CFLAGS"] += " -Wno-unused-function"
+    compileargs += " -Wno-unused-function"
     # Mute the ugly trick for value/value*
-    os.environ["CFLAGS"] += " -Wno-int-conversion"
-    os.environ["CFLAGS"] += " -Wno-incompatible-pointer-types"
+    compileargs += " -Wno-int-conversion"
+    compileargs += " -Wno-incompatible-pointer-types"
     # assignment discards 'const' qualifier from pointer target type
-    os.environ["CFLAGS"] += " -Wno-discarded-qualifiers"
-
-    # Compiler specific
-    if compiler == "clang":
-        # Other warning on a Python flag (not my fault...)
-        os.environ["CFLAGS"] += " -Wno-unknown-warning-option"
-
-    # gcc
-    if "gcc" in compiler:
-        os.environ["CFLAGS"] += " -Wno-strict-prototypes"
+    compileargs += " -Wno-discarded-qualifiers"
 
     extensions = [
         Extension(
             "facile.core",
             ["facile/core.pyx", "interface/interface_c.c"],
             language="c",
-            include_dirs=INCLUDE,
-            extra_compile_args=compileargs,
+            include_dirs=[ocamlpath],
+            extra_compile_args=compileargs.split(),
             extra_link_args=[mlobject, asmrunlib],
         )
     ]
