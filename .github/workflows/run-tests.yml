@@ -67,6 +67,11 @@ jobs:
           make
           make install
 
+      - name: Install Python facile library
+        run: |
+          eval $(opam env --set-switch --switch=4.04.2+fPIC)
+          poetry install
+
       - name: Style checking
         run: |
           poetry run flake8 facile examples tests
@@ -76,11 +81,6 @@ jobs:
       - name: Type checking
         run: |
           poetry run mypy facile examples tests
-
-      - name: Install Python facile library
-        run: |
-          eval $(opam env --set-switch --switch=4.04.2+fPIC)
-          poetry install
 
       - name: Run Pytest
         run: |
