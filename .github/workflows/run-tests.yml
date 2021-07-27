@@ -85,8 +85,8 @@ jobs:
       - name: Install Python facile library (+fPIC)
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          # eval $(opam env --set-switch --switch=4.04.2+fPIC)
-          opam exec --switch=4.04.2+fPIC -- poetry install
+          eval $(opam env --set-switch --switch=4.04.2+fPIC)
+          opam exec -- poetry install
 
       - name: Style checking
         run: |
