@@ -75,7 +75,7 @@ jobs:
         run: |
           opam install --switch=4.04.2+fPIC ocamlfind ocamlbuild
           opam exec --switch=4.04.2+fPIC -- make
-          make install
+          opam exec --switch=4.04.2+fPIC -- make install
 
       - name: Install Python facile library
         if: ${{ matrix.os != 'ubuntu-latest' }}
