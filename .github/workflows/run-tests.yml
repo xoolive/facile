@@ -35,7 +35,8 @@ jobs:
           git clone git@git.recherche.enac.fr:facile.git facile.ml
           cd facile.ml
           git checkout 03a93f9
-          sed -i "/BUILD =/ s/$/ -ocamlopt 'ocamlopt -runtime-variant _pic'/" Makefile
+        # shouldn't be necessary for now after we switched to a +fPIC variant
+        # sed -i "/BUILD =/ s/$/ -ocamlopt 'ocamlopt -runtime-variant _pic'/" Makefile
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -53,11 +54,15 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
+      - name: Switch to most recent +fPIC variant
+        run: |
+          opam switch create 4.04.2+fPIC
+          opam switch 4.04.2+fPIC
+          eval $(opam env)
+
       - name: Compile and install facile.ml library
         working-directory: ./facile.ml
         run: |
-          opam switch create 4.04.2+fPIC
-          eval $(opam env --switch=4.04.2+fPIC)
           opam install ocamlfind ocamlbuild
           make
           make install
@@ -69,3 +74,13 @@ jobs:
       - name: Run Pytest
         run: |
           poetry run pytest
+
+      - name: Build wheel
+        run: |
+          poetry build
+
+      - name: Upload the build artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.os }}-${{ matrix.python-version }}-facile-wheel
+          path: dist/*.whl
