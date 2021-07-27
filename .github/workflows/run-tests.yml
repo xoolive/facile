@@ -73,8 +73,7 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         working-directory: ./facile.ml
         run: |
-          # eval $(opam env --set-switch --switch=4.04.2+fPIC)
-          opam install ocamlfind ocamlbuild
+          opam install --switch=4.04.2+fPIC ocamlfind ocamlbuild
           opam exec --switch=4.04.2+fPIC -- make
           make install
 
