@@ -69,7 +69,7 @@ def build():
         compiler = sysconfig.get_config_vars()["CC"]
         compiler = os.environ["CC"]
     except Exception:
-        pass
+        compiler = ""
 
     # Flag for array
     os.environ["CFLAGS"] += " -Wno-unused-function"
