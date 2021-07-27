@@ -75,9 +75,9 @@ jobs:
         run: |
           # eval $(opam env --set-switch --switch=4.04.2+fPIC)
           opam install ocamlfind ocamlbuild
-          opam --switch=4.04.2+fPIC exec -- make
+          opam exec --switch=4.04.2+fPIC -- make
           make install
-          
+
       - name: Install Python facile library
         if: ${{ matrix.os != 'ubuntu-latest' }}
         run: |
@@ -87,7 +87,7 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           # eval $(opam env --set-switch --switch=4.04.2+fPIC)
-          opam --switch=4.04.2+fPIC exec -- poetry install
+          opam exec --switch=4.04.2+fPIC -- poetry install
 
       - name: Style checking
         run: |
