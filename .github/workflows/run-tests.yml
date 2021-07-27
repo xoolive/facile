@@ -14,7 +14,7 @@ jobs:
           # - macos-latest
           - ubuntu-latest
         ocaml-compiler:
-          - 4.04.2+fPIC
+          - 4.12.0
         python-version:
           - 3.7
           # - 3.8
@@ -56,6 +56,7 @@ jobs:
       - name: Compile and install facile.ml library
         working-directory: ./facile.ml
         run: |
+          opam switch create 4.04.2+fPIC
           eval $(opam env)
           opam install ocamlfind ocamlbuild
           make
