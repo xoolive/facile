@@ -58,8 +58,10 @@ def ocaml_config(bpath=None):
 def build():
     ocamlpath, mlobject, asmrunlib = ocaml_config()
 
-    compiler = sysconfig.get_config_var("CC", "")
-    compileargs = sysconfig.get_config_var("CFLAGS", "")
+    compiler = sysconfig.get_config_var("CC")
+    compiler = "" if compiler is None else compiler
+    compileargs = sysconfig.get_config_var("CFLAGS")
+    compileargs = "" if compileargs is None else compileargs
 
     # Flag for array
     compileargs += " -Wno-unused-function"
