@@ -64,3 +64,7 @@ jobs:
       - name: Install Python facile library
         run: |
           poetry install
+
+      - name: Run Pytest
+        run: |
+          poetry run pytest
