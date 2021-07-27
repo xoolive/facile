@@ -62,14 +62,14 @@ jobs:
       - name: Compile and install facile.ml library
         working-directory: ./facile.ml
         run: |
-          eval $(opam env --switch=4.04.2+fPIC)
+          eval $(opam env --set-switch)
           opam install ocamlfind ocamlbuild
           make
           make install
 
       - name: Install Python facile library
         run: |
-          eval $(opam env --switch=4.04.2+fPIC)
+          eval $(opam env --set-switch)
           poetry install
 
       - name: Run Pytest
