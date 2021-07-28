@@ -4,6 +4,10 @@ on:
   push:
   workflow_dispatch:
 
+env:
+  UBUNTU_SWITCH: 4.04.2+fPIC
+  WINDOWS_SWITCH: 4.12.0+msvc64
+
 jobs:
   deploy:
     runs-on: ${{ matrix.os }}
@@ -24,6 +28,10 @@ jobs:
     steps:
       - name: Checkout Python code
         uses: actions/checkout@v2
+
+      - name: tmate session if tests fail
+        if: failure() # && github.event_name == 'workflow_dispatch'
+        uses: mxschmitt/action-tmate@v3
 
       - name: Set up private ssh key
         uses: webfactory/ssh-agent@v0.5.3
@@ -58,18 +66,16 @@ jobs:
       - name: Switch to most recent +fPIC variant (Ubuntu only)
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          echo "4.04.2+fPIC" > OCAML_SWITCH
-          opam switch create $(cat OCAML_SWITCH)
-          opam switch $(cat OCAML_SWITCH)
+          opam switch create $UBUNTU_SWITCH
+          opam switch $UBUNTU_SWITCH
 
       - name: Switch to msvc64 variant (Windows only)
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          echo "4.12.0+msvc64" > OCAML_SWITCH
-          opam switch create $(cat OCAML_SWITCH)
-          opam switch $(cat OCAML_SWITCH)
+          opam switch create $WINDOWS_SWITCH
+          opam switch $WINDOWS_SWITCH
 
-      - name: Compile and install facile.ml library
+      - name: Compile and install facile.ml library (MacOS)
         if: ${{ matrix.os == 'macos-latest' }}
         working-directory: ./facile.ml
         run: |
@@ -77,23 +83,37 @@ jobs:
           opam exec -- make
           opam exec -- make install
 
-      - name: Compile and install facile.ml library (switch)
-        if: ${{ matrix.os != 'macos-latest' }}
+      - name: Compile and install facile.ml library (Ubuntu)
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         working-directory: ./facile.ml
         run: |
-          opam install --switch=$(cat OCAML_SWITCH) ocamlfind ocamlbuild
-          opam exec --switch=$(cat OCAML_SWITCH) -- make
-          opam exec --switch=$(cat OCAML_SWITCH) -- make install
+          opam install --switch=$UBUNTU_SWITCH ocamlfind ocamlbuild
+          opam exec --switch=$UBUNTU_SWITCH -- make
+          opam exec --switch=$UBUNTU_SWITCH -- make install
 
-      - name: Install Python facile library
+      - name: Compile and install facile.ml library (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        working-directory: ./facile.ml
+        run: |
+          opam install --switch=$UBUNTU_SWITCH ocamlfind ocamlbuild
+          opam exec --switch=$UBUNTU_SWITCH -- make
+          opam exec --switch=$UBUNTU_SWITCH -- make install
+
+      - name: Install Python facile library (MacOS)
         if: ${{ matrix.os == 'macos-latest' }}
         run: |
           opam exec -- poetry install
 
-      - name: Install Python facile library (switch)
-        if: ${{ matrix.os != 'macos-latest' }}
+      - name: Install Python facile library (Ubuntu)
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          eval $(opam env --set-switch --switch=$(cat OCAML_SWITCH))
+          eval $(opam env --set-switch --switch=$UBUNTU_SWITCH)
+          opam exec -- poetry install
+
+      - name: Install Python facile library (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          eval $(opam env --set-switch --switch=$WINDOWS_SWITCH)
           opam exec -- poetry install
 
       - name: Style checking
