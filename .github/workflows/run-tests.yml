@@ -58,34 +58,42 @@ jobs:
       - name: Switch to most recent +fPIC variant (Ubuntu only)
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          opam switch create 4.04.2+fPIC
-          opam switch 4.04.2+fPIC
+          echo "4.04.2+fPIC" > OCAML_SWITCH
+          opam switch create $(cat OCAML_SWITCH)
+          opam switch $(cat OCAML_SWITCH)
+
+      - name: Switch to msvc64 variant (Windows only)
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          echo "4.12.0+msvc64" > OCAML_SWITCH
+          opam switch create $(cat OCAML_SWITCH)
+          opam switch $(cat OCAML_SWITCH)
 
       - name: Compile and install facile.ml library
-        if: ${{ matrix.os != 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'macos-latest' }}
         working-directory: ./facile.ml
         run: |
           opam install ocamlfind ocamlbuild
           opam exec -- make
           opam exec -- make install
-          
-      - name: Compile and install facile.ml library (+fPIC)
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+
+      - name: Compile and install facile.ml library (switch)
+        if: ${{ matrix.os != 'macos-latest' }}
         working-directory: ./facile.ml
         run: |
-          opam install --switch=4.04.2+fPIC ocamlfind ocamlbuild
-          opam exec --switch=4.04.2+fPIC -- make
-          opam exec --switch=4.04.2+fPIC -- make install
+          opam install --switch=$(cat OCAML_SWITCH) ocamlfind ocamlbuild
+          opam exec --switch=$(cat OCAML_SWITCH) -- make
+          opam exec --switch=$(cat OCAML_SWITCH) -- make install
 
       - name: Install Python facile library
-        if: ${{ matrix.os != 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'macos-latest' }}
         run: |
           opam exec -- poetry install
 
-      - name: Install Python facile library (+fPIC)
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - name: Install Python facile library (switch)
+        if: ${{ matrix.os != 'macos-latest' }}
         run: |
-          eval $(opam env --set-switch --switch=4.04.2+fPIC)
+          eval $(opam env --set-switch --switch=$(cat OCAML_SWITCH))
           opam exec -- poetry install
 
       - name: Style checking
