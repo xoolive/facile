@@ -65,7 +65,7 @@ jobs:
           ocaml-compiler: ocaml-variants.4.04.2+msvc64c
 
       - name: Compile and install facile.ml library
-        if: ${{ success() or matrix.os == 'windows-latest' }}
+        if: ${{ success() || matrix.os == 'windows-latest' }}
         working-directory: ./facile.ml
         run: |
           opam install ocamlfind ocamlbuild
