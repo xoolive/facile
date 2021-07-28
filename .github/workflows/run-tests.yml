@@ -14,8 +14,8 @@ jobs:
           - macos-latest
           - ubuntu-latest
           - windows-latest
-        ocaml-compiler:
-          - 4.12.0
+        # ocaml-compiler:
+        #   - 4.12.0
         python-version:
           - 3.7
           - 3.8
@@ -52,10 +52,10 @@ jobs:
         uses: ocaml/setup-ocaml@v2
         with:
           # ocaml-compiler: ${{ matrix.ocaml-compiler }}
-          ocaml-compiler: 4.04.2+fPIC
+          ocaml-compiler: "4.04.2+fPIC"
 
       - name: Switch to most recent +fPIC variant (Ubuntu only)
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'false ubuntu-latest' }}
         run: |
           OPAM_SWITCH=4.04.2+fPIC
           echo 'OPAM_SWITCH=$OPAM_SWITCH' >> $GITHUB_ENV
@@ -71,7 +71,7 @@ jobs:
           opam switch ${{ env.OPAM_SWITCH }}
 
       - name: Compile and install facile.ml library (MacOS)
-        if: ${{ matrix.os == 'macos-latest' }}
+        if: ${{ matrix.os != 'windows-latest' }}
         working-directory: ./facile.ml
         run: |
           opam install ocamlfind ocamlbuild
@@ -79,7 +79,7 @@ jobs:
           opam exec -- make install
 
       - name: Compile and install facile.ml library (Windows)
-        if: ${{ matrix.os != 'macos-latest' }}
+        if: ${{ matrix.os == 'windows-latest' }}
         working-directory: ./facile.ml
         run: |
           opam install --switch=${{ env.OPAM_SWITCH }} ocamlfind ocamlbuild
@@ -87,12 +87,12 @@ jobs:
           opam exec --switch=${{ env.OPAM_SWITCH }} -- make install
 
       - name: Install Python facile library (MacOS)
-        if: ${{ matrix.os == 'macos-latest' }}
+        if: ${{ matrix.os != 'windows-latest' }}
         run: |
           opam exec -- poetry install
 
       - name: Install Python facile library (Ubuntu and Windows)
-        if: ${{ matrix.os != 'macos-latest' }}
+        if: ${{ matrix.os == 'windows-latest' }}
         run: |
           eval $(opam env --set-switch --switch=${{ env.OPAM_SWITCH }})
           opam exec -- poetry install
