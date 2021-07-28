@@ -34,6 +34,7 @@ jobs:
           git clone git@git.recherche.enac.fr:facile.git facile.ml
           cd facile.ml
           git checkout 03a93f9
+          sed -i '/^OPT_INSTALL/ s/$/ _build\/$(NAME).lib/' Makefile
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -75,7 +76,7 @@ jobs:
       - name: Install Python facile library
         if: success() || matrix.os == 'windows-latest'
         run: |
-          opam exec -- poetry install || echo "::error"
+          opam exec -- poetry install
 
       - name: Style checking
         run: |
