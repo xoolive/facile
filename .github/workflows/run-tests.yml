@@ -50,7 +50,7 @@ jobs:
         uses: ocaml/setup-ocaml@v2
         if: ${{ matrix.os == 'macos-latest' }}
         with:
-          ocaml-compiler: ocaml-variants.4.12.0
+          ocaml-compiler: ocaml-variants.4.12.0+options
 
       - name: Use OCaml for Ubuntu
         uses: ocaml/setup-ocaml@v2
@@ -62,7 +62,7 @@ jobs:
         uses: ocaml/setup-ocaml@v2
         if: ${{ matrix.os == 'windows-latest' }}
         with:
-          ocaml-compiler: ocaml-variants.4.11.0+msvc64
+          ocaml-compiler: ocaml-variants.4.12.0+mingw64c
 
       - name: Compile and install facile.ml library
         working-directory: ./facile.ml
