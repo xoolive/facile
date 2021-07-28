@@ -24,7 +24,11 @@ def ocaml_config(bpath=None):
     if not os.path.exists(bpath):
         os.mkdir(bpath)
 
-    mlobject = f"{bpath}/interface_ml.o"
+    ext_obj = "o"
+    if sysconfig.get_platform() == "win64":
+        ext_obj = "obj"
+
+    mlobject = f"{bpath}/interface_ml.{ext_obj}"
 
     ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
     if ocamlpath == "":
@@ -63,7 +67,7 @@ def build():
     compileargs = sysconfig.get_config_var("CFLAGS")
     compileargs = "" if compileargs is None else compileargs
 
-    if sys.platform != 'win32':
+    if sys.platform != "win32":
         # Flag for array
         compileargs += " -Wno-unused-function"
         # Mute the ugly trick for value/value*
