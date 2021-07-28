@@ -34,7 +34,10 @@ def ocaml_config(bpath=None):
     if ocamlpath == "":
         raise SystemError("opam exec -- ocamlopt not found")
 
-    asmrunlib = ocamlpath + "/libasmrun.a"
+    static_obj = "a"
+    if sysconfig.get_platform().startswith("win"):
+        static_obj = "lib"
+    asmrunlib = f"{ocamlpath}/libasmrun.{static_obj}"
 
     # Rely on ocamlfind to find facile, but you can add some hints if need be
     # facilepath = os.popen("opam exec -- ocamlfind query facile").readline()
