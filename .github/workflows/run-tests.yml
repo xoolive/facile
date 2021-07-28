@@ -62,7 +62,7 @@ jobs:
         uses: ocaml/setup-ocaml@v2
         if: ${{ matrix.os == 'windows-latest' }}
         with:
-          ocaml-compiler: ocaml-variants.4.04.2+msvc64c
+          ocaml-compiler: ocaml-variants.4.10.2+msvc64c
 
       - name: Compile and install facile.ml library
         if: ${{ success() || matrix.os == 'windows-latest' }}
