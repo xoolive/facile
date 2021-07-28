@@ -14,8 +14,6 @@ jobs:
           - macos-latest
           - ubuntu-latest
           - windows-latest
-        # ocaml-compiler:
-        #   - 4.12.0
         python-version:
           - 3.7
           - 3.8
@@ -48,53 +46,33 @@ jobs:
           version: 1.1.6
           virtualenvs-in-project: true
 
-      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+      - name: Use OCaml for Mac OS
         uses: ocaml/setup-ocaml@v2
+        if: ${{ matrix.os == 'macos-latest' }}
         with:
-          # ocaml-compiler: ${{ matrix.ocaml-compiler }}
-          ocaml-compiler: "4.04.2+fPIC"
+          ocaml-compiler: ocaml-variants.4.12.0
 
-      - name: Switch to most recent +fPIC variant (Ubuntu only)
-        if: ${{ matrix.os == 'false ubuntu-latest' }}
-        run: |
-          OPAM_SWITCH=4.04.2+fPIC
-          echo 'OPAM_SWITCH=$OPAM_SWITCH' >> $GITHUB_ENV
-          opam switch create ${{ env.OPAM_SWITCH }}
-          opam switch ${{ env.OPAM_SWITCH }}
+      - name: Use OCaml for Ubuntu
+        uses: ocaml/setup-ocaml@v2
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        with:
+          ocaml-compiler: ocaml-variants.4.04.2+fPIC
 
-      - name: Switch to msvc64 variant (Windows only)
+      - name: Use OCaml for Windows
+        uses: ocaml/setup-ocaml@v2
         if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          OPAM_SWITCH=4.11.0+msvc64
-          echo 'OPAM_SWITCH=$OPAM_SWITCH' >> $GITHUB_ENV
-          opam switch create ${{ env.OPAM_SWITCH }}
-          opam switch ${{ env.OPAM_SWITCH }}
+        with:
+          ocaml-compiler: ocaml-variants.4.11.0+msvc64
 
-      - name: Compile and install facile.ml library (MacOS)
-        if: ${{ matrix.os != 'windows-latest' }}
+      - name: Compile and install facile.ml library
         working-directory: ./facile.ml
         run: |
           opam install ocamlfind ocamlbuild
           opam exec -- make
           opam exec -- make install
 
-      - name: Compile and install facile.ml library (Windows)
-        if: ${{ matrix.os == 'windows-latest' }}
-        working-directory: ./facile.ml
+      - name: Install Python facile library
         run: |
-          opam install --switch=${{ env.OPAM_SWITCH }} ocamlfind ocamlbuild
-          opam exec --switch=${{ env.OPAM_SWITCH }} -- make
-          opam exec --switch=${{ env.OPAM_SWITCH }} -- make install
-
-      - name: Install Python facile library (MacOS)
-        if: ${{ matrix.os != 'windows-latest' }}
-        run: |
-          opam exec -- poetry install
-
-      - name: Install Python facile library (Ubuntu and Windows)
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          eval $(opam env --set-switch --switch=${{ env.OPAM_SWITCH }})
           opam exec -- poetry install
 
       - name: tmate session if tests fail
