@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: tmate session if tests fail
-        if: failure() # && github.event_name == 'workflow_dispatch'
+        if: failure() && github.event_name == 'push'
         uses: mxschmitt/action-tmate@v3
 
       - name: Set up private ssh key
@@ -72,8 +72,8 @@ jobs:
       - name: Switch to msvc64 variant (Windows only)
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          opam switch create $WINDOWS_SWITCH
-          opam switch $WINDOWS_SWITCH
+          opam switch create ${{ env.WINDOWS_SWITCH }}
+          opam switch ${{ env.WINDOWS_SWITCH }}
 
       - name: Compile and install facile.ml library (MacOS)
         if: ${{ matrix.os == 'macos-latest' }}
@@ -95,9 +95,9 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         working-directory: ./facile.ml
         run: |
-          opam install --switch=$UBUNTU_SWITCH ocamlfind ocamlbuild
-          opam exec --switch=$UBUNTU_SWITCH -- make
-          opam exec --switch=$UBUNTU_SWITCH -- make install
+          opam install --switch=${{ env.WINDOWS_SWITCH }} ocamlfind ocamlbuild
+          opam exec --switch=${{ env.WINDOWS_SWITCH }} -- make
+          opam exec --switch=${{ env.WINDOWS_SWITCH }} -- make install
 
       - name: Install Python facile library (MacOS)
         if: ${{ matrix.os == 'macos-latest' }}
@@ -113,7 +113,7 @@ jobs:
       - name: Install Python facile library (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          eval $(opam env --set-switch --switch=$WINDOWS_SWITCH)
+          eval $(opam env --set-switch --switch=${{ env.WINDOWS_SWITCH }})
           opam exec -- poetry install
 
       - name: Style checking
