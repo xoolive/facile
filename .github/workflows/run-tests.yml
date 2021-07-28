@@ -14,8 +14,6 @@ jobs:
           - macos-latest
           - ubuntu-latest
           - windows-latest
-        ocaml-compiler:
-          - 4.12.0
         python-version:
           - 3.7
           - 3.8
@@ -36,8 +34,6 @@ jobs:
           git clone git@git.recherche.enac.fr:facile.git facile.ml
           cd facile.ml
           git checkout 03a93f9
-        # shouldn't be necessary for now after we switched to a +fPIC variant
-        # sed -i "/BUILD =/ s/$/ -ocamlopt 'ocamlopt -runtime-variant _pic'/" Makefile
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -50,51 +46,36 @@ jobs:
           version: 1.1.6
           virtualenvs-in-project: true
 
-      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+      - name: Use OCaml for Mac OS
         uses: ocaml/setup-ocaml@v2
+        if: ${{ matrix.os == 'macos-latest' }}
         with:
-          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          ocaml-compiler: ocaml-variants.4.12.0+options
 
-      - name: Switch to most recent +fPIC variant (Ubuntu only)
+      - name: Use OCaml for Ubuntu
+        uses: ocaml/setup-ocaml@v2
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: |
-          echo "4.04.2+fPIC" > OCAML_SWITCH
-          opam switch create $(cat OCAML_SWITCH)
-          opam switch $(cat OCAML_SWITCH)
+        with:
+          ocaml-compiler: ocaml-variants.4.04.2+fPIC
 
-      - name: Switch to msvc64 variant (Windows only)
+      - name: Use OCaml for Windows
+        uses: ocaml/setup-ocaml@v2
         if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          echo "4.12.0+msvc64" > OCAML_SWITCH
-          opam switch create $(cat OCAML_SWITCH)
-          opam switch $(cat OCAML_SWITCH)
+        with:
+          ocaml-compiler: ocaml-variants.4.10.2+msvc64c
 
       - name: Compile and install facile.ml library
-        if: ${{ matrix.os == 'macos-latest' }}
+        if: success() || matrix.os == 'windows-latest'
         working-directory: ./facile.ml
         run: |
           opam install ocamlfind ocamlbuild
           opam exec -- make
           opam exec -- make install
 
-      - name: Compile and install facile.ml library (switch)
-        if: ${{ matrix.os != 'macos-latest' }}
-        working-directory: ./facile.ml
-        run: |
-          opam install --switch=$(cat OCAML_SWITCH) ocamlfind ocamlbuild
-          opam exec --switch=$(cat OCAML_SWITCH) -- make
-          opam exec --switch=$(cat OCAML_SWITCH) -- make install
-
       - name: Install Python facile library
-        if: ${{ matrix.os == 'macos-latest' }}
+        if: success() || matrix.os == 'windows-latest'
         run: |
-          opam exec -- poetry install
-
-      - name: Install Python facile library (switch)
-        if: ${{ matrix.os != 'macos-latest' }}
-        run: |
-          eval $(opam env --set-switch --switch=$(cat OCAML_SWITCH))
-          opam exec -- poetry install
+          opam exec -- poetry install || echo "::error"
 
       - name: Style checking
         run: |
@@ -107,15 +88,22 @@ jobs:
           poetry run mypy facile examples tests
 
       - name: Run Pytest
+        if: success() || matrix.os == 'windows-latest'
         run: |
           poetry run pytest
 
+      - name: tmate session if tests fail
+        if: failure() && matrix.python-version == 3.9
+        uses: mxschmitt/action-tmate@v3
+
       - name: Build wheel
+        if: success() || matrix.os == 'windows-latest'
         run: |
           poetry build
 
       - name: Upload the build artifact
         uses: actions/upload-artifact@v2
+        if: success() || matrix.os == 'windows-latest'
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}-facile-wheel
           path: dist/*.whl
