@@ -51,7 +51,8 @@ jobs:
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
         with:
-          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          # ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          ocaml-compiler: 4.04.2+fPIC
 
       - name: Switch to most recent +fPIC variant (Ubuntu only)
         if: ${{ matrix.os == 'ubuntu-latest' }}
