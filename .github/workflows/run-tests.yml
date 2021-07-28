@@ -34,7 +34,7 @@ jobs:
           git clone git@git.recherche.enac.fr:facile.git facile.ml
           cd facile.ml
           git checkout 03a93f9
-          sed -i '/^OPT_INSTALL/ s/$/ _build\/$(NAME).lib/' Makefile
+          sed -i'' -e '/^OPT_INSTALL/ s/$/ _build\/$(NAME).lib/' Makefile
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -64,6 +64,7 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         with:
           ocaml-compiler: ocaml-variants.4.10.2+msvc64c
+          opam-depext: false
 
       - name: Compile and install facile.ml library
         if: success() || matrix.os == 'windows-latest'

@@ -25,7 +25,7 @@ def ocaml_config(bpath=None):
         os.mkdir(bpath)
 
     ext_obj = "o"
-    if sysconfig.get_platform() == "win64":
+    if sysconfig.get_platform().startswith("win"):
         ext_obj = "obj"
 
     mlobject = f"{bpath}/interface_ml.{ext_obj}"
@@ -34,11 +34,14 @@ def ocaml_config(bpath=None):
     if ocamlpath == "":
         raise SystemError("opam exec -- ocamlopt not found")
 
-    asmrunlib = ocamlpath + "/libasmrun.a"
+    static_obj = "a"
+    if sysconfig.get_platform().startswith("win"):
+        static_obj = "lib"
+    asmrunlib = f"{ocamlpath}/libasmrun.{static_obj}"
 
     # Rely on ocamlfind to find facile, but you can add some hints if need be
-    facilepath = os.popen("opam exec -- ocamlfind query facile").readline()
-    facilepath = facilepath.strip()
+    # facilepath = os.popen("opam exec -- ocamlfind query facile").readline()
+    # facilepath = facilepath.strip()
 
     # Check timestamps for OCaml file
     exists = not os.path.exists(mlobject)
