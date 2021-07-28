@@ -65,7 +65,7 @@ jobs:
           ocaml-compiler: ocaml-variants.4.10.2+msvc64c
 
       - name: Compile and install facile.ml library
-        if: ${{ success() || matrix.os == 'windows-latest' }}
+        if: success() || matrix.os == 'windows-latest'
         working-directory: ./facile.ml
         run: |
           opam install ocamlfind ocamlbuild
@@ -73,6 +73,7 @@ jobs:
           opam exec -- make install
 
       - name: Install Python facile library
+        if: success() || matrix.os == 'windows-latest'
         run: |
           opam exec -- poetry install || echo "::error"
 
@@ -87,6 +88,7 @@ jobs:
           poetry run mypy facile examples tests
 
       - name: Run Pytest
+        if: success() || matrix.os == 'windows-latest'
         run: |
           poetry run pytest
 
@@ -95,11 +97,13 @@ jobs:
         uses: mxschmitt/action-tmate@v3
 
       - name: Build wheel
+        if: success() || matrix.os == 'windows-latest'
         run: |
           poetry build
 
       - name: Upload the build artifact
         uses: actions/upload-artifact@v2
+        if: success() || matrix.os == 'windows-latest'
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}-facile-wheel
           path: dist/*.whl
