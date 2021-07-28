@@ -73,11 +73,7 @@ jobs:
 
       - name: Install Python facile library
         run: |
-          opam exec -- poetry install
-
-      - name: tmate session if tests fail
-        if: failure() && matrix.python-version == 3.9
-        uses: mxschmitt/action-tmate@v3
+          opam exec -- poetry install || echo "::error"
 
       - name: Style checking
         run: |
@@ -92,6 +88,10 @@ jobs:
       - name: Run Pytest
         run: |
           poetry run pytest
+
+      - name: tmate session if tests fail
+        if: failure() && matrix.python-version == 3.9
+        uses: mxschmitt/action-tmate@v3
 
       - name: Build wheel
         run: |
