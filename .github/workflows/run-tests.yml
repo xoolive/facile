@@ -62,8 +62,6 @@ jobs:
       - name: Set vcvarsall.bat # does nothing on Linux and MacOS
         uses: ilammy/msvc-dev-cmd@v1
         if: ${{ matrix.os == 'windows-latest' }}
-        with:
-          sdk: 14.29.30037
 
       - name: Use OCaml for Windows
         uses: ocaml/setup-ocaml@v2
