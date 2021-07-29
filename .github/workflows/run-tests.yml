@@ -59,11 +59,17 @@ jobs:
         with:
           ocaml-compiler: ocaml-variants.4.04.2+fPIC
 
+      - name: Set vcvarsall.bat # does nothing on Linux and MacOS
+        uses: ilammy/msvc-dev-cmd@v1
+        if: ${{ matrix.os == 'windows-latest' }}
+        with:
+          sdk: 14.29.30037
+
       - name: Use OCaml for Windows
         uses: ocaml/setup-ocaml@v2
         if: ${{ matrix.os == 'windows-latest' }}
         with:
-          ocaml-compiler: ocaml-variants.4.10.2+msvc64c
+          ocaml-compiler: ocaml-variants.4.12.0+msvc64
           opam-depext: false # why is this ignored?
         # * Note: *
         # This target fails with the installation of config-file
