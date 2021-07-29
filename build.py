@@ -54,7 +54,7 @@ def ocaml_config(build_path=None) -> Tuple[List[str], List[str]]:
     # Check timestamps for OCaml file
     exists = os.path.exists(mlobject)
     ml_mtime = os.path.getmtime("interface/interface.ml")
-    obj_mtime = os.path.getmtime(mlobject)
+    obj_mtime = os.path.getmtime(mlobject) if exists else 0
     if not exists or ml_mtime > obj_mtime:
         print("Compiling interface.ml")
         cmd = (
