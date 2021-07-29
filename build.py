@@ -79,12 +79,12 @@ def build():
 
     if sys.platform != "win32":
         # Flag for array
-        compileargs += "-Wno-unused-function "
+        compileargs += " -Wno-unused-function"
         # Mute the ugly trick for value/value*
-        compileargs += "-Wno-int-conversion "
-        compileargs += "-Wno-incompatible-pointer-types "
+        compileargs += " -Wno-int-conversion"
+        compileargs += " -Wno-incompatible-pointer-types"
         # assignment discards 'const' qualifier from pointer target type
-        compileargs += "-Wno-discarded-qualifiers "
+        compileargs += " -Wno-discarded-qualifiers"
 
     extensions = [
         Extension(
