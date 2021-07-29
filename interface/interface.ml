@@ -81,6 +81,7 @@ let _ =
   Callback.register "FdArray.get" FdArray.get;
   Callback.register "FdArray.max" FdArray.max;
   Callback.register "FdArray.min" FdArray.min;
+  Callback.register "FdArray.sum" FdArray.sum;
 
   (* Constraint expression *)
 

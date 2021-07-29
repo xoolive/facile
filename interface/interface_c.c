@@ -488,6 +488,16 @@ value *fdarray_max(value *in1)
   return fcl_wrap(a);
 }
 
+value *fdarray_sum(value *in1)
+{
+  value a;
+  CLOSURE("FdArray.sum");
+  a = caml_callback_exn(*closure, *in1);
+  if Is_exception_result (a)
+    return 0;
+  return fcl_wrap(a);
+}
+
 value *fdarray_get(value *in1, value *in2)
 {
   value a;

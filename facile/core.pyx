@@ -1021,6 +1021,17 @@ cdef class Array(object):
             raise IndexError("Empty list")
         return Variable(value, __SECRET__)
 
+    def sum(self):
+        """Returns a new variable that is the sum of all expressions in self"""
+        cdef uintptr_t value
+        print("before fdarray_sum")
+        print(self.mlvalue)
+        value = fdarray_sum(self.mlvalue)
+        print("after fdarray_sum")
+        if value == 0:
+            raise IndexError("Empty list")
+        return Variable(value, __SECRET__)
+
     def sort(self):
         """Return an array of variables sorted in increasing order."""
         cdef uintptr_t value

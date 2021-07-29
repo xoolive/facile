@@ -66,6 +66,7 @@ cdef extern from "./interface/interface.h":
     uintptr_t fdarray_get(uintptr_t, uintptr_t)
     uintptr_t fdarray_max(uintptr_t)
     uintptr_t fdarray_min(uintptr_t)
+    uintptr_t fdarray_sum(uintptr_t)
 
     uintptr_t strategy_minmin()
     uintptr_t strategy_mindomain()
