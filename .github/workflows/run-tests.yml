@@ -13,7 +13,7 @@ jobs:
         os:
           - macos-latest
           - ubuntu-latest
-          - windows-latest
+          # - windows-latest
         python-version:
           - 3.7
           - 3.8
