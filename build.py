@@ -31,6 +31,7 @@ def ocaml_config(build_path=None) -> Tuple[List[str], List[str]]:
         ext_obj = "obj"
 
     mlobject = f"{build_path}/interface_ml.{ext_obj}"
+    extra_link_args.append(mlobject)
 
     ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
     if ocamlpath == "":
@@ -51,10 +52,10 @@ def ocaml_config(build_path=None) -> Tuple[List[str], List[str]]:
     # facilepath = facilepath.strip()
 
     # Check timestamps for OCaml file
-    exists = not os.path.exists(mlobject)
-    if exists or os.path.getmtime("interface/interface.ml") > os.path.getmtime(
-        mlobject
-    ):
+    exists = os.path.exists(mlobject)
+    ml_mtime = os.path.getmtime("interface/interface.ml")
+    obj_mtime = os.path.getmtime(mlobject)
+    if not exists or ml_mtime > obj_mtime:
         print("Compiling interface.ml")
         cmd = (
             "opam exec -- ocamlfind ocamlopt"  # " -runtime-variant _pic"
