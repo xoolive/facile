@@ -35,6 +35,7 @@ def ocaml_config(build_path=None) -> Tuple[List[str], List[str]]:
     ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
     if ocamlpath == "":
         raise SystemError("ocamlopt not found")
+    include_dirs.append(ocamlpath)
 
     static_obj = "a"
     if sysconfig.get_platform().startswith("win"):
