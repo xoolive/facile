@@ -5,39 +5,45 @@ import sysconfig
 import time
 from distutils.command import build_ext
 from distutils.core import Distribution, Extension
+from typing import List, Tuple
 
 from Cython.Build import cythonize
 
 
-def ocaml_config(bpath=None):
+def ocaml_config(build_path=None) -> Tuple[List[str], List[str]]:
 
-    if bpath is None:
-        # I know, it's bad! Feel free to improve...
-        bpath = "build/temp.%s-%s.%s" % (
+    include_dirs: List[str] = []
+    extra_link_args: List[str] = []
+
+    if build_path is None:
+        build_path = "build/temp.{}-{}".format(
             sysconfig.get_platform(),
-            sys.version_info[0],
-            sys.version_info[1],
+            sysconfig.get_config_var("py_version_short"),
         )
 
     if not os.path.exists("build"):
         os.mkdir("build")
-    if not os.path.exists(bpath):
-        os.mkdir(bpath)
+    if not os.path.exists(build_path):
+        os.mkdir(build_path)
 
     ext_obj = "o"
     if sysconfig.get_platform().startswith("win"):
         ext_obj = "obj"
 
-    mlobject = f"{bpath}/interface_ml.{ext_obj}"
+    mlobject = f"{build_path}/interface_ml.{ext_obj}"
 
     ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
     if ocamlpath == "":
-        raise SystemError("opam exec -- ocamlopt not found")
+        raise SystemError("ocamlopt not found")
 
     static_obj = "a"
     if sysconfig.get_platform().startswith("win"):
         static_obj = "lib"
-    asmrunlib = f"{ocamlpath}/libasmrun.{static_obj}"
+
+    extra_link_args.append(f"{ocamlpath}/libasmrun.{static_obj}")
+    if sysconfig.get_platform().startswith("win"):
+        extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_msvc64.obj")
+        extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_initer_msvc64.obj")
 
     # Rely on ocamlfind to find facile, but you can add some hints if need be
     # facilepath = os.popen("opam exec -- ocamlfind query facile").readline()
@@ -59,34 +65,35 @@ def ocaml_config(bpath=None):
         now = time.time()
         os.utime("facile/core.pyx", (now, now))
 
-    return ocamlpath, mlobject, asmrunlib
+    return include_dirs, extra_link_args
 
 
 def build():
-    ocamlpath, mlobject, asmrunlib = ocaml_config()
+    include_dirs, extra_link_args = ocaml_config()
 
     compiler = sysconfig.get_config_var("CC")
     compiler = "" if compiler is None else compiler
+
     compileargs = sysconfig.get_config_var("CFLAGS")
     compileargs = "" if compileargs is None else compileargs
 
     if sys.platform != "win32":
         # Flag for array
-        compileargs += " -Wno-unused-function"
+        compileargs += "-Wno-unused-function "
         # Mute the ugly trick for value/value*
-        compileargs += " -Wno-int-conversion"
-        compileargs += " -Wno-incompatible-pointer-types"
+        compileargs += "-Wno-int-conversion "
+        compileargs += "-Wno-incompatible-pointer-types "
         # assignment discards 'const' qualifier from pointer target type
-        compileargs += " -Wno-discarded-qualifiers"
+        compileargs += "-Wno-discarded-qualifiers "
 
     extensions = [
         Extension(
             "facile.core",
             ["facile/core.pyx", "interface/interface_c.c"],
             language="c",
-            include_dirs=[ocamlpath],
+            include_dirs=include_dirs,
             extra_compile_args=compileargs.split(),
-            extra_link_args=[mlobject, asmrunlib],
+            extra_link_args=extra_link_args,
         )
     ]
     ext_modules = cythonize(
