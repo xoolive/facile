@@ -64,9 +64,14 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         with:
           ocaml-compiler: ocaml-variants.4.10.2+msvc64c
-          opam-depext: false
+          opam-depext: false # why is this ignored?
+        # * Note: *
+        # This target fails with the installation of config-file
+        # ocamlfind: config_file.o: No such file or directory
+        # However this is not an issue for compiling facile
 
       - name: Compile and install facile.ml library
+        # See Note above
         if: success() || matrix.os == 'windows-latest'
         working-directory: ./facile.ml
         run: |
@@ -75,6 +80,7 @@ jobs:
           opam exec -- make install
 
       - name: Install Python facile library
+        # See Note above
         if: success() || matrix.os == 'windows-latest'
         run: |
           opam exec -- poetry install
@@ -90,6 +96,7 @@ jobs:
           poetry run mypy facile examples tests
 
       - name: Run Pytest
+        # See Note above
         if: success() || matrix.os == 'windows-latest'
         run: |
           poetry run pytest
@@ -99,12 +106,14 @@ jobs:
         uses: mxschmitt/action-tmate@v3
 
       - name: Build wheel
+        # See Note above
         if: success() || matrix.os == 'windows-latest'
         run: |
           poetry build
 
       - name: Upload the build artifact
         uses: actions/upload-artifact@v2
+        # See Note above
         if: success() || matrix.os == 'windows-latest'
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}-facile-wheel

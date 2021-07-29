@@ -5,49 +5,57 @@ import sysconfig
 import time
 from distutils.command import build_ext
 from distutils.core import Distribution, Extension
+from typing import List, Tuple
 
 from Cython.Build import cythonize
 
 
-def ocaml_config(bpath=None):
+def ocaml_config(build_path=None) -> Tuple[List[str], List[str]]:
 
-    if bpath is None:
-        # I know, it's bad! Feel free to improve...
-        bpath = "build/temp.%s-%s.%s" % (
+    include_dirs: List[str] = []
+    extra_link_args: List[str] = []
+
+    if build_path is None:
+        build_path = "build/temp.{}-{}".format(
             sysconfig.get_platform(),
-            sys.version_info[0],
-            sys.version_info[1],
+            sysconfig.get_config_var("py_version_short"),
         )
 
     if not os.path.exists("build"):
         os.mkdir("build")
-    if not os.path.exists(bpath):
-        os.mkdir(bpath)
+    if not os.path.exists(build_path):
+        os.mkdir(build_path)
 
     ext_obj = "o"
     if sysconfig.get_platform().startswith("win"):
         ext_obj = "obj"
 
-    mlobject = f"{bpath}/interface_ml.{ext_obj}"
+    mlobject = f"{build_path}/interface_ml.{ext_obj}"
+    extra_link_args.append(mlobject)
 
     ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
     if ocamlpath == "":
-        raise SystemError("opam exec -- ocamlopt not found")
+        raise SystemError("ocamlopt not found")
+    include_dirs.append(ocamlpath)
 
     static_obj = "a"
     if sysconfig.get_platform().startswith("win"):
         static_obj = "lib"
-    asmrunlib = f"{ocamlpath}/libasmrun.{static_obj}"
+
+    extra_link_args.append(f"{ocamlpath}/libasmrun.{static_obj}")
+    if sysconfig.get_platform().startswith("win"):
+        extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_msvc64.obj")
+        extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_initer_msvc64.obj")
 
     # Rely on ocamlfind to find facile, but you can add some hints if need be
     # facilepath = os.popen("opam exec -- ocamlfind query facile").readline()
     # facilepath = facilepath.strip()
 
     # Check timestamps for OCaml file
-    exists = not os.path.exists(mlobject)
-    if exists or os.path.getmtime("interface/interface.ml") > os.path.getmtime(
-        mlobject
-    ):
+    exists = os.path.exists(mlobject)
+    ml_mtime = os.path.getmtime("interface/interface.ml")
+    obj_mtime = os.path.getmtime(mlobject) if exists else 0
+    if not exists or ml_mtime > obj_mtime:
         print("Compiling interface.ml")
         cmd = (
             "opam exec -- ocamlfind ocamlopt"  # " -runtime-variant _pic"
@@ -59,14 +67,15 @@ def ocaml_config(bpath=None):
         now = time.time()
         os.utime("facile/core.pyx", (now, now))
 
-    return ocamlpath, mlobject, asmrunlib
+    return include_dirs, extra_link_args
 
 
 def build():
-    ocamlpath, mlobject, asmrunlib = ocaml_config()
+    include_dirs, extra_link_args = ocaml_config()
 
     compiler = sysconfig.get_config_var("CC")
     compiler = "" if compiler is None else compiler
+
     compileargs = sysconfig.get_config_var("CFLAGS")
     compileargs = "" if compileargs is None else compileargs
 
@@ -84,9 +93,9 @@ def build():
             "facile.core",
             ["facile/core.pyx", "interface/interface_c.c"],
             language="c",
-            include_dirs=[ocamlpath],
+            include_dirs=include_dirs,
             extra_compile_args=compileargs.split(),
-            extra_link_args=[mlobject, asmrunlib],
+            extra_link_args=extra_link_args,
         )
     ]
     ext_modules = cythonize(
