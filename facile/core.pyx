@@ -1072,7 +1072,7 @@ cdef class Array(object):
         """Return an array of variables sorted in increasing order."""
         cdef uintptr_t value
         value = sorting_sort(self.mlvalue)
-        return Array(value, self.length)
+        return Array(value, self.length, self.shape)
 
     def alldifferent(self, *args, **kwargs):
         """Equivalent to alldifferent applied to all elements of the array.
@@ -1149,7 +1149,7 @@ cdef class Array(object):
 
         v = np.empty(shape, dtype=object).ravel()
         for i, x in enumerate(np.ravel(v)):
-            v[i] =  Variable.binary()
+            v[i] = Variable.binary()
         return array(v.reshape(shape))
 
     @classmethod
@@ -1158,7 +1158,7 @@ cdef class Array(object):
 
         v = np.empty(shape, dtype=object).ravel()
         for i, x in enumerate(np.ravel(v)):
-            v[i] = variable(min_val, max_val, *args, **kwargs),
+            v[i] = variable(min_val, max_val, *args, **kwargs)
         return array(v.reshape(shape))
 
 
@@ -1970,7 +1970,7 @@ def array(variables):
         shape = variables.shape
         variables = variables.ravel()
 
-    except ImportError:
+    except AttributeError, ImportError:
         pass
     if isinstance(variables, Iterable):
         variables = list(variables)

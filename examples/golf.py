@@ -1,4 +1,5 @@
 import facile
+from facile.core import Array
 
 # A Golf Tournament (from http://www.icparc.ic.ac.uk/~cg6/conjunto.html)
 #
@@ -24,27 +25,24 @@ nb_weeks = 5
 # An array of nb_weeks * nb_golfers decision variables to choose the group of
 # every golfer every week
 
-groups = [
-    facile.array([facile.variable(range(nb_groups)) for i in range(nb_golfers)])
-    for j in range(nb_weeks)
-]
+groups = Array.variable((nb_weeks, nb_golfers), range(nb_groups))
 
 # For each week, exactly size_group golfers in each group:
 for i in range(nb_weeks):
 
     # [1] Use a Sorting Constraint (redundant with [2])
-    s = groups[i].sort()
+    s = groups[i, :].sort()
     for j in range(nb_golfers):
         facile.constraint(s[j] == j // size_group)
 
     # [2] Use a Global Cardinality Constraint (redundant with [1])
-    gcc = groups[i].gcc([(size_group, i) for i in range(nb_groups)])
+    gcc = groups[i, :].gcc([(size_group, i) for i in range(nb_groups)])
     facile.constraint(gcc)
 
 # Two golfers do not play in the same group more than once
 for g1 in range(nb_golfers):
     for g2 in range(g1 + 1, nb_golfers):
-        g1_with_g2 = [groups[w][g1] == groups[w][g2] for w in range(nb_weeks)]
+        g1_with_g2 = [groups[w, g1] == groups[w, g2] for w in range(nb_weeks)]
         facile.constraint(sum(g1_with_g2) <= 1)  # type: ignore
 
 # Breaking the symmetries
@@ -53,13 +51,12 @@ for g1 in range(nb_golfers):
 
 for w in range(nb_weeks):
     for g in range(nb_groups):
-        facile.constraint(groups[w][g] <= g)
+        facile.constraint(groups[w, g] <= g)
 
 for g in range(nb_golfers):
-    facile.constraint(groups[0][g] == g // size_group)
+    facile.constraint(groups[0, g] == g // size_group)
 
-if not facile.solve([v for k in groups for v in k]):
+if not facile.solve(list(groups)):
     print("No solution found")
 else:
-    for v in groups:
-        print(v.value())
+    print(groups.value())
