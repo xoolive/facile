@@ -41,6 +41,7 @@ See also (resolution):
 import array
 import heapq
 import itertools
+import functools
 import numbers
 import reprlib
 import types
@@ -900,6 +901,11 @@ cdef class Cstr(object):
         """Constraints cannot be interpreted as booleans."""
         raise ValueError("A constraint cannot be interpreted as a boolean.")
 
+def linearize(cumul, x):
+    value, mult = cumul
+    i_, s_ = x
+    return value + mult * i_, mult * s_
+
 # TODO operateurs terme à terme (+, -, *) with zip_longest
 cdef class Array(object):
     """Array helps the manipulation of arrays of variables and/or expressions.
@@ -918,13 +924,15 @@ cdef class Array(object):
 
     cdef uintptr_t mlvalue
     cdef long length
+    cdef tuple shape
 
     def __dealloc__(self):
         fcl_destroy(self.mlvalue)
 
-    def __cinit__(self, value, length):
+    def __cinit__(self, value, length, shape):
         self.mlvalue = value
         self.length = length
+        self.shape = shape
 
     def __getval(self):
         return self.mlvalue
@@ -940,6 +948,10 @@ cdef class Array(object):
             yield Variable(values[i], __SECRET__)
 
     def __repr__(self):
+        if len(self.shape) > 1:
+            import numpy as np
+
+            return repr(np.array(list(self)).reshape(self.shape))
         return repr(list(self))
 
     def __getitem__(self, key):
@@ -950,6 +962,28 @@ cdef class Array(object):
         values between 0 and (len-1).
         """
         cdef uintptr_t value
+        try:
+            import numpy as np
+
+            if isinstance(key, tuple):
+                if len(key) != len(self.shape):
+                    msg = "The index must of the same dimension as the array"
+                    raise KeyError(msg)
+                if any(isinstance(k, slice) for k in key):
+                    new_array = np.array(list(self))
+                    return array(new_array.reshape(self.shape)[key])
+
+                assert all(
+                    not isinstance(i_, int) or i_ < s_
+                    for i_, s_ in zip(key, self.shape)
+                )
+
+                # key = np.ravel_multi_index(key, dims=self.shape)
+                key, _ = functools.reduce(
+                    linearize, zip(reversed(key), reversed(self.shape))
+                )
+        except ImportError:
+            pass
         if isinstance(key, Variable):
             value = fdarray_get(self.mlvalue, key.__getval())
         elif isinstance(key, Arith):
@@ -983,7 +1017,12 @@ cdef class Array(object):
 
     def value(self):
         """Apply value() to all elements in Array."""
-        return [x.value() for x in self]
+        res = [x.value() for x in self]
+        if len(self.shape) > 1:
+            import numpy as np
+
+            return np.array(res).reshape(self.shape)
+        return res
 
     def max(self):
         """Returns a new variable that is the max of all expressions in self.
@@ -1024,10 +1063,7 @@ cdef class Array(object):
     def sum(self):
         """Returns a new variable that is the sum of all expressions in self"""
         cdef uintptr_t value
-        print("before fdarray_sum")
-        print(self.mlvalue)
         value = fdarray_sum(self.mlvalue)
-        print("after fdarray_sum")
         if value == 0:
             raise IndexError("Empty list")
         return Variable(value, __SECRET__)
@@ -1898,6 +1934,26 @@ def array(variables):
     cdef uintptr_t value
     cdef Variable v
     cdef array.array _vars
+    numpy_msg = (
+        "Only numpy arrays of variables, expressions, constraints and integers "
+        "are accepted"
+    )
+    shape = len(variables),  # tuple[int]
+    try:
+        import numpy as np 
+
+        if isinstance(variables, np.ndarray):
+            if not all(
+                any(isinstance(x, type_) for type_ in (int, Variable, Arith))
+                for x in variables.ravel()
+            ):
+                raise TypeError(numpy_msg)
+
+        shape = variables.shape
+        variables = variables.ravel()
+
+    except ImportError:
+        pass
     if isinstance(variables, Iterable):
         variables = list(variables)
         length = len(variables)
@@ -1915,7 +1971,7 @@ def array(variables):
                 raise TypeError("The arguments must be variables or expressions")
         pt_vars = <uintptr_t*>_vars.data.as_voidptr
         value = fdarray_create(pt_vars, length)
-        return Array(value, length)
+        return Array(value, length, shape)
     raise TypeError("The argument must be iterable")
 
 def make_constraint(update, delay):
