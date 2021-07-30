@@ -1,4 +1,5 @@
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Iterable,
     Iterator,
@@ -8,7 +9,6 @@ from typing import (
     Sized,
     Tuple,
     Union,
-    TYPE_CHECKING,
     overload,
 )
 

@@ -39,9 +39,9 @@ See also (resolution):
 """
 
 import array
+import functools
 import heapq
 import itertools
-import functools
 import numbers
 import reprlib
 import types
