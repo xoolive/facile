@@ -1143,6 +1143,24 @@ cdef class Array(object):
         value = gcc_cstr(self.mlvalue, pt_cards, pt_values, l)
         return Cstr(value, __SECRET__)
 
+    @classmethod
+    def binary(cls, shape):
+        import numpy as np
+
+        v = np.empty(shape, dtype=object).ravel()
+        for i, x in enumerate(np.ravel(v)):
+            v[i] =  Variable.binary()
+        return array(v.reshape(shape))
+
+    @classmethod
+    def variable(cls, shape, min_val, max_val=None, *args, **kwargs):
+        import numpy as np
+
+        v = np.empty(shape, dtype=object).ravel()
+        for i, x in enumerate(np.ravel(v)):
+            v[i] = variable(min_val, max_val, *args, **kwargs),
+        return array(v.reshape(shape))
+
 
 cdef class Strategy(object):
     """

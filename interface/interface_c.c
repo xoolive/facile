@@ -152,7 +152,6 @@ void domain_values(value *domain, int *values)
   size_t i = 0;
   CLOSURE("Domain.values");
   v = caml_callback(*closure, *domain);
-  // TODO change to array !!
   while (v != Val_emptylist)
   {
     values[i] = Int_val(Field(v, 0)); /* accessing the head */

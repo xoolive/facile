@@ -148,6 +148,17 @@ class Array(Iterable, Sized):
     def gcc(
         self, distribution: Iterable[Tuple[Union[int, Arith, Variable], int]]
     ) -> Cstr: ...
+    @classmethod
+    def binary(cls, shape: Tuple[int, ...]) -> "Array": ...
+    @classmethod
+    def variable(
+        cls,
+        shape: Tuple[int, ...],
+        min_val: Union[int, range, Arith, Cstr, Iterable[int]],
+        max_val: Optional[int] = None,
+        *args,
+        **kwargs,
+    ) -> "Array": ...
 
 class Strategy:
     @classmethod
