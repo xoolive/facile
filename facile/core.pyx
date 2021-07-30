@@ -1823,6 +1823,24 @@ def minimize(goal, expr, *args, **kwargs):
     res = solve(goal, *args, minimize=expr, **kwargs)
     return res
 
+def maximize(goal, expr, *args, **kwargs):
+    """
+    The `maximize` function solves the problem defined by all posted
+    constraints on variables passed in parameter, and minimizes the
+    expression passed in parameter.
+
+    It returns an empty list if the problem has no solution, and a pair
+    `(optimal, values)` with `value`s appearing in the same order as
+    `variables`.
+
+    The `maximize` function raises TypeError if `variables` is not
+    iterable or if expression is not valid.
+    """
+    res = minimize(goal, -expr, *args, **kwargs)
+    if res.solved:
+        res['evaluation'] *= -1
+    return res
+
 def constraint(cstr):
     """
     The `constraint` function defines a constraint and posts it to the

@@ -193,6 +193,12 @@ def solve(
     **kwargs,
 ) -> Solution: ...
 def solve_all(*args, **kwargs) -> List[Solution]: ...
+def maximize(
+    goal: Union[Goal, Iterable[Variable]],
+    expr: Union[Variable, Arith],
+    *args,
+    **kwargs,
+) -> Solution: ...
 def minimize(
     goal: Union[Goal, Iterable[Variable]],
     expr: Union[Variable, Arith],

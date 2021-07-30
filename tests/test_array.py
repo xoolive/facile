@@ -57,3 +57,45 @@ def test_invalid_array() -> None:
     )
     with pytest.raises(TypeError, match=msg):
         _ = facile.array(np_array)
+
+
+def test_broadcast() -> None:
+    c = np.array(
+        [
+            [13, 21, 20, 12, 8, 26, 22, 11],
+            [12, 36, 25, 41, 40, 11, 4, 8],
+            [35, 32, 13, 36, 26, 21, 13, 37],
+            [34, 54, 7, 8, 12, 22, 11, 40],
+            [21, 6, 45, 18, 24, 34, 12, 48],
+            [42, 19, 39, 15, 14, 16, 28, 46],
+            [16, 34, 38, 3, 34, 40, 22, 24],
+            [26, 20, 5, 17, 45, 31, 37, 43],
+        ]
+    )
+
+    var = facile.Array.binary(c.shape)
+
+    for i in range(c.shape[0]):
+        facile.constraint(var[:, i].sum() == 1)
+        facile.constraint(var[i, :].sum() == 1)
+
+    # TODO (var * c).sum()
+    sol = facile.minimize(list(var), (var * c.ravel()).sum())
+
+    assert sol.solved
+    assert sol.evaluation == 76
+    assert (
+        np.array(sol.solution).reshape(c.shape)
+        == np.array(  # noqa: W503
+            [
+                [1, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 1],
+                [0, 0, 0, 0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 1, 0, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+            ]
+        )
+    ).all()
