@@ -101,7 +101,7 @@ int val_refine(value *val, value *domain)
   return Is_exception_result(v);
 }
 
-void val_delay(value *val, value **events, int len, value *cstr)
+void val_delay(value *val, value **events, unsigned long len, value *cstr)
 {
   value array;
   size_t i = 0;
@@ -161,7 +161,7 @@ void domain_values(value *domain, int *values)
   }
 }
 
-value *domain_create(int *val, long len)
+value *domain_create(int *val, unsigned long len)
 {
   value v, array;
   size_t i = 0;
@@ -401,7 +401,7 @@ value *cstr_not(value *in)
   return fcl_wrap(a);
 }
 
-value *cstr_alldiff(value **val, long len, int b)
+value *cstr_alldiff(value **val, unsigned long len, int b)
 {
   value array, a;
   size_t i = 0;
@@ -424,7 +424,7 @@ value *cstr_boolean(value *cstr)
   return fcl_wrap(a);
 }
 
-value *gcc_cstr(value *array, value **cards, long *values, long len)
+value *gcc_cstr(value *array, value **cards, long *values, unsigned long len)
 {
   value a;
   size_t i = 0;
@@ -450,7 +450,7 @@ value *cstr_create(int update, int delay)
   return fcl_wrap(a);
 }
 
-value *fdarray_create(value **val, long len)
+value *fdarray_create(value **val, unsigned long len)
 {
   value array;
   size_t i = 0;

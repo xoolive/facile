@@ -15,12 +15,12 @@ cdef extern from "./interface/interface.h":
     int val_min(uintptr_t)
     int val_max(uintptr_t)
     int val_refine(uintptr_t, uintptr_t)
-    void val_delay(uintptr_t, uintptr_t*, int, uintptr_t)
+    void val_delay(uintptr_t, uintptr_t*, long, uintptr_t)
 
     uintptr_t val_domain(uintptr_t var)
     int domain_size(uintptr_t domain)
     void domain_values(uintptr_t domain, int* values)
-    uintptr_t domain_create(int* values, uintptr_t size)
+    uintptr_t domain_create(int* values, long size)
     uintptr_t domain_removelow(int, uintptr_t)
     uintptr_t domain_removeup(int, uintptr_t)
 
@@ -57,7 +57,7 @@ cdef extern from "./interface/interface.h":
     uintptr_t cstr_and(uintptr_t, uintptr_t)
     uintptr_t cstr_xor(uintptr_t, uintptr_t)
     uintptr_t cstr_not(uintptr_t)
-    uintptr_t cstr_alldiff(uintptr_t*, uintptr_t, int)
+    uintptr_t cstr_alldiff(uintptr_t*, uintptr_t, long)
     uintptr_t cstr_boolean(uintptr_t)
     uintptr_t cstr_create(int, int)
 

@@ -12,11 +12,11 @@ value *val_domain(value *var);
 int val_min(value *in);
 int val_max(value *in);
 int val_refine(value *val, value *domain);
-void val_delay(value *val, value **events, int len, value *cstr);
+void val_delay(value *val, value **events, unsigned long len, value *cstr);
 
 int domain_size(value *domain);
 void domain_values(value *domain, int *values);
-value *domain_create(int *values, long size);
+value *domain_create(int *values, unsigned long size);
 value *domain_removelow(int, value *domain);
 value *domain_removeup(int, value *domain);
 
@@ -27,7 +27,7 @@ value *fd_onsubst();
 
 value *interval_ismember(value *in, int inf, int sup);
 value *sorting_sort(value *in);
-value *gcc_cstr(value *, value **, long *, long);
+value *gcc_cstr(value *, value **, long *, unsigned long);
 
 value *fd2e(value *in);
 value *e2fd(value *in);
@@ -47,7 +47,7 @@ value *cstr_ne(value *in1, value *in2);
 value *cstr_gt(value *in1, value *in2);
 value *cstr_ge(value *in1, value *in2);
 
-value *fdarray_create(value **val, long len);
+value *fdarray_create(value **val, unsigned long len);
 void fdarray_read(value *in1, value **in2);
 value *fdarray_get(value *in1, value *in2);
 value *fdarray_max(value *in1);
@@ -60,7 +60,7 @@ value *cstr_or(value *, value *);
 value *cstr_and(value *, value *);
 value *cstr_xor(value *, value *);
 value *cstr_not(value *);
-value *cstr_alldiff(value **, long, int);
+value *cstr_alldiff(value **, unsigned long, int);
 value *cstr_boolean(value *);
 value *cstr_create(int, int);
 
