@@ -2027,3 +2027,6 @@ def make_constraint(update, delay):
     return Cstr(cstr_create(update_callback.id, delay_callback.id), __SECRET__)
 
 
+def facile_sum(*args):
+    "A typed version of the sum built-in"
+    return sum(*args)

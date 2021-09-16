@@ -1,4 +1,4 @@
-from facile import constraint, solve_all, variable
+from facile import constraint, solve_all, sum, variable
 
 # http://xkcd.com/287/
 
@@ -20,7 +20,7 @@ products = [
 # how many items of each dish
 quantity = [variable(range(10)) for p in price]
 
-constraint(sum(q * p for q, p in zip(quantity, price)) == total)  # type: ignore
+constraint(sum(q * p for q, p in zip(quantity, price)) == total)
 
 
 def print_current(sol):

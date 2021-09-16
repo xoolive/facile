@@ -28,7 +28,7 @@ def arithmetic(puzzle="SEND+MORE=MONEY", base=10) -> None:
 
     # constraints
     facile.constraint(facile.alldifferent(letters.values()))
-    facile.constraint(sum(words[:-1]) == words[-1])  # type: ignore
+    facile.constraint(facile.sum(words[:-1]) == words[-1])
 
     for word in expr_pb:
         facile.constraint(word[0] > 0)

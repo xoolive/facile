@@ -1,6 +1,6 @@
 from typing import Optional
 
-from facile import Solution, constraint, minimize, variable
+from facile import Solution, constraint, minimize, sum, variable
 
 
 def coins(values, maxval) -> Optional[Solution]:
@@ -17,11 +17,11 @@ def coins(values, maxval) -> Optional[Solution]:
         # How many coins per type
         nb_coins = [variable(range(maxval // values[i])) for i in range(n)]
         mysum = sum([x[0] * x[1] for x in zip(values, nb_coins)])
-        constraint(mysum == val)  # type: ignore
+        constraint(mysum == val)
         for j in range(len(nb_coins)):
             constraint(nb_coins[j] <= nb_min_coins[j])
 
-    total = variable(sum(nb_min_coins))  # type: ignore
+    total = variable(sum(nb_min_coins))
 
     return minimize(nb_min_coins, total)
 

@@ -6,7 +6,7 @@ import facile
 array = [facile.variable(range(10)) for i in range(10)]
 
 for i in range(10):
-    facile.constraint(sum(x == i for x in array) == array[i])  # type: ignore
+    facile.constraint(facile.sum(x == i for x in array) == array[i])
 
 if facile.solve(array):
     print([v.value() for v in array])

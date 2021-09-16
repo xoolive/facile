@@ -9,7 +9,7 @@
 #   Seventy-five problems for testing automatic theorem provers.
 #   Journal of Automated Reasoning, 2: 216, 1986.
 
-from facile import Array, constraint, solve, variable
+from facile import Array, constraint, solve, sum, variable
 
 n = 3
 agatha, butler, charles = 0, 1, 2
@@ -63,7 +63,7 @@ for i in range(n):
 # No one hates everyone.
 #   (sum j: hates[i, j]) <= 2,
 for i in range(n):
-    constraint(sum([hates[i, j] for j in range(n)]) <= 2)  # type: ignore
+    constraint(sum([hates[i, j] for j in range(n)]) <= 2)
 
 # Who killed Agatha?
 constraint(victim == agatha)

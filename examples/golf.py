@@ -43,7 +43,7 @@ for i in range(nb_weeks):
 for g1 in range(nb_golfers):
     for g2 in range(g1 + 1, nb_golfers):
         g1_with_g2 = [groups[w, g1] == groups[w, g2] for w in range(nb_weeks)]
-        facile.constraint(sum(g1_with_g2) <= 1)  # type: ignore
+        facile.constraint(facile.sum(g1_with_g2) <= 1)
 
 # Breaking the symmetries
 #  - 0 always in the first group, 1 in a group less than 1, ...

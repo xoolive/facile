@@ -1,6 +1,6 @@
 # flake8: noqa: E226
 
-from facile import constraint, solve, variable
+from facile import constraint, solve, sum, variable
 
 # Number of buckets
 nb = 3
@@ -24,10 +24,10 @@ constraint(buckets[steps - 1][2] == 0)
 for i in range(steps - 1):
     # we change the contents of two buckets at a time
     sum_buckets = sum([buckets[i][b] != buckets[i + 1][b] for b in range(nb)])
-    constraint(sum_buckets == 2)  # type: ignore
+    constraint(sum_buckets == 2)
     # we play with a constant amount of water
     sum_water = sum([buckets[i][b] for b in range(nb)])
-    constraint(sum_water == 8)  # type: ignore
+    constraint(sum_water == 8)
     for b1 in range(nb):
         for b2 in range(b1):
             constraint(

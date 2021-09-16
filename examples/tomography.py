@@ -8,7 +8,7 @@
 
 """
 
-from facile import Variable, constraint
+from facile import Variable, constraint, sum
 
 row_sums = [0, 0, 8, 2, 6, 4, 5, 3, 7, 0, 0]
 col_sums = [0, 0, 7, 1, 6, 3, 4, 5, 2, 7, 0, 0]
@@ -19,9 +19,9 @@ cols = len(col_sums)
 x = [[Variable.binary() for j in col_sums] for i in row_sums]
 
 for i in range(rows):
-    constraint(sum(x[i][j] for j in range(cols)) == row_sums[i])  # type: ignore
+    constraint(sum(x[i][j] for j in range(cols)) == row_sums[i])
 for j in range(cols):
-    constraint(sum(x[i][j] for i in range(rows)) == col_sums[j])  # type: ignore
+    constraint(sum(x[i][j] for i in range(rows)) == col_sums[j])
 
 
 def print_solution():
