@@ -1,0 +1,79 @@
+name: publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+        python-version:
+          - 3.7
+          - 3.8
+          - 3.9
+
+    steps:
+      - name: Checkout Python code
+        uses: actions/checkout@v2
+
+      - name: Set up private ssh key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Checkout OCaml facile library
+        run: |
+          ssh-keyscan git.recherche.enac.fr > ~/.ssh/known_hosts
+          git clone git@git.recherche.enac.fr:facile.git facile.ml
+          cd facile.ml
+          git checkout 03a93f9
+          sed -i'' -e '/^OPT_INSTALL/ s/$/ _build\/$(NAME).lib/' Makefile
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1.1.6
+        with:
+          version: 1.1.6
+          virtualenvs-in-project: true
+
+      - name: Use OCaml for Mac OS
+        uses: ocaml/setup-ocaml@v2
+        if: ${{ matrix.os == 'macos-latest' }}
+        with:
+          ocaml-compiler: ocaml-variants.4.12.0+options
+
+      - name: Use OCaml for Ubuntu
+        uses: ocaml/setup-ocaml@v2
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        with:
+          ocaml-compiler: ocaml-variants.4.04.2+fPIC
+
+      - name: Compile and install facile.ml library
+        working-directory: ./facile.ml
+        run: |
+          opam install ocamlfind ocamlbuild
+          opam exec -- make
+          opam exec -- make install
+
+      - name: Build wheel
+        run: |
+          opam exec -- poetry build
+          # do not upload tar.gz, only wheels
+          rm dist/*.tar.gz
+
+      - name: Publish a Python distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_PASSWORD }}
