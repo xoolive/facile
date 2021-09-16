@@ -66,9 +66,13 @@ jobs:
           opam exec -- make
           opam exec -- make install
 
+      - name: Install Python facile library
+        run: |
+          opam exec -- poetry install
+
       - name: Build wheel
         run: |
-          opam exec -- poetry build
+          poetry build
           # do not upload tar.gz, only wheels
           rm dist/*.tar.gz
 
