@@ -30,7 +30,7 @@ jobs:
     needs: configure
     runs-on: ubuntu-latest
     container:
-      image: "xoolive/centos7-dev:0.1"
+      image: "xoolive/centos7-dev:0.2"
       options: --user ${{ needs.configure.outputs.uid_gid }} -v /home/runner/facile.ml:/facile.ml
 
     strategy:
@@ -90,10 +90,6 @@ jobs:
       - name: Run Pytest
         run: |
           poetry run pytest
-
-      - name: tmate session if tests fail
-        if: failure() && matrix.python-version == 3.9
-        uses: mxschmitt/action-tmate@v3
 
       - name: Build wheel
         run: |
