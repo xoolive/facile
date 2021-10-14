@@ -5,15 +5,23 @@ on:
   workflow_dispatch:
 
 jobs:
+  configure:
+    runs-on: ubuntu-latest
+    outputs:
+      uid_gid: ${{ steps.get-user.outputs.uid_gid }}
+    steps:
+      - id: get-user
+        run: echo "::set-output name=uid_gid::$(id -u):$(id -g)"
+
   deploy:
-    runs-on: ${{ matrix.os }}
+    needs: configure
+    runs-on: ubuntu-latest
     container:
-      image: "centos:7"
+      image: "xoolive/centos7-dev:0.1"
+      options: --user ${{ needs.configure.outputs.uid_gid }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
         python-version:
           - "3.7"
           - "3.8"
@@ -23,12 +31,6 @@ jobs:
     steps:
       - name: Checkout Python code
         uses: actions/checkout@v2
-
-      - name: Install sudo and development tools
-        run: |
-          yum update -y
-          yum install -y sudo
-          yum groupinstall -y "Development tools"
 
       - name: Set up private ssh key
         uses: webfactory/ssh-agent@v0.5.3
@@ -56,13 +58,10 @@ jobs:
 
       - name: Use OCaml for Ubuntu
         uses: ocaml/setup-ocaml@v2
-        if: ${{ matrix.os == 'ubuntu-latest' }}
         with:
           ocaml-compiler: ocaml-variants.4.04.2+fPIC
 
       - name: Compile and install facile.ml library
-        # See Note above
-        if: success() || matrix.os == 'windows-latest'
         working-directory: ./facile.ml
         run: |
           opam install ocamlfind ocamlbuild
