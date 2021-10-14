@@ -12,13 +12,15 @@ jobs:
     steps:
       - id: get-user
         run: echo "::set-output name=uid_gid::$(id -u):$(id -g)"
+      - name: Add user to /etc/passwd
+        run: getent passwd $USER > /tmp/mypasswd
 
   deploy:
     needs: configure
     runs-on: ubuntu-latest
     container:
       image: "xoolive/centos7-dev:0.1"
-      options: --user ${{ needs.configure.outputs.uid_gid }}
+      options: --user ${{ needs.configure.outputs.uid_gid }} -v /tmp/mypasswd:/etc/passwd:ro
     strategy:
       fail-fast: false
       matrix:
