@@ -32,13 +32,11 @@ jobs:
       - name: Checkout Python code
         uses: actions/checkout@v2
 
-      - name: Set up private ssh key
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
-
       - name: Checkout OCaml facile library
         run: |
+          eval `ssh-agent`
+          echo "${{ secrets.SSH_KEY }}" | ssh-add -
+          mkdir ~/.ssh
           ssh-keyscan git.recherche.enac.fr > ~/.ssh/known_hosts
           git clone git@git.recherche.enac.fr:facile.git facile.ml
           cd facile.ml
