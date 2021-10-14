@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: "xoolive/centos7-dev:0.1"
-      options: --user ${{ needs.configure.outputs.uid_gid }} -v $HOME/facile.ml:/facile.ml
+      options: --user ${{ needs.configure.outputs.uid_gid }} -v /home/runner/facile.ml:/facile.ml
 
     strategy:
       fail-fast: false
