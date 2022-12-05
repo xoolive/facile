@@ -186,10 +186,10 @@ def solve(
     *args,
     time: bool = True,
     backtrack: bool = False,
-    on_backtrack: Callable[[], None] = None,
+    on_backtrack: Optional[Callable[[], None]] = None,
     all_solutions: bool = False,
     minimize: Optional[Union[Variable, Arith]] = None,
-    on_solution: Callable[[], None] = None,
+    on_solution: Optional[Callable[[], None]] = None,
     **kwargs,
 ) -> Solution: ...
 def solve_all(*args, **kwargs) -> List[Solution]: ...

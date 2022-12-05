@@ -106,9 +106,9 @@ jobs:
         run: |
           poetry run pytest
 
-      - name: tmate session if tests fail
-        if: failure() && matrix.python-version == 3.9
-        uses: mxschmitt/action-tmate@v3
+      # - name: tmate session if tests fail
+      #   if: failure() && matrix.python-version == 3.9
+      #   uses: mxschmitt/action-tmate@v3
 
       - name: Build wheel
         # See Note above

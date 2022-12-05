@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from functools import reduce
 from typing import Union
@@ -9,7 +11,7 @@ Expression = Union[facile.Variable, facile.Arith]
 
 def arithmetic(puzzle="SEND+MORE=MONEY", base=10) -> None:
 
-    problem = re.split(r"[\s+=]", puzzle)
+    problem: list[str] = re.split(r"[\s+=]", puzzle)
 
     # remove spaces
     problem = list(filter(lambda w: len(w) > 0, problem))
@@ -36,9 +38,9 @@ def arithmetic(puzzle="SEND+MORE=MONEY", base=10) -> None:
     assert facile.solve(letters.values())
 
     # print solutions
-    for word, numbers in zip(problem, expr_pb):
+    for word_str, numbers in zip(problem, expr_pb):
         strings = [str(n.value()) for n in numbers]
-        print(f"{word} = {''.join(strings)}")
+        print(f"{word_str} = {''.join(strings)}")
 
 
 if __name__ == "__main__":
