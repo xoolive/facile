@@ -79,6 +79,14 @@ jobs:
 
       - name: Publish a Python distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         with:
           user: __token__
           password: ${{ secrets.PYPI_PASSWORD }}
+
+      - name: Upload the build artifact
+        uses: actions/upload-artifact@v2
+        if: ${{ matrix.os == 'macos-latest' }}
+        with:
+          name: ${{ matrix.os }}-${{ matrix.python-version }}-facile-wheel
+          path: dist/*.whl
