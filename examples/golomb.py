@@ -17,7 +17,7 @@ def golomb(n) -> Optional[facile.Solution]:
     # = 2**j * (2**(i-j) - 1) qui sont tous différents.
     # On a donc au moins cette solution.
 
-    ticks = [facile.variable(range(2 ** n)) for i in range(n)]
+    ticks = [facile.variable(range(2**n)) for i in range(n)]
 
     # First tick at the start of the ruler
     facile.constraint(ticks[0] == 0)

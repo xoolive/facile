@@ -9,20 +9,20 @@ readme = "readme.md"
 include = [{ path = "facile/**/*.so", format = "wheel" }]
 
 [tool.poetry.dependencies]
-python = ">=3.7.1,<4.0"
+python = ">=3.8,<4.0"
 importlib-metadata = "^4.6.1"
 
 [tool.poetry.dev-dependencies]
-Cython = "^0.29.24"
-numpy = "^1.21.1"
-black = "^21.7b0"
-isort = "^5.9.2"
-mypy = "^0.910"
-pytest = "^6.2.4"
-flake8 = "^3.9.2"
-flake8-bugbear = "^21.4.3"
-flake8-pyi = "^20.10.0"
-pre-commit = "^2.13.0"
+Cython = ">=0.29.24"
+numpy = ">=1.21.2"
+black = ">=21.7b0"
+isort = ">=5.9.2"
+mypy = ">=0.910"
+pytest = ">=6.2.4"
+flake8 = ">=3.9.2"
+flake8-bugbear = ">=21.4.3"
+flake8-pyi = ">=20.10.0"
+pre-commit = ">=2.13.0"
 
 [tool.poetry.build]
 generate-setup-file = false
@@ -34,7 +34,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 80
-target_version = ['py37', 'py38', 'py39']
+target_version = ['py38', 'py39', 'py310', 'py311']
 include = '\.pyi?$'
 
 [tool.isort]
