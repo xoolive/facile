@@ -1189,6 +1189,11 @@ cdef class Strategy(object):
         self._toclean.append(p)
 
     @classmethod
+    def lexicographic(cls):
+        """Favours the value with the minimum minimum value in its domain."""
+        return cls(strategy_lexicographic(), __SECRET__)
+
+    @classmethod
     def min_min(cls):
         """Favours the value with the minimum minimum value in its domain."""
         return cls(strategy_minmin(), __SECRET__)
@@ -1463,17 +1468,19 @@ cdef class Goal(object):
             _vars = array.array('Q', [v.__getval() for v in variables])
             pt_vars = <uintptr_t*>_vars.data.as_voidptr
 
-            if strategy is not None:
-                if isinstance(strategy, str):
-                    strategy = eval("Strategy." + strategy + "()")
+            if strategy is None:
+                strategy = "lexicographic"
 
-                # if isinstance(strategy, types.FunctionType):
-                if callable(strategy):
-                    strategy = Strategy.custom(strategy)
+            if isinstance(strategy, str):
+                strategy = eval("Strategy." + strategy + "()")
 
-                msg = "The second argument is a strategy"
-                assert isinstance(strategy, Strategy), msg
-                c_strategy = strategy.__getval()
+            # if isinstance(strategy, types.FunctionType):
+            if callable(strategy):
+                strategy = Strategy.custom(strategy)
+
+            msg = "The second argument is a strategy"
+            assert isinstance(strategy, Strategy), msg
+            c_strategy = strategy.__getval()
 
             if length < 1:
                 raise TypeError("The argument list must be non empty")

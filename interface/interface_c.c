@@ -525,6 +525,12 @@ value *strategy_minmin()
   return fcl_wrap(*closure);
 }
 
+value *strategy_lexicographic()
+{
+  CLOSURE("Strategy.lexicographic");
+  return fcl_wrap(*closure);
+}
+
 value *strategy_callback(int i)
 {
   value res;

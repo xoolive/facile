@@ -164,6 +164,10 @@ let _ =
 
   (* Strategies on arrays *)
 
+  Callback.register "Strategy.lexicographic"
+    (Goals.Array.choose_index
+       (fun a1 a2 -> Fd.is_var a1 > Fd.is_var a2));
+
   Callback.register "Strategy.min_min"
     (Goals.Array.choose_index
        (fun a1 a2 -> Fd.min a1 < Fd.min a2));

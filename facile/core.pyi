@@ -153,7 +153,7 @@ class Array(Iterable, Sized):
     @classmethod
     def variable(
         cls,
-        shape: Tuple[int, ...],
+        shape: Union[int, Tuple[int, ...]],
         min_val: Union[int, range, Arith, Cstr, Iterable[int]],
         max_val: Optional[int] = None,
         *args,

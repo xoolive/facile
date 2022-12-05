@@ -64,6 +64,7 @@ value *cstr_alldiff(value **, unsigned long, int);
 value *cstr_boolean(value *);
 value *cstr_create(int, int);
 
+value *strategy_lexicographic();
 value *strategy_minmin();
 value *strategy_mindomain();
 value *strategy_queen();

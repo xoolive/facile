@@ -87,6 +87,7 @@ def build():
         compileargs += " -Wno-incompatible-pointer-types"
         # assignment discards 'const' qualifier from pointer target type
         compileargs += " -Wno-discarded-qualifiers"
+        compileargs += " -std=c99"
 
     extensions = [
         Extension(
