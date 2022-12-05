@@ -1,7 +1,6 @@
-name: tests
+name: centos7
 
 on:
-  push:
   workflow_dispatch:
 
 jobs:
