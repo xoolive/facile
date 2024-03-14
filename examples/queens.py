@@ -48,7 +48,6 @@ def print_line(val: int, n: int) -> None:
 
 
 if __name__ == "__main__":
-
     try:
         n = int(sys.argv[1])
     except Exception:

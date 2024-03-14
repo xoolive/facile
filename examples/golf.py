@@ -29,7 +29,6 @@ groups = Array.variable((nb_weeks, nb_golfers), range(nb_groups))
 
 # For each week, exactly size_group golfers in each group:
 for i in range(nb_weeks):
-
     # [1] Use a Sorting Constraint (redundant with [2])
     s = groups[i, :].sort()
     for j in range(nb_golfers):

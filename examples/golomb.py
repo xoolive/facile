@@ -11,7 +11,6 @@ import facile
 
 
 def golomb(n) -> Optional[facile.Solution]:
-
     # On peut majorer la taille de la règle par 2 ** n. En effet, si
     # ticks[i] vaut 2**i alors tous les ticks[i] - ticks[j] = 2**i - 2**j
     # = 2**j * (2**(i-j) - 1) qui sont tous différents.
@@ -45,7 +44,6 @@ def golomb(n) -> Optional[facile.Solution]:
 
 
 if __name__ == "__main__":
-
     n = 5
     if len(sys.argv) > 1:
         n = int(sys.argv[1])

@@ -12,15 +12,56 @@ data = [
     # fmt: off
     {
         "sizes": [
-            50, 42, 37, 35, 33, 29, 27, 25, 24, 19,
-            18, 17, 16, 15, 11, 9, 8, 7, 6, 4, 2,
+            50,
+            42,
+            37,
+            35,
+            33,
+            29,
+            27,
+            25,
+            24,
+            19,
+            18,
+            17,
+            16,
+            15,
+            11,
+            9,
+            8,
+            7,
+            6,
+            4,
+            2,
         ],
         "bigsize": 112,
     },
     {
         "sizes": [
-            81, 64, 56, 55, 51, 43, 39, 38, 35, 33, 31,
-            30, 29, 20, 18, 16, 14, 9, 8, 5, 4, 3, 2, 1,
+            81,
+            64,
+            56,
+            55,
+            51,
+            43,
+            39,
+            38,
+            35,
+            33,
+            31,
+            30,
+            29,
+            20,
+            18,
+            16,
+            14,
+            9,
+            8,
+            5,
+            4,
+            3,
+            2,
+            1,
         ],
         "bigsize": 175,
     },
@@ -74,7 +115,7 @@ def tiles(sizes, bigsize):
             )
 
         fill_square(0, 0, bigsize)
-        for (x, y, s) in zip(xs, ys, sizes):
+        for x, y, s in zip(xs, ys, sizes):
             fill_square(x.value(), y.value(), s)
 
         ax.set_xlim((0, bigsize))
@@ -88,12 +129,11 @@ def tiles(sizes, bigsize):
     except ImportError as e:
         # if matplotlib fails for an unknown reason
         print(e)
-        for (x, y, s) in zip(xs, ys, sizes):
+        for x, y, s in zip(xs, ys, sizes):
             print(x.value(), y.value(), s)
 
 
 if __name__ == "__main__":
-
     try:
         tiles(**data[int(sys.argv[1])])
     except Exception as e:

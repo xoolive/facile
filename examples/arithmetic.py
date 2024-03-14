@@ -10,7 +10,6 @@ Expression = Union[facile.Variable, facile.Arith]
 
 
 def arithmetic(puzzle="SEND+MORE=MONEY", base=10) -> None:
-
     problem: list[str] = re.split(r"[\s+=]", puzzle)
 
     # remove spaces
@@ -44,7 +43,6 @@ def arithmetic(puzzle="SEND+MORE=MONEY", base=10) -> None:
 
 
 if __name__ == "__main__":
-
     problems = [
         "SEND + MORE = MONEY",
         "SEND + MOST = MONEY",
