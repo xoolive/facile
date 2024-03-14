@@ -1,0 +1,10 @@
+(executable
+ (name binding)
+ (modules binding)
+ (libraries facile)
+ (modes
+  (native object))
+ ;(ocamlopt_flags (-output-obj))
+ (promote
+  (until-clean)
+  (into .)))

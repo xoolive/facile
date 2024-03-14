@@ -6,37 +6,43 @@ description = "Python constraint programming library"
 authors = ["Xavier Olive <git@xoolive.org>"]
 license = "LGPL 3.0"
 readme = "readme.md"
+packages = [{ include = "facile", from = "python/" }]
 include = [{ path = "facile/**/*.so", format = "wheel" }]
+build = "python/build.py"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4.0"
-importlib-metadata = "^4.6.1"
+python = ">=3.9,<4.0"
 
-[tool.poetry.dev-dependencies]
-Cython = ">=0.29.24"
-numpy = ">=1.21.2"
-black = ">=21.7b0"
-isort = ">=5.9.2"
+[tool.poetry.group.dev.dependencies]
+cython = "^3.0.9"
 mypy = ">=0.910"
+numpy = ">=1.21.2"
 pytest = ">=6.2.4"
-flake8 = ">=3.9.2"
-flake8-bugbear = ">=21.4.3"
-flake8-pyi = ">=20.10.0"
-pre-commit = ">=2.13.0"
-
-[tool.poetry.build]
-generate-setup-file = false
-script = "build.py"
+ruff = "^0.3.2"
 
 [build-system]
-requires = ["poetry-core>=1.0.0", "Cython>=0.29.24"]
+requires = ["poetry-core>=1.0.0", "setuptools>=62.6.0"]
+# requires = ["poetry-core>=1.0.0", "cython>=3.0", "setuptools>=62.6.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.black]
+[tool.ruff]
 line-length = 80
-target_version = ['py38', 'py39', 'py310', 'py311']
-include = '\.pyi?$'
+target-version = "py39"
 
-[tool.isort]
-line_length = 80
-profile = "black"
+[tool.ruff.lint]
+select = [ "E", "W", "F", "I", "RUF" ]
+
+[tool.mypy]
+python_version = 3.9
+platform = "posix"
+
+color_output = true
+pretty = true
+show_column_numbers = true
+strict = true
+check_untyped_defs = true
+ignore_missing_imports = true
+warn_no_return = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unused_ignores = true

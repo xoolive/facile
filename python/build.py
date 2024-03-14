@@ -1,24 +1,25 @@
+from __future__ import annotations
+
 import os
 import shutil
 import sys
 import sysconfig
 import time
-from distutils.command import build_ext
-from distutils.core import Distribution, Extension
-from typing import List, Tuple
 
 from Cython.Build import cythonize
+from setuptools import Distribution, Extension
+from setuptools.command import build_ext
 
 
-def ocaml_config(build_path=None) -> Tuple[List[str], List[str]]:
-
-    include_dirs: List[str] = []
-    extra_link_args: List[str] = []
+def ocaml_config(build_path: None | str = None) -> tuple[list[str], list[str]]:
+    include_dirs: list[str] = []
+    extra_link_args: list[str] = []
 
     if build_path is None:
-        build_path = "build/temp.{}-{}".format(
-            sysconfig.get_platform(),
-            sysconfig.get_config_var("py_version_short"),
+        build_path = (
+            build_ext.build_ext(Distribution())
+            .get_finalized_command("build_ext")
+            .build_temp
         )
 
     if not os.path.exists("build"):
@@ -31,6 +32,7 @@ def ocaml_config(build_path=None) -> Tuple[List[str], List[str]]:
         ext_obj = "obj"
 
     mlobject = f"{build_path}/interface_ml.{ext_obj}"
+    mlobject = "binding/binding.exe.o"
     extra_link_args.append(mlobject)
 
     ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
@@ -42,7 +44,11 @@ def ocaml_config(build_path=None) -> Tuple[List[str], List[str]]:
     if sysconfig.get_platform().startswith("win"):
         static_obj = "lib"
 
-    extra_link_args.append(f"{ocamlpath}/libasmrun.{static_obj}")
+    if sysconfig.get_platform().startswith("linux"):
+        extra_link_args.append(f"{ocamlpath}/libasmrun_pic.{static_obj}")
+    else:
+        extra_link_args.append(f"{ocamlpath}/libasmrun.{static_obj}")
+
     if sysconfig.get_platform().startswith("win"):
         extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_msvc64.obj")
         extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_initer_msvc64.obj")
@@ -52,25 +58,24 @@ def ocaml_config(build_path=None) -> Tuple[List[str], List[str]]:
     # facilepath = facilepath.strip()
 
     # Check timestamps for OCaml file
-    exists = os.path.exists(mlobject)
-    ml_mtime = os.path.getmtime("interface/interface.ml")
-    obj_mtime = os.path.getmtime(mlobject) if exists else 0
-    if not exists or ml_mtime > obj_mtime:
-        print("Compiling interface.ml")
-        cmd = (
-            "opam exec -- ocamlfind ocamlopt"  # " -runtime-variant _pic"
-            " -package facile -linkpkg -output-obj -verbose"
-            f" -o {mlobject} interface/interface.ml"
-        )
-        print(cmd)
-        os.system(cmd)
-        now = time.time()
-        os.utime("facile/core.pyx", (now, now))
+    # exists = os.path.exists(mlobject)
+    # ml_mtime = os.path.getmtime("interface/interface.ml")
+    # obj_mtime = os.path.getmtime(mlobject) if exists else 0
+    # if not exists or ml_mtime > obj_mtime:
+    #     print("Compiling interface.ml")
+    #     cmd = (
+    #         "opam exec -- ocamlfind ocamlopt"
+    #         " -package facile -linkpkg -output-obj -verbose"
+    #         f" -o {mlobject} interface/interface.ml"
+    #     )
+    #     os.system(cmd)
+    #     now = time.time()
+    #     os.utime("facile/core.pyx", (now, now))
 
     return include_dirs, extra_link_args
 
 
-def build():
+def build() -> None:
     include_dirs, extra_link_args = ocaml_config()
 
     compiler = sysconfig.get_config_var("CC")
@@ -92,13 +97,14 @@ def build():
     extensions = [
         Extension(
             "facile.core",
-            ["facile/core.pyx", "interface/interface_c.c"],
+            ["facile/core.pyx", "binding/facile.c"],
             language="c",
-            include_dirs=include_dirs,
+            include_dirs=["."] + include_dirs,
             extra_compile_args=compileargs.split(),
             extra_link_args=extra_link_args,
         )
     ]
+
     ext_modules = cythonize(
         extensions,
         compiler_directives={"binding": True, "language_level": 3},
@@ -107,7 +113,6 @@ def build():
     distribution = Distribution(
         {"name": "extended", "ext_modules": ext_modules}
     )
-    distribution.package_dir = "extended"
 
     cmd = build_ext.build_ext(distribution)
     cmd.verbose = True

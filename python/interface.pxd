@@ -1,7 +1,7 @@
 from libc.stdint cimport uintptr_t
 
 
-cdef extern from "./interface/interface.h":
+cdef extern from "./binding/facile.h":
 
     void init()
     void fcl_destroy(uintptr_t v)
