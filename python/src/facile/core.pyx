@@ -1,5 +1,5 @@
 # distutils: language = c
-# cython: embedsignature=True
+# cython: embedsignature=True,c_api_binop_methods=True
 
 """Facile stands for Functional Constraint Library.
 
@@ -112,7 +112,7 @@ cdef class Domain(object):
             raise ValueError("Invalid secret")
         self.mlvalue = value
 
-    def __getval(self):
+    def _getval(self):
         return self.mlvalue
 
     def __repr__(self):
@@ -171,7 +171,7 @@ cdef class Event(object):
         # fcl_destroy(self.mlvalue)
         pass
 
-    def __getval(self):
+    def _getval(self):
         return self.mlvalue
 
     def __cinit__(self, value, secret):
@@ -229,7 +229,7 @@ cdef class Variable(object):
         fmt = "<Variable {} ({})>"
         return fmt.format(self.name, self.mlname())
 
-    def __getval(self):
+    def _getval(self):
         return self.mlvalue
 
     def set_name(self, n):
@@ -265,10 +265,10 @@ cdef class Variable(object):
             raise Stak_Fail
 
     def delay(self, events, Cstr c):
-        events_val = [e.__getval() for e in events]
+        events_val = [e._getval() for e in events]
         cdef array.array _events = array.array('Q', events_val)
         cdef uintptr_t* pt_events = <uintptr_t*>_events.data.as_voidptr
-        val_delay(self.mlvalue, pt_events, len(events), c.__getval())
+        val_delay(self.mlvalue, pt_events, len(events), c._getval())
 
     def in_interval(self, int inf, int sup):
         cdef uintptr_t res
@@ -286,11 +286,11 @@ cdef class Variable(object):
     @classmethod
     def create(cls, values, name=None):
         if isinstance(values, Arith):
-            return cls(e2fd(values.__getval()), __SECRET__)
+            return cls(e2fd(values._getval()), __SECRET__)
         if isinstance(values, Cstr):
             return +values
         domain = Domain.create(values)
-        val = cls(val_create(domain.__getval()), __SECRET__)
+        val = cls(val_create(domain._getval()), __SECRET__)
         if name is not None:
             val.set_name(name)
         return val
@@ -302,183 +302,183 @@ cdef class Variable(object):
     def __richcmp__(self, value, op):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
         if op == 0:
-           return self.__lt(value)
+           return self._lt(value)
         if op == 1:
-            return self.__le(value)
+            return self._le(value)
         if op == 2:
-            return self.__eq(value)
+            return self._eq(value)
         if op == 3:
-            return self.__ne(value)
+            return self._ne(value)
         if op == 4:
-            return self.__gt(value)
+            return self._gt(value)
         if op == 5:
-            return self.__ge(value)
+            return self._ge(value)
         return None
 
-    def __lt(self, fd):
+    def _lt(self, fd):
         if isinstance(fd, Cstr):
-            c = cstr_lt(fd2e(self.__getval()), fd.__abs__().__getval())
+            c = cstr_lt(fd2e(self._getval()), fd.__abs__()._getval())
             return Cstr(c, __SECRET__)
         if isinstance(fd, Arith):
-            c = cstr_lt(fd2e(self.__getval()), fd.__getval())
+            c = cstr_lt(fd2e(self._getval()), fd._getval())
             return Cstr(c, __SECRET__)
         if isinstance(fd, Variable):
-            c = cstr_lt(fd2e(self.__getval()), fd2e(fd.__getval()))
+            c = cstr_lt(fd2e(self._getval()), fd2e(fd._getval()))
             return Cstr(c, __SECRET__)
         if isinstance(fd, numbers.Integral):
-            c = cstr_lt(fd2e(self.__getval()), i2e(fd))
+            c = cstr_lt(fd2e(self._getval()), i2e(fd))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
-    def __le(self, fd):
+    def _le(self, fd):
         if isinstance(fd, Cstr):
-            c = cstr_le(fd2e(self.__getval()), fd.__abs__().__getval())
+            c = cstr_le(fd2e(self._getval()), fd.__abs__()._getval())
             return Cstr(c, __SECRET__)
         if isinstance(fd, Arith):
-            c = cstr_le(fd2e(self.__getval()), fd.__getval())
+            c = cstr_le(fd2e(self._getval()), fd._getval())
             return Cstr(c, __SECRET__)
         if isinstance(fd, Variable):
-            c = cstr_le(fd2e(self.__getval()), fd2e(fd.__getval()))
+            c = cstr_le(fd2e(self._getval()), fd2e(fd._getval()))
             return Cstr(c, __SECRET__)
         if isinstance(fd, numbers.Integral):
-            c = cstr_le(fd2e(self.__getval()), i2e(fd))
+            c = cstr_le(fd2e(self._getval()), i2e(fd))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
-    def __eq(self, fd):
+    def _eq(self, fd):
         if isinstance(fd, Cstr):
-            c = cstr_eq(fd2e(self.__getval()), fd.__abs__().__getval())
+            c = cstr_eq(fd2e(self._getval()), fd.__abs__()._getval())
             return Cstr(c, __SECRET__)
         if isinstance(fd, Arith):
-            c = cstr_eq(fd2e(self.__getval()), fd.__getval())
+            c = cstr_eq(fd2e(self._getval()), fd._getval())
             return Cstr(c, __SECRET__)
         if isinstance(fd, Variable):
-            c = cstr_eq(fd2e(self.__getval()), fd2e(fd.__getval()))
+            c = cstr_eq(fd2e(self._getval()), fd2e(fd._getval()))
             return Cstr(c, __SECRET__)
         if isinstance(fd, numbers.Integral):
-            c = cstr_eq(fd2e(self.__getval()), i2e(fd))
+            c = cstr_eq(fd2e(self._getval()), i2e(fd))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
-    def __ne(self, fd):
+    def _ne(self, fd):
         if isinstance(fd, Cstr):
-            c = cstr_ne(fd2e(self.__getval()), fd.__abs__().__getval())
+            c = cstr_ne(fd2e(self._getval()), fd.__abs__()._getval())
             return Cstr(c, __SECRET__)
         if isinstance(fd, Arith):
-            c = cstr_ne(fd2e(self.__getval()), fd.__getval())
+            c = cstr_ne(fd2e(self._getval()), fd._getval())
             return Cstr(c, __SECRET__)
         if isinstance(fd, Variable):
-            c = cstr_ne(fd2e(self.__getval()), fd2e(fd.__getval()))
+            c = cstr_ne(fd2e(self._getval()), fd2e(fd._getval()))
             return Cstr(c, __SECRET__)
         if isinstance(fd, numbers.Integral):
-            c = cstr_ne(fd2e(self.__getval()), i2e(fd))
+            c = cstr_ne(fd2e(self._getval()), i2e(fd))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
-    def __gt(self, fd):
+    def _gt(self, fd):
         if isinstance(fd, Cstr):
-            c = cstr_gt(fd2e(self.__getval()), fd.__abs__().__getval())
+            c = cstr_gt(fd2e(self._getval()), fd.__abs__()._getval())
             return Cstr(c, __SECRET__)
         if isinstance(fd, Arith):
-            c = cstr_gt(fd2e(self.__getval()), fd.__getval())
+            c = cstr_gt(fd2e(self._getval()), fd._getval())
             return Cstr(c, __SECRET__)
         if isinstance(fd, Variable):
-            c = cstr_gt(fd2e(self.__getval()), fd2e(fd.__getval()))
+            c = cstr_gt(fd2e(self._getval()), fd2e(fd._getval()))
             return Cstr(c, __SECRET__)
         if isinstance(fd, numbers.Integral):
-            c = cstr_gt(fd2e(self.__getval()), i2e(fd))
+            c = cstr_gt(fd2e(self._getval()), i2e(fd))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
-    def __ge(self, fd):
+    def _ge(self, fd):
         if isinstance(fd, Cstr):
-            c = cstr_ge(fd2e(self.__getval()), fd.__abs__().__getval())
+            c = cstr_ge(fd2e(self._getval()), fd.__abs__()._getval())
             return Cstr(c, __SECRET__)
         if isinstance(fd, Arith):
-            c = cstr_ge(fd2e(self.__getval()), fd.__getval())
+            c = cstr_ge(fd2e(self._getval()), fd._getval())
             return Cstr(c, __SECRET__)
         if isinstance(fd, Variable):
-            c = cstr_ge(fd2e(self.__getval()), fd2e(fd.__getval()))
+            c = cstr_ge(fd2e(self._getval()), fd2e(fd._getval()))
             return Cstr(c, __SECRET__)
         if isinstance(fd, numbers.Integral):
-            c = cstr_ge(fd2e(self.__getval()), i2e(fd))
+            c = cstr_ge(fd2e(self._getval()), i2e(fd))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __add__(a, b):
         if isinstance(a, numbers.Integral):
-            c = arith_add(i2e(a), fd2e(b.__getval()))
+            c = arith_add(i2e(a), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
-            c = arith_add(fd2e(a.__getval()), b.__getval())
+            c = arith_add(fd2e(a._getval()), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Variable):
-            c = arith_add(fd2e(a.__getval()), fd2e(b.__getval()))
+            c = arith_add(fd2e(a._getval()), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, numbers.Integral):
-            c = arith_add(fd2e(a.__getval()), i2e(b))
+            c = arith_add(fd2e(a._getval()), i2e(b))
             return Arith(c, __SECRET__)
         if isinstance(b, Cstr):
-            return a + Variable(cstr_boolean(b.__getval()), __SECRET__)
+            return a + Variable(cstr_boolean(b._getval()), __SECRET__)
         return NotImplemented
 
     def __sub__(a, b):
         if isinstance(a, numbers.Integral):
-            c = arith_sub(i2e(a), fd2e(b.__getval()))
+            c = arith_sub(i2e(a), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
-            c = arith_sub(fd2e(a.__getval()), b.__getval())
+            c = arith_sub(fd2e(a._getval()), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Variable):
-            c = arith_sub(fd2e(a.__getval()), fd2e(b.__getval()))
+            c = arith_sub(fd2e(a._getval()), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, numbers.Integral):
-            c = arith_sub(fd2e(a.__getval()), i2e(b))
+            c = arith_sub(fd2e(a._getval()), i2e(b))
             return Arith(c, __SECRET__)
         return NotImplemented
 
     def __mul__(a, b):
         if isinstance(a, numbers.Integral):
-            c = arith_mul(i2e(a), fd2e(b.__getval()))
+            c = arith_mul(i2e(a), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
-            c = arith_mul(fd2e(a.__getval()), b.__getval())
+            c = arith_mul(fd2e(a._getval()), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Variable):
-            c = arith_mul(fd2e(a.__getval()), fd2e(b.__getval()))
+            c = arith_mul(fd2e(a._getval()), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, numbers.Integral):
-            c = arith_mul(fd2e(a.__getval()), i2e(b))
+            c = arith_mul(fd2e(a._getval()), i2e(b))
             return Arith(c, __SECRET__)
         return NotImplemented
 
     def __floordiv__(a, b):
         if isinstance(a, numbers.Integral):
-            c = arith_div(i2e(a), fd2e(b.__getval()))
+            c = arith_div(i2e(a), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
-            c = arith_div(fd2e(a.__getval()), b.__getval())
+            c = arith_div(fd2e(a._getval()), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Variable):
-            c = arith_div(fd2e(a.__getval()), fd2e(b.__getval()))
+            c = arith_div(fd2e(a._getval()), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, numbers.Integral):
-            c = arith_div(fd2e(a.__getval()), i2e(b))
+            c = arith_div(fd2e(a._getval()), i2e(b))
             return Arith(c, __SECRET__)
         return NotImplemented
 
     def __mod__(a, b):
         if isinstance(a, numbers.Integral):
-            c = arith_mod(i2e(a), fd2e(b.__getval()))
+            c = arith_mod(i2e(a), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
-            c = arith_mod(fd2e(a.__getval()), b.__getval())
+            c = arith_mod(fd2e(a._getval()), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Variable):
-            c = arith_mod(fd2e(a.__getval()), fd2e(b.__getval()))
+            c = arith_mod(fd2e(a._getval()), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, numbers.Integral):
-            c = arith_mod(fd2e(a.__getval()), i2e(b))
+            c = arith_mod(fd2e(a._getval()), i2e(b))
             return Arith(c, __SECRET__)
         return NotImplemented
 
@@ -489,7 +489,7 @@ cdef class Variable(object):
         return 0 - a
 
     def __abs__(a):
-        c = arith_abs(fd2e(a.__getval()))
+        c = arith_abs(fd2e(a._getval()))
         return Arith(c, __SECRET__)
 
 
@@ -516,7 +516,7 @@ cdef class Arith(object):
             raise ValueError("Invalid pointer value")
         self.mlvalue = value
 
-    def __getval(self):
+    def _getval(self):
         return self.mlvalue
 
     def __repr__(self):
@@ -525,183 +525,183 @@ cdef class Arith(object):
     def __richcmp__(self, value, op):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
         if op == 0:
-            return self.__lt(value)
+            return self._lt(value)
         if op == 1:
-            return self.__le(value)
+            return self._le(value)
         if op == 2:
-            return self.__eq(value)
+            return self._eq(value)
         if op == 3:
-            return self.__ne(value)
+            return self._ne(value)
         if op == 4:
-            return self.__gt(value)
+            return self._gt(value)
         if op == 5:
-            return self.__ge(value)
+            return self._ge(value)
         return None
 
-    def __lt(self, value):
+    def _lt(self, value):
         if isinstance(value, Cstr):
-            c = cstr_lt(self.__getval(), value.__abs__().__getval())
+            c = cstr_lt(self._getval(), value.__abs__()._getval())
             return Cstr(c, __SECRET__)
         if isinstance(value, Arith):
-            c = cstr_lt(self.__getval(), value.__getval())
+            c = cstr_lt(self._getval(), value._getval())
             return Cstr(c, __SECRET__)
         if isinstance(value, Variable):
-            c = cstr_lt(self.__getval(), fd2e(value.__getval()))
+            c = cstr_lt(self._getval(), fd2e(value._getval()))
             return Cstr(c, __SECRET__)
         if isinstance(value, numbers.Integral):
-            c = cstr_lt(self.__getval(), i2e(value))
+            c = cstr_lt(self._getval(), i2e(value))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
-    def __le(self, value):
+    def _le(self, value):
         if isinstance(value, Cstr):
-            c = cstr_le(self.__getval(), value.__abs__().__getval())
+            c = cstr_le(self._getval(), value.__abs__()._getval())
             return Cstr(c, __SECRET__)
         if isinstance(value, Arith):
-            c = cstr_le(self.__getval(), value.__getval())
+            c = cstr_le(self._getval(), value._getval())
             return Cstr(c, __SECRET__)
         if isinstance(value, Variable):
-            c = cstr_le(self.__getval(), fd2e(value.__getval()))
+            c = cstr_le(self._getval(), fd2e(value._getval()))
             return Cstr(c, __SECRET__)
         if isinstance(value, numbers.Integral):
-            c = cstr_le(self.__getval(), i2e(value))
+            c = cstr_le(self._getval(), i2e(value))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
-    def __eq(self, value):
+    def _eq(self, value):
         if isinstance(value, Cstr):
-            c = cstr_eq(self.__getval(), value.__abs__().__getval())
+            c = cstr_eq(self._getval(), value.__abs__()._getval())
             return Cstr(c, __SECRET__)
         if isinstance(value, Arith):
-            c = cstr_eq(self.__getval(), value.__getval())
+            c = cstr_eq(self._getval(), value._getval())
             return Cstr(c, __SECRET__)
         if isinstance(value, Variable):
-            c = cstr_eq(self.__getval(), fd2e(value.__getval()))
+            c = cstr_eq(self._getval(), fd2e(value._getval()))
             return Cstr(c, __SECRET__)
         if isinstance(value, numbers.Integral):
-            c = cstr_eq(self.__getval(), i2e(value))
+            c = cstr_eq(self._getval(), i2e(value))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
-    def __ne(self, value):
+    def _ne(self, value):
         if isinstance(value, Cstr):
-            c = cstr_ne(self.__getval(), value.__abs__().__getval())
+            c = cstr_ne(self._getval(), value.__abs__()._getval())
             return Cstr(c, __SECRET__)
         if isinstance(value, Arith):
-            c = cstr_ne(self.__getval(), value.__getval())
+            c = cstr_ne(self._getval(), value._getval())
             return Cstr(c, __SECRET__)
         if isinstance(value, Variable):
-            c = cstr_ne(self.__getval(), fd2e(value.__getval()))
+            c = cstr_ne(self._getval(), fd2e(value._getval()))
             return Cstr(c, __SECRET__)
         if isinstance(value, numbers.Integral):
-            c = cstr_ne(self.__getval(), i2e(value))
+            c = cstr_ne(self._getval(), i2e(value))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
-    def __gt(self, value):
+    def _gt(self, value):
         if isinstance(value, Cstr):
-            c = cstr_gt(self.__getval(), value.__abs__().__getval())
+            c = cstr_gt(self._getval(), value.__abs__()._getval())
             return Cstr(c, __SECRET__)
         if isinstance(value, Arith):
-            c = cstr_gt(self.__getval(), value.__getval())
+            c = cstr_gt(self._getval(), value._getval())
             return Cstr(c, __SECRET__)
         if isinstance(value, Variable):
-            c = cstr_gt(self.__getval(), fd2e(value.__getval()))
+            c = cstr_gt(self._getval(), fd2e(value._getval()))
             return Cstr(c, __SECRET__)
         if isinstance(value, numbers.Integral):
-            c = cstr_gt(self.__getval(), i2e(value))
+            c = cstr_gt(self._getval(), i2e(value))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
-    def __ge(self, value):
+    def _ge(self, value):
         if isinstance(value, Cstr):
-            c = cstr_ge(self.__getval(), value.__abs__().__getval())
+            c = cstr_ge(self._getval(), value.__abs__()._getval())
             return Cstr(c, __SECRET__)
         if isinstance(value, Arith):
-            c = cstr_ge(self.__getval(), value.__getval())
+            c = cstr_ge(self._getval(), value._getval())
             return Cstr(c, __SECRET__)
         if isinstance(value, Variable):
-            c = cstr_ge(self.__getval(), fd2e(value.__getval()))
+            c = cstr_ge(self._getval(), fd2e(value._getval()))
             return Cstr(c, __SECRET__)
         if isinstance(value, numbers.Integral):
-            c = cstr_ge(self.__getval(), i2e(value))
+            c = cstr_ge(self._getval(), i2e(value))
             return Cstr(c, __SECRET__)
         raise TypeError("Expressions of incompatible types")
 
     def __add__(a, b):
         if isinstance(a, numbers.Integral):
-            c = arith_add(i2e(a), b.__getval())
+            c = arith_add(i2e(a), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
-            c = arith_add(a.__getval(), b.__getval())
+            c = arith_add(a._getval(), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Variable):
-            c = arith_add(a.__getval(), fd2e(b.__getval()))
+            c = arith_add(a._getval(), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, numbers.Integral):
-            c = arith_add(a.__getval(), i2e(b))
+            c = arith_add(a._getval(), i2e(b))
             return Arith(c, __SECRET__)
         if isinstance(b, Cstr):
-            return a + Variable(cstr_boolean(b.__getval()), __SECRET__)
+            return a + Variable(cstr_boolean(b._getval()), __SECRET__)
         return NotImplemented
 
     def __sub__(a, b):
         if isinstance(a, numbers.Integral):
-            c = arith_sub(i2e(a), b.__getval())
+            c = arith_sub(i2e(a), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
-            c = arith_sub(a.__getval(), b.__getval())
+            c = arith_sub(a._getval(), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Variable):
-            c = arith_sub(a.__getval(), fd2e(b.__getval()))
+            c = arith_sub(a._getval(), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, numbers.Integral):
-            c = arith_sub(a.__getval(), i2e(b))
+            c = arith_sub(a._getval(), i2e(b))
             return Arith(c, __SECRET__)
         return NotImplemented
 
     def __mul__(a, b):
         if isinstance(a, numbers.Integral):
-            c = arith_mul(i2e(a), b.__getval())
+            c = arith_mul(i2e(a), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
-            c = arith_mul(a.__getval(), b.__getval())
+            c = arith_mul(a._getval(), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Variable):
-            c = arith_mul(a.__getval(), fd2e(b.__getval()))
+            c = arith_mul(a._getval(), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, numbers.Integral):
-            c = arith_mul(a.__getval(), i2e(b))
+            c = arith_mul(a._getval(), i2e(b))
             return Arith(c, __SECRET__)
         return NotImplemented
 
     def __floordiv__(a, b):
         if isinstance(a, numbers.Integral):
-            c = arith_div(i2e(a), b.__getval())
+            c = arith_div(i2e(a), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
-            c = arith_div(a.__getval(), b.__getval())
+            c = arith_div(a._getval(), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Variable):
-            c = arith_div(a.__getval(), fd2e(b.__getval()))
+            c = arith_div(a._getval(), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, numbers.Integral):
-            c = arith_div(a.__getval(), i2e(b))
+            c = arith_div(a._getval(), i2e(b))
             return Arith(c, __SECRET__)
         return NotImplemented
 
     def __mod__(a, b):
         if isinstance(a, numbers.Integral):
-            c = arith_mod(i2e(a), b.__getval())
+            c = arith_mod(i2e(a), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Arith):
-            c = arith_mod(a.__getval(), b.__getval())
+            c = arith_mod(a._getval(), b._getval())
             return Arith(c, __SECRET__)
         if isinstance(b, Variable):
-            c = arith_mod(a.__getval(), fd2e(b.__getval()))
+            c = arith_mod(a._getval(), fd2e(b._getval()))
             return Arith(c, __SECRET__)
         if isinstance(b, numbers.Integral):
-            c = arith_mod(a.__getval(), i2e(b))
+            c = arith_mod(a._getval(), i2e(b))
             return Arith(c, __SECRET__)
         return NotImplemented
 
@@ -712,7 +712,7 @@ cdef class Arith(object):
         return 0 - a
 
     def __abs__(a):
-        c = arith_abs(a.__getval())
+        c = arith_abs(a._getval())
         return Arith(c, __SECRET__)
 
     def value(self):
@@ -770,26 +770,26 @@ cdef class Cstr(object):
             raise ValueError("Non reifiable constraint")
         self.mlvalue = value
 
-    def __getval(self):
+    def _getval(self):
         return self.mlvalue
 
     def __repr__(self):
-        return (<bytes> cstr_name(self.__getval())).decode()
+        return (<bytes> cstr_name(self._getval())).decode()
 
     def __richcmp__(self, value, op):
     # < 0 # <= 1 # == 2 # != 3 # > 4 # >= 5
         if op == 0:
-            return self.__abs__().__lt(value)
+            return self.__abs__()._lt(value)
         if op == 1:
-            return self.__abs__().__le(value)
+            return self.__abs__()._le(value)
         if op == 2:
-            return self.__abs__().__eq(value)
+            return self.__abs__()._eq(value)
         if op == 3:
-            return self.__abs__().__ne(value)
+            return self.__abs__()._ne(value)
         if op == 4:
-            return self.__abs__().__gt(value)
+            return self.__abs__()._gt(value)
         if op == 5:
-            return self.__abs__().__ge(value)
+            return self.__abs__()._ge(value)
         return None
 
     def __and__(Cstr c1, Cstr c2):
@@ -803,7 +803,7 @@ cdef class Cstr(object):
         >>> x.value()
         [0, 1, 0]
         """
-        return Cstr(cstr_and(c1.__getval(), c2.__getval()), __SECRET__)
+        return Cstr(cstr_and(c1._getval(), c2._getval()), __SECRET__)
 
     def __or__(Cstr c1, Cstr c2):
         """`|` (or) operator on constraints.
@@ -816,7 +816,7 @@ cdef class Cstr(object):
         >>> x.value()
         [0, 0, 1]
         """
-        return Cstr(cstr_or(c1.__getval(), c2.__getval()), __SECRET__)
+        return Cstr(cstr_or(c1._getval(), c2._getval()), __SECRET__)
 
     def __invert__(self):
         """`~` (not) operator on constraints.
@@ -838,7 +838,7 @@ cdef class Cstr(object):
             ...
         ValueError: Non reifiable constraint
         """
-        return Cstr(cstr_not(self.__getval()), __SECRET__)
+        return Cstr(cstr_not(self._getval()), __SECRET__)
 
     def __xor__(Cstr c1, Cstr c2):
         """`^` (xor) operator on constraints.
@@ -851,44 +851,45 @@ cdef class Cstr(object):
         >>> x.value()
         [0, 0, 1]
         """
-        return Cstr(cstr_xor(c1.__getval(), c2.__getval()), __SECRET__)
+        return Cstr(cstr_xor(c1._getval(), c2._getval()), __SECRET__)
 
     def __add__(c1, c2):
         if isinstance(c2, Cstr):
-            return c1 + Variable(cstr_boolean(c2.__getval()), __SECRET__)
+            return c1 + Variable(cstr_boolean(c2._getval()), __SECRET__)
         if isinstance(c1, Cstr):
-            return Variable(cstr_boolean(c1.__getval()), __SECRET__) + c2
+            return Variable(cstr_boolean(c1._getval()), __SECRET__) + c2
         return NotImplemented
 
     def __sub__(c1, c2):
         if isinstance(c2, Cstr):
-            return c1 - Variable(cstr_boolean(c2.__getval()), __SECRET__)
+            return c1 - Variable(cstr_boolean(c2._getval()), __SECRET__)
         if isinstance(c1, Cstr):
-            return Variable(cstr_boolean(c1.__getval()), __SECRET__) - c2
+            return Variable(cstr_boolean(c1._getval()), __SECRET__) - c2
         return NotImplemented
 
     def __mul__(c1, c2):
         if isinstance(c2, Cstr):
-            return c1 * Variable(cstr_boolean(c2.__getval()), __SECRET__)
+            return c1 * Variable(cstr_boolean(c2._getval()), __SECRET__)
         if isinstance(c1, Cstr):
-            return Variable(cstr_boolean(c1.__getval()), __SECRET__) * c2
+            return Variable(cstr_boolean(c1._getval()), __SECRET__) * c2
         return NotImplemented
 
     def __pos__(a):
         """Constraint reification."""
-        return Variable(cstr_boolean(a.__getval()), __SECRET__)
+        return Variable(cstr_boolean(a._getval()), __SECRET__)
 
     def __neg__(a):
         """Constraint reification."""
-        return 0 - Variable(cstr_boolean(a.__getval()), __SECRET__)
+        return 0 - Variable(cstr_boolean(a._getval()), __SECRET__)
 
     def __abs__(a):
         """Constraint reification."""
-        return Variable(cstr_boolean(a.__getval()), __SECRET__)
+        return Variable(cstr_boolean(a._getval()), __SECRET__)
 
     def post(self):
         """Constraint posting to the solver."""
-        if cstr_post(self.__getval()) == 1:
+        v= cstr_post(self._getval())
+        if v == 1:
             raise Stak_Fail
 
     # For Python 2.x
@@ -934,7 +935,7 @@ cdef class Array(object):
         self.length = length
         self.shape = shape
 
-    def __getval(self):
+    def _getval(self):
         return self.mlvalue
 
     def __len__(self):
@@ -985,9 +986,9 @@ cdef class Array(object):
         except ImportError:
             pass
         if isinstance(key, Variable):
-            value = fdarray_get(self.mlvalue, key.__getval())
+            value = fdarray_get(self.mlvalue, key._getval())
         elif isinstance(key, Arith):
-            value = fdarray_get(self.mlvalue, e2fd(key.__getval()))
+            value = fdarray_get(self.mlvalue, e2fd(key._getval()))
         elif isinstance(key, numbers.Integral):
             value = fdarray_get(self.mlvalue, e2fd(i2e(key)))
         else:
@@ -1132,7 +1133,7 @@ cdef class Array(object):
             if not isinstance(v, numbers.Integral):
                 raise TypeError("Values must be integers")
             do_not_gc.append(c)
-            cards.append(c.__getval())
+            cards.append(c._getval())
             values.append(v)
 
         cdef array.array _cards = array.array('Q', cards)
@@ -1182,7 +1183,7 @@ cdef class Strategy(object):
         self.mlvalue = value
         self._toclean = []
 
-    def __getval(self):
+    def _getval(self):
         return self.mlvalue
 
     def toclean(self, p):
@@ -1240,7 +1241,7 @@ cdef class Assignment(object):
         self._toclean = []
         self._keep = []
 
-    def __getval(self):
+    def _getval(self):
         return self.mlvalue
 
     def toclean(self, p):
@@ -1278,7 +1279,7 @@ cdef class Assignment(object):
         """`&` (and) operator on assignment.
 
         """
-        res = Assignment(assignment_and(c1.__getval(), c2.__getval()), __SECRET__)
+        res = Assignment(assignment_and(c1._getval(), c2._getval()), __SECRET__)
         res._toclean = c1._toclean + c2._toclean
         c1._toclean.clear()
         c2._toclean.clear()
@@ -1288,7 +1289,7 @@ cdef class Assignment(object):
         """`|` (or) operator on assignment.
 
         """
-        res = Assignment(assignment_or(c1.__getval(), c2.__getval()), __SECRET__)
+        res = Assignment(assignment_or(c1._getval(), c2._getval()), __SECRET__)
         res._toclean = c1._toclean + c2._toclean
         c1._toclean.clear()
         c2._toclean.clear()
@@ -1356,14 +1357,14 @@ cdef class Goal(object):
         self.variables = []
         self._keep = []
 
-    def __getval(self):
+    def _getval(self):
         return self.mlvalue
 
     def __and__(Goal c1, Goal c2):
         """`&` (and) operator on goals.
 
         """
-        res = Goal(goals_and(c1.__getval(), c2.__getval()), __SECRET__)
+        res = Goal(goals_and(c1._getval(), c2._getval()), __SECRET__)
         res.variables = c1.variables + c2.variables
         res._toclean = c1._toclean + c2._toclean
         res._keep = c1._keep + c2._keep
@@ -1375,7 +1376,7 @@ cdef class Goal(object):
         """`|` (or) operator on goals.
 
         """
-        res = Goal(goals_or(c1.__getval(), c2.__getval()), __SECRET__)
+        res = Goal(goals_or(c1._getval(), c2._getval()), __SECRET__)
         res.variables = c1.variables + c2.variables
         res._toclean = c1._toclean + c2._toclean
         res._keep = c1._keep + c2._keep
@@ -1428,8 +1429,7 @@ cdef class Goal(object):
 
     @classmethod
     def unify(cls, Variable var, int i):
-        print ("unify {} {}".format(var, i))
-        res = cls(goals_unify(var.__getval(), i), __SECRET__)
+        res = cls(goals_unify(var._getval(), i), __SECRET__)
         res.variables = [[var]]  # does it make sense?
         return res
 
@@ -1444,8 +1444,8 @@ cdef class Goal(object):
 
         if isinstance(variables, Selector):
             s = variables._select()
-            v = variables._variables() 
-            l = variables._labelling() 
+            v = variables._variables()
+            l = variables._labelling()
             res = cls(goals_selector_forall(s, v, l), __SECRET__)
             res.keep(variables)
             return res
@@ -1456,7 +1456,7 @@ cdef class Goal(object):
         if not isinstance(assign, Assignment):
             raise ValueError("assign must refer to a valid Assignment")
 
-        c_assign = assign.__getval() # default to indomain
+        c_assign = assign._getval() # default to indomain
 
         if isinstance(variables, Iterable):
             variables = list(variables)
@@ -1465,7 +1465,7 @@ cdef class Goal(object):
                 msg = "All arguments must be variables"
                 assert isinstance(v, Variable), msg
 
-            _vars = array.array('Q', [v.__getval() for v in variables])
+            _vars = array.array('Q', [v._getval() for v in variables])
             pt_vars = <uintptr_t*>_vars.data.as_voidptr
 
             if strategy is None:
@@ -1480,7 +1480,7 @@ cdef class Goal(object):
 
             msg = "The second argument is a strategy"
             assert isinstance(strategy, Strategy), msg
-            c_strategy = strategy.__getval()
+            c_strategy = strategy._getval()
 
             if length < 1:
                 raise TypeError("The argument list must be non empty")
@@ -1498,7 +1498,7 @@ cdef class Goal(object):
         if not isinstance(goal, Goal):
             goal = Goal.forall(goal, *args)
         if isinstance(expr, Arith):
-            expr = Variable(e2fd(expr.__getval()), __SECRET__)
+            expr = Variable(e2fd(expr._getval()), __SECRET__)
         if not isinstance(expr, Variable):
             raise SyntaxError
 
@@ -1511,8 +1511,8 @@ cdef class Goal(object):
                   'restart': mode_restart(),
                   'dichotomic': mode_dicho()}
 
-        obj = goals_minimize(d_mode[mode], g_goal.__getval(),
-                             expr.__getval(), keep.id)
+        obj = goals_minimize(d_mode[mode], g_goal._getval(),
+                             expr._getval(), keep.id)
 
         res = cls(obj, __SECRET__)
         res.variables = goal.variables
@@ -1596,54 +1596,54 @@ def stak_trail(fun):
 
 cdef object __ml_callbacks = {}
 
-cdef void on_backtrack_callback(int i, int n):
+cdef void on_backtrack_callback(int i, int n) noexcept:
     __ml_callbacks[i](n)
 
-cdef int atomic_callback(int i):
+cdef int atomic_callback(int i) noexcept:
     try:
         __ml_callbacks[i]()
         return 0
     except Stak_Fail:
         return -1
 
-cdef void on_solution_callback(int i, int n):
+cdef void on_solution_callback(int i, int n) noexcept:
     __ml_callbacks[i](n)
 
-cdef void on_assign_callback(int i, uintptr_t v):
+cdef void on_assign_callback(int i, uintptr_t v) noexcept:
     __ml_callbacks[i](v)
 
-cdef int selector_select(int i):
+cdef int selector_select(int i) noexcept:
     return __ml_callbacks[i]()
 
 # TODO
 test_keep_goals = {}
 
-cdef uintptr_t selector_labelling(int i, int l):
+cdef uintptr_t selector_labelling(int i, int l) noexcept:
     res = __ml_callbacks[i](l)
     test_keep_goals[i] = res
     assert isinstance(res, Goal)
-    return res.__getval()
+    return res._getval()
 
-cdef uintptr_t goal_creator(int i):
+cdef uintptr_t goal_creator(int i) noexcept:
     try:
         res = __ml_callbacks[i]()
     except Stak_Fail:
         return 0
     test_keep_goals[i] = res
     assert isinstance(res, Goal)
-    return res.__getval()
+    return res._getval()
 
-cdef int strategy_cb(int i, uintptr_t* v1, int length):
+cdef int strategy_cb(int i, uintptr_t* v1, int length) noexcept:
     return __ml_callbacks[i]([Variable(v1[j], __SECRET__)
                               for j in range(length)])
 
-cdef int update_cb(int i, int a):
+cdef int update_cb(int i, int a) noexcept:
     try:
         return __ml_callbacks[i](a)
     except Stak_Fail:
         return -1
 
-cdef void delay_cb(int i, uintptr_t c):
+cdef void delay_cb(int i, uintptr_t c) noexcept:
     __ml_callbacks[i](c)
 
 def solve(objective, *args, time=True, backtrack=False, on_backtrack=None,
@@ -1739,7 +1739,7 @@ def solve(objective, *args, time=True, backtrack=False, on_backtrack=None,
 
         obj = Goal.minimize(objective, minimize, keep, *args, **kwargs)
         obj = obj | Goal.success()
-        _ = goals_solve(on_backtrack.id, obj.__getval()) == 1
+        _ = goals_solve(on_backtrack.id, obj._getval()) == 1
         sol['solved'] = True
         sol['time'] = time.perf_counter() - start
 
@@ -1763,7 +1763,7 @@ def solve(objective, *args, time=True, backtrack=False, on_backtrack=None,
             res.append(Solution(sol))
 
         obj = (objective & Goal.atomic(keep) & Goal.fail()) | Goal.success()
-        sol['solved'] = goals_solve(on_backtrack.id, obj.__getval()) == 1
+        sol['solved'] = goals_solve(on_backtrack.id, obj._getval()) == 1
         sol['time'] = time.perf_counter() - start
         sol['solution'] = None
         res.append(sol)
@@ -1774,7 +1774,7 @@ def solve(objective, *args, time=True, backtrack=False, on_backtrack=None,
         return res
 
     # else
-    sol['solved'] = goals_solve(on_backtrack.id, objective.__getval()) == 1
+    sol['solved'] = goals_solve(on_backtrack.id, objective._getval()) == 1
 
     # IMPORTANT! Free memory
     del __ml_callbacks[on_backtrack.id]
@@ -1909,9 +1909,9 @@ def alldifferent(variables, lazy=False):
         _vars = array.array('Q', range(length))
         for i in range(length):
             if isinstance(variables[i], Variable):
-                _vars[i] = variables[i].__getval()
+                _vars[i] = variables[i]._getval()
             elif isinstance(variables[i], Arith):
-                _vars[i] = e2fd(variables[i].__getval())
+                _vars[i] = e2fd(variables[i]._getval())
             else:
                 raise TypeError("Arguments must be variables or expressions")
         pt_vars = <uintptr_t*>_vars.data.as_voidptr
@@ -1983,7 +1983,7 @@ def array(variables):
     )
     shape = len(variables),  # tuple[int]
     try:
-        import numpy as np 
+        import numpy as np
 
         if isinstance(variables, np.ndarray):
             if not all(
@@ -2005,9 +2005,9 @@ def array(variables):
         _vars = array.array('Q', range(length))
         for i in range(length):
             if isinstance(variables[i], Variable):
-                _vars[i] = variables[i].__getval()
+                _vars[i] = variables[i]._getval()
             elif isinstance(variables[i], Arith):
-                _vars[i] = e2fd(variables[i].__getval())
+                _vars[i] = e2fd(variables[i]._getval())
             elif isinstance(variables[i], numbers.Integral):
                 _vars[i] = e2fd(i2e(variables[i]))
             else:

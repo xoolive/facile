@@ -214,7 +214,7 @@ def variable(
     **kwargs,
 ) -> Variable: ...
 def array(
-    variables: Union[Iterable[Union[int, Variable, Arith]], "np.ndarray"]
+    variables: Union[Iterable[Union[int, Variable, Arith]], "np.ndarray"],
 ) -> Array: ...
 
 # -- Methods for constraints --

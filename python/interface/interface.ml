@@ -22,7 +22,7 @@ external goal_creator: int -> unit -> Facile.Goals.t =
 
 let _ =
 
-  (**
+  (*
    * All callback registrations
    *)
 
