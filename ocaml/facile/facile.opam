@@ -1,0 +1,27 @@
+opam-version: "2.0"
+name: "facile"
+version: "dev"
+synopsis: "A Functional Constraint Library for OCaml"
+maintainer: "Nicolas Barnier <nicolas.barnier@enac.fr>"
+authors: [
+  "Nicolas Barnier <nicolas.barnier@enac.fr>"
+]
+# homepage: "https://git.recherche.enac.fr/projects/ocaml/stdlog"
+# bug-reports: "https://git.recherche.enac.fr/projects/ocaml/stdlog/issues/new"
+# dev-repo: "git://git@git.recherche.enac.fr:ocaml/stdlog.git"
+tags: [ "org:enac" ]
+build: [
+  ["dune" "subst"] {pinned}
+  ["dune"
+   "build"
+   "-p" name
+    "-j" jobs
+    "@install"
+    "@runtest" {with-test}
+    "@doc" {with-doc}
+  ]
+]
+depends: [
+  "ocaml"
+  "dune" {>= "2.0"}
+]
