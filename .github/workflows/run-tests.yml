@@ -18,7 +18,7 @@ jobs:
           - macos-12 # x86_64
           - macos-14 # aarch64
           - ubuntu-latest
-          - windows-latest
+          # - windows-latest  # ocaml5 will be coming with opam 2.2
         python-version:
           - "3.9"
           - "3.10"
@@ -121,7 +121,7 @@ jobs:
         # if: success() || matrix.os == 'windows-latest'
         working-directory: ./python
         run: |
-          poetry build
+          opam exec -- poetry build
 
       - name: Upload the build artifact
         uses: actions/upload-artifact@v2

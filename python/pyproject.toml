@@ -6,9 +6,9 @@ description = "Python constraint programming library"
 authors = ["Xavier Olive <git@xoolive.org>"]
 license = "LGPL 3.0"
 readme = "readme.md"
-packages = [{ include = "facile", from = "python/" }]
+#packages = [{ include = "facile", from = "python/" }]
 include = [{ path = "facile/**/*.so", format = "wheel" }]
-build = "python/build.py"
+build = "build.py"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
