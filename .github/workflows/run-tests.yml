@@ -58,6 +58,7 @@ jobs:
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ env.OCAML_COMPILER }}
+          dune-cache: true
 
       # - name: Set vcvarsall.bat # does nothing on Linux and MacOS
       #   uses: ilammy/msvc-dev-cmd@v1
@@ -77,6 +78,7 @@ jobs:
         # See Note above
         working-directory: ./ocaml/facile
         run: |
+          opam install . --deps-only
           opam exec -- dune build
           opam exec -- dune install
 
