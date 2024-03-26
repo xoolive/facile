@@ -1,5 +1,6 @@
-import facile
 import pytest
+
+import facile
 
 
 def test_solution() -> None:

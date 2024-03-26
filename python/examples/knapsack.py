@@ -1,4 +1,5 @@
 import numpy as np
+
 from facile import Array, constraint, maximize
 
 capacity = np.array([18209, 7692, 1333, 924, 26638, 61188, 13360])

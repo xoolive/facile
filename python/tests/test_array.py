@@ -1,6 +1,7 @@
-import facile
 import numpy as np
 import pytest
+
+import facile
 
 
 def test_basic_array() -> None:
