@@ -95,15 +95,18 @@ jobs:
           opam exec -- poetry install
 
       - name: Style checking
+        working-directory: ./python
         run: |
           poetry run ruff check facile examples tests
           poetry run ruff format --check facile examples tests
 
       - name: Type checking
+        working-directory: ./python
         run: |
           poetry run mypy facile examples tests
 
       - name: Run Pytest
+        working-directory: ./python
         # See Note above
         #if: success() || matrix.os == 'windows-latest'
         run: |
@@ -116,6 +119,7 @@ jobs:
       - name: Build wheel
         # See Note above
         # if: success() || matrix.os == 'windows-latest'
+        working-directory: ./python
         run: |
           poetry build
 
@@ -125,4 +129,4 @@ jobs:
         # if: success() || matrix.os == 'windows-latest'
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}-facile-wheel
-          path: dist/*.whl
+          path: ./python/dist/*.whl
