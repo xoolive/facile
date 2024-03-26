@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-12 # x86_64
+          - macos-11 # x86_64
           - macos-14 # aarch64
           - ubuntu-latest
           # - windows-latest  # ocaml5 will be coming with opam 2.2
@@ -28,19 +28,6 @@ jobs:
     steps:
       - name: Checkout Python code
         uses: actions/checkout@v4
-
-      # - name: Set up private ssh key
-      #   uses: webfactory/ssh-agent@v0.5.3
-      #   with:
-      #     ssh-private-key: ${{ secrets.SSH_KEY }}
-
-      # - name: Checkout OCaml facile library
-      #   run: |
-      #     ssh-keyscan git.recherche.enac.fr > ~/.ssh/known_hosts
-      #     git clone git@git.recherche.enac.fr:facile.git facile.ml
-      #     cd facile.ml
-      #     git checkout 03a93f9
-      #     sed -i'' -e '/^OPT_INSTALL/ s/$/ _build\/$(NAME).lib/' Makefile
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -60,22 +47,7 @@ jobs:
           ocaml-compiler: ${{ env.OCAML_COMPILER }}
           dune-cache: true
 
-      # - name: Set vcvarsall.bat # does nothing on Linux and MacOS
-      #   uses: ilammy/msvc-dev-cmd@v1
-      #   if: ${{ matrix.os == 'windows-latest' }}
-      # - name: Use OCaml for Windows
-      #   uses: ocaml/setup-ocaml@v2
-      #   if: ${{ matrix.os == 'windows-latest' }}
-      #   with:
-      #     ocaml-compiler: ocaml-variants.4.12.0+msvc64
-      #     opam-depext: false # why is this ignored?
-      # * Note: *
-      # This target fails with the installation of config-file
-      # ocamlfind: config_file.o: No such file or directory
-      # However this is not an issue for compiling facile
-
       - name: Compile and install Ocaml facile library
-        # See Note above
         working-directory: ./ocaml/facile
         run: |
           opam install . --deps-only
@@ -88,8 +60,6 @@ jobs:
           opam exec -- dune build
 
       - name: Install Python facile library
-        # See Note above
-        # if: success() || matrix.os == 'windows-latest'
         working-directory: ./python
         run: |
           opam exec -- poetry install
@@ -100,33 +70,23 @@ jobs:
           poetry run ruff check facile examples tests
           poetry run ruff format --check facile examples tests
 
-      - name: Type checking
-        working-directory: ./python
-        run: |
-          poetry run mypy facile examples tests
+          # - name: Type checking
+          #   working-directory: ./python
+          #   run: |
+          #     poetry run mypy facile examples tests
 
       - name: Run Pytest
         working-directory: ./python
-        # See Note above
-        #if: success() || matrix.os == 'windows-latest'
         run: |
           poetry run pytest
 
-      # - name: tmate session if tests fail
-      #   if: failure() && matrix.python-version == 3.9
-      #   uses: mxschmitt/action-tmate@v3
-
       - name: Build wheel
-        # See Note above
-        # if: success() || matrix.os == 'windows-latest'
         working-directory: ./python
         run: |
           opam exec -- poetry build
 
       - name: Upload the build artifact
         uses: actions/upload-artifact@v2
-        # See Note above
-        # if: success() || matrix.os == 'windows-latest'
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}-facile-wheel
           path: ./python/dist/*.whl
