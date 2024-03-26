@@ -20,10 +20,15 @@ jobs:
           - ubuntu-latest
           # - windows-latest  # ocaml5 will be coming with opam 2.2
         python-version:
-          - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"
+        include:
+          # Python 3.9 is not available on macos14
+          - python-version: "3.9"
+            os: ubuntu-latest
+          - python-version: "3.9"
+            os: macos-11
 
     steps:
       - name: Checkout Python code
@@ -75,10 +80,11 @@ jobs:
           #   run: |
           #     poetry run mypy facile examples tests
 
-      - name: Run Pytest
+      - name: Run Pytest and examples
         working-directory: ./python
         run: |
           poetry run pytest
+          # for file in examples; do poetry run python $file; done
 
       - name: Build wheel
         working-directory: ./python
