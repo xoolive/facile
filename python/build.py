@@ -4,7 +4,6 @@ import os
 import shutil
 import sys
 import sysconfig
-import time
 
 from Cython.Build import cythonize
 from setuptools import Distribution, Extension
@@ -44,10 +43,10 @@ def ocaml_config(build_path: None | str = None) -> tuple[list[str], list[str]]:
     if sysconfig.get_platform().startswith("win"):
         static_obj = "lib"
 
-    if sysconfig.get_platform().startswith("linux"):
-        extra_link_args.append(f"{ocamlpath}/libasmrun_pic.{static_obj}")
-    else:
-        extra_link_args.append(f"{ocamlpath}/libasmrun.{static_obj}")
+    # if sysconfig.get_platform().startswith("linux"):
+    #     extra_link_args.append(f"{ocamlpath}/libasmrun_pic.{static_obj}")
+    # else:
+    #     extra_link_args.append(f"{ocamlpath}/libasmrun.{static_obj}")
 
     if sysconfig.get_platform().startswith("win"):
         extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_msvc64.obj")
@@ -76,15 +75,19 @@ def ocaml_config(build_path: None | str = None) -> tuple[list[str], list[str]]:
 
 
 def build() -> None:
-    include_dirs, extra_link_args = ocaml_config()
+    # include_dirs, extra_link_args = ocaml_config()
 
-    compiler = sysconfig.get_config_var("CC")
-    compiler = "" if compiler is None else compiler
+    ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
+    if ocamlpath == "":
+        raise SystemError("ocamlopt not found")
+
+    # compiler = sysconfig.get_config_var("CC")
+    # compiler = "" if compiler is None else compiler
 
     compileargs = sysconfig.get_config_var("CFLAGS")
     compileargs = "" if compileargs is None else compileargs
 
-    if sys.platform != "win32":
+    if sys.platform == "linux":
         # Flag for array
         compileargs += " -Wno-unused-function"
         # Mute the ugly trick for value/value*
@@ -93,15 +96,23 @@ def build() -> None:
         # assignment discards 'const' qualifier from pointer target type
         compileargs += " -Wno-discarded-qualifiers"
         compileargs += " -std=c99"
+    elif sys.platform == "darwin":
+        # Flag for array
+        compileargs += " -Wno-unused-function"
+        # Mute the ugly trick for value/value*
+        compileargs += " -Wno-int-conversion"
+        compileargs += " -Wno-incompatible-pointer-types"
+        compileargs += " -Wno-unreachable-code-fallthrough"
+        compileargs += " -std=c99"
 
     extensions = [
         Extension(
             "facile.core",
             ["facile/core.pyx", "binding/facile.c"],
             language="c",
-            include_dirs=["."] + include_dirs,
+            include_dirs=[".", ocamlpath],
             extra_compile_args=compileargs.split(),
-            extra_link_args=extra_link_args,
+            extra_link_args=["binding/binding.exe.o"],
         )
     ]
 

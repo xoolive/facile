@@ -14,7 +14,7 @@ from typing import (
 
 if TYPE_CHECKING:
     try:
-        import numpy as np  # noqa: F401
+        import numpy as np
     except ImportError:
         pass
 

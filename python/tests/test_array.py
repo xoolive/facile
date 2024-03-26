@@ -1,7 +1,6 @@
+import facile
 import numpy as np
 import pytest
-
-import facile
 
 
 def test_basic_array() -> None:
@@ -73,7 +72,7 @@ def test_broadcast() -> None:
     assert sol.evaluation == 76
     assert (
         np.array(sol.solution).reshape(c.shape)
-        == np.array(  # noqa: W503
+        == np.array(
             [
                 [1, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 1],

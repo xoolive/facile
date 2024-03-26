@@ -2,9 +2,10 @@
  (name binding)
  (modules binding)
  (libraries facile)
+ (link_flags
+  (-cclib -lasmrun_pic))
  (modes
   (native object))
- ;(ocamlopt_flags (-output-obj))
  (promote
   (until-clean)
   (into .)))

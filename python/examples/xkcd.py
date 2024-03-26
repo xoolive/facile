@@ -1,3 +1,5 @@
+# ruff: noqa: RUF001
+
 from facile import constraint, solve_all, sum, variable
 
 # http://xkcd.com/287/
