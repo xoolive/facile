@@ -1,0 +1,11 @@
+(executable
+ (name binding)
+ (modules binding)
+ (libraries facile)
+ (link_flags
+  (-cclib -lasmrun_pic))
+ (modes
+  (native object))
+ (promote
+  (until-clean)
+  (into .)))

@@ -1,0 +1,8 @@
+(library
+ (name facile) (public_name facile)
+ (modules (:standard \ Fcl_ac4))
+ (wrapped false))
+
+(toplevel
+ (name      faciletop)
+ (libraries facile))

@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "facile"
+homepage = "https://github.com/xoolive/facile"
+version = "1.6"
+description = "Python constraint programming library"
+authors = ["Xavier Olive <git@xoolive.org>"]
+license = "LGPL 3.0"
+readme = "readme.md"
+#packages = [{ include = "facile", from = "python/" }]
+include = [{ path = "facile/**/*.so", format = "wheel" }]
+build = "build.py"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+
+[tool.poetry.group.dev.dependencies]
+mypy = ">=0.910"
+numpy = ">=1.21.2"
+pytest = ">=6.2.4"
+ruff = "^0.3.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "cython>=3.0", "setuptools>=62.6.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 80
+target-version = "py39"
+
+[tool.ruff.lint]
+select = [ "E", "W", "F", "I", "RUF" ]
+
+[tool.mypy]
+python_version = 3.9
+platform = "posix"
+
+color_output = true
+pretty = true
+show_column_numbers = true
+strict = true
+check_untyped_defs = true
+ignore_missing_imports = true
+warn_no_return = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unused_ignores = true
