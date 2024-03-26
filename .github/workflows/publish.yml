@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout Python code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up private ssh key
         uses: webfactory/ssh-agent@v0.5.3
