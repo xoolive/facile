@@ -6,6 +6,11 @@ This code is a Cython-based wrapping in Python of basic functionalities of this 
 
 The documentation (installation, quickstart and examples) has been moved to [readthedocs.org](http://facile.readthedocs.io/).
 
+> [!WARNING]
+> I did not write the Ocaml library. I wrote the Python binding.  
+> I can only offer support on the Python binding.  
+> The plan is to clarify the contributions in a very near future.
+
 ## Things left to do
 
 - Find a way to better parametrize the resolution process (heuristics, variable choice order, etc.)
