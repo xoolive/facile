@@ -49,13 +49,13 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Use OCaml for Mac OS
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         if: ${{ matrix.os == 'macos-latest' }}
         with:
           ocaml-compiler: ocaml-variants.4.12.0+options
 
       - name: Use OCaml for Ubuntu
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         if: ${{ matrix.os == 'ubuntu-latest' }}
         with:
           ocaml-compiler: ocaml-variants.4.04.2+fPIC

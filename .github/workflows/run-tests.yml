@@ -47,7 +47,7 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Install Ocaml ${{ env.OCAML_COMPILER }}
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ env.OCAML_COMPILER }}
           dune-cache: true
