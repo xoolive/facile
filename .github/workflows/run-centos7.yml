@@ -61,7 +61,7 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Use OCaml for Ubuntu
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ocaml-variants.4.04.2+fPIC
 
