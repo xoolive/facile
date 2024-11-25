@@ -15,20 +15,15 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-11 # x86_64
-          - macos-14 # aarch64
+          # - macos-11 # x86_64
+          - macos-14
           - ubuntu-latest
-          # - windows-latest  # ocaml5 will be coming with opam 2.2
+          - windows-latest
         python-version:
           - "3.10"
           - "3.11"
           - "3.12"
-        include:
-          # Python 3.9 is not available on macos14
-          - python-version: "3.9"
-            os: ubuntu-latest
-          - python-version: "3.9"
-            os: macos-11
+          - "3.13"
 
     steps:
       - name: Checkout Python code
