@@ -57,6 +57,7 @@ jobs:
       - name: Compile Ocaml binding for Facile
         working-directory: ./python/binding
         run: |
+          opam install dune-configurator
           opam exec -- dune build
 
       - name: Install Python facile library
