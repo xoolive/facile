@@ -5,10 +5,7 @@
  (link_flags
   (:include flags.sexp))
  (modes
-  (native object))
- (promote
-  (until-clean)
-  (into .)))
+  (native object)))
 
 (rule
  (targets flags.sexp)

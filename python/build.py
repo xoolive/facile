@@ -30,8 +30,8 @@ def ocaml_config(build_path: None | str = None) -> tuple[list[str], list[str]]:
     if sysconfig.get_platform().startswith("win"):
         ext_obj = "obj"
 
-    mlobject = f"{build_path}/interface_ml.{ext_obj}"
-    mlobject = "binding/binding.exe.o"
+    # mlobject = f"{build_path}/interface_ml.{ext_obj}"
+    mlobject = "binding/_build/default/binding.exe.o"
     extra_link_args.append(mlobject)
 
     ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
@@ -87,6 +87,10 @@ def build() -> None:
     compileargs = sysconfig.get_config_var("CFLAGS")
     compileargs = "" if compileargs is None else compileargs
 
+    extra_link_args: list[str] = []
+    mlobject = "binding/_build/default/binding.exe.o"
+    extra_link_args.append(mlobject)
+
     if sys.platform == "linux":
         # Flag for array
         compileargs += " -Wno-unused-function"
@@ -104,6 +108,13 @@ def build() -> None:
         compileargs += " -Wno-incompatible-pointer-types"
         compileargs += " -Wno-unreachable-code-fallthrough"
         compileargs += " -std=c99"
+    # elif sys.platform.startswith("win"):
+    elif sysconfig.get_platform().startswith("win"):
+        ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
+        if ocamlpath == "":
+            raise SystemError("ocamlopt not found")
+        extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_msvc64.obj")
+        extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_initer_msvc64.obj")
 
     extensions = [
         Extension(
@@ -112,7 +123,7 @@ def build() -> None:
             language="c",
             include_dirs=[".", ocamlpath],
             extra_compile_args=compileargs.split(),
-            extra_link_args=["binding/binding.exe.o"],
+            extra_link_args=extra_link_args,
         )
     ]
 
