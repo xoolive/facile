@@ -6,19 +6,20 @@ on:
 
 env:
   POETRY_VERSION: "1.7.0"
-  OCAML_COMPILER: "5.1"
 
 jobs:
   deploy:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner.os }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          # - macos-11 # x86_64
-          - macos-14
-          - ubuntu-latest
-          - windows-latest
+        runner:
+          - os: macos-14
+            ocaml: 5.2
+          - os: ubuntu-latest
+            ocaml: 5.2
+          - os: windows-latest
+            ocaml: 5.2+msvc64
         python-version:
           - "3.10"
           - "3.11"
@@ -41,16 +42,11 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
 
-      - name: Install Ocaml ${{ env.OCAML_COMPILER }}
+      - name: Install Ocaml ${{ matrix.runner.ocaml }}
         uses: ocaml/setup-ocaml@v3
         with:
-          ocaml-compiler: ${{ env.OCAML_COMPILER }}
+          ocaml-compiler: ${{ matrix.runner.ocaml }}
           dune-cache: true
-
-      - name: Switch to msvc
-        if: ${{ startsWith(runner.os, 'windows') }}
-        run: |
-          opam install system-msvc
 
       - name: Compile and install Ocaml facile library
         working-directory: ./ocaml/facile
