@@ -15,11 +15,11 @@ jobs:
       matrix:
         runner:
           - os: macos-14
-            ocaml: 5.2
+            ocaml: 5.1
           - os: ubuntu-latest
-            ocaml: 5.2
+            ocaml: 5.1
           - os: windows-latest
-            ocaml: 5.2+msvc64
+            ocaml: 5.1+msvc64c
         python-version:
           - "3.10"
           - "3.11"
