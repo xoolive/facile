@@ -3,9 +3,16 @@
  (modules binding)
  (libraries facile)
  (link_flags
-  (-cclib -lasmrun_pic))
+  (:include flags.sexp))
  (modes
   (native object))
  (promote
   (until-clean)
   (into .)))
+
+(rule
+ (targets flags.sexp)
+ (deps
+  (:discover config/discover.exe))
+ (action
+  (run %{discover})))
