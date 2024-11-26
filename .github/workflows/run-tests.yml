@@ -19,7 +19,7 @@ jobs:
           - os: ubuntu-latest
             ocaml: 5.1
           - os: windows-latest
-            ocaml: ocaml-base-compiler.5.3.0~beta1,system-msvc,dune
+            ocaml: system-msvc
         python-version:
           - "3.10"
           - "3.11"
@@ -96,5 +96,5 @@ jobs:
       - name: Upload the build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-${{ matrix.python-version }}-facile-wheel
+          name: ${{ matrix.runner.os }}-${{ matrix.python-version }}-facile-wheel
           path: ./python/dist/*.whl
