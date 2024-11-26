@@ -115,8 +115,9 @@ def build() -> None:
         if ocamlpath == "":
             raise SystemError("ocamlopt not found")
         extra_link_args.append(mlobject + "bj")  # .obj
-        extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_msvc64.obj")
-        extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_initer_msvc64.obj")
+        os.environ["LDSHARED"] = "flexlink.exe"
+        # extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_msvc64.obj")
+        # extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_initer_msvc64.obj")
 
     extensions = [
         Extension(
