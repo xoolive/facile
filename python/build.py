@@ -89,7 +89,6 @@ def build() -> None:
 
     extra_link_args: list[str] = []
     mlobject = "binding/_build/default/binding.exe.o"
-    extra_link_args.append(mlobject)
 
     if sys.platform == "linux":
         # Flag for array
@@ -100,6 +99,7 @@ def build() -> None:
         # assignment discards 'const' qualifier from pointer target type
         compileargs += " -Wno-discarded-qualifiers"
         compileargs += " -std=c99"
+        extra_link_args.append(mlobject)
     elif sys.platform == "darwin":
         # Flag for array
         compileargs += " -Wno-unused-function"
@@ -108,11 +108,13 @@ def build() -> None:
         compileargs += " -Wno-incompatible-pointer-types"
         compileargs += " -Wno-unreachable-code-fallthrough"
         compileargs += " -std=c99"
+        extra_link_args.append(mlobject)
     # elif sys.platform.startswith("win"):
     elif sysconfig.get_platform().startswith("win"):
         ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
         if ocamlpath == "":
             raise SystemError("ocamlopt not found")
+        extra_link_args.append(mlobject + "bj")  # .obj
         extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_msvc64.obj")
         extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_initer_msvc64.obj")
 
