@@ -7,7 +7,7 @@ let () =
       in
       print_endline system;
       let flags =
-        if system = "mingw64" then [ "-cclib"; "-lasmrun" ]
+        if system = "win64" then [ "-cclib"; "-lasmrun" ]
         else [ "-cclib"; "-lasmrun_pic" ]
       in
       C.Flags.(write_sexp "flags.sexp" flags))
