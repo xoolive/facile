@@ -47,6 +47,11 @@ jobs:
           ocaml-compiler: ${{ env.OCAML_COMPILER }}
           dune-cache: true
 
+      - name: Switch to msvc
+        if: ${{ startsWith(runner.os, 'windows') }}
+        run: |
+          opam install system-msvc
+
       - name: Compile and install Ocaml facile library
         working-directory: ./ocaml/facile
         run: |
