@@ -115,7 +115,7 @@ def build() -> None:
         if ocamlpath == "":
             raise SystemError("ocamlopt not found")
         extra_link_args.append(mlobject + "bj")  # .obj
-        os.environ["LDSHARED"] = "flexlink.exe"
+        # libraries=["ws2_32", "version"],  # Link Windows libraries
         # extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_msvc64.obj")
         # extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_initer_msvc64.obj")
 
@@ -142,6 +142,17 @@ def build() -> None:
     cmd = build_ext.build_ext(distribution)
     cmd.verbose = True
     cmd.ensure_finalized()
+
+    if sysconfig.get_platform().startswith("win"):
+        from distutils.ccompiler import new_compiler
+
+        # Force MSVC compiler
+        cmd.compiler = new_compiler(compiler="msvc")
+
+        # Modify linker, if required
+        if hasattr(cmd.compiler, "set_executable"):
+            cmd.compiler.set_executable("linker_exe", "flexlink.exe")
+
     cmd.run()
 
     # Copy built extensions back to the project
