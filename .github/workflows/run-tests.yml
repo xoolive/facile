@@ -68,7 +68,16 @@ jobs:
 
       - name: Install Python facile library
         working-directory: ./python
+        if: ${{ !startsWith(runner.os, 'windows') }}
         run: |
+          opam exec -- poetry install
+
+      - name: Install Python facile library
+        working-directory: ./python
+        if: ${{ startsWith(runner.os, 'windows') }}
+        run: |
+          echo "LDSHARED=C:\Users\runneradmin\.opam\default\bin\flexlink.exe -chain msvc" >> $env:GITHUB_ENV
+          echo "LDSHARED is $env:LDSHARED"
           opam exec -- poetry install
 
       - name: Style checking

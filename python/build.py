@@ -142,17 +142,6 @@ def build() -> None:
     cmd = build_ext.build_ext(distribution)
     cmd.verbose = True
     cmd.ensure_finalized()
-
-    if sysconfig.get_platform().startswith("win"):
-        from distutils.ccompiler import new_compiler
-
-        # Force MSVC compiler
-        cmd.compiler = new_compiler(compiler="msvc")
-
-        # Modify linker, if required
-        if hasattr(cmd.compiler, "set_executable"):
-            cmd.compiler.set_executable("linker_exe", "flexlink.exe")
-
     cmd.run()
 
     # Copy built extensions back to the project
