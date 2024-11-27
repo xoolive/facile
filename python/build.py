@@ -166,11 +166,7 @@ def build() -> None:
                 # Override the linker with flexlink.exe
                 self.compiler = new_compiler()
                 self.compiler.linker = _find_exe("flexlink.exe")
-                self.compiler.ldflags_shared = [
-                    "-chain",
-                    "msvc",
-                    *self.compiler.ldflags_shared,
-                ]
+                self.compiler.linker += " -chain msvc"
 
             super().build_extensions()
 
