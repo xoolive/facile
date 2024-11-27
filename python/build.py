@@ -144,6 +144,7 @@ def build() -> None:
             print(f"{sysconfig.get_platform()=}")
             if sysconfig.get_platform().startswith("win"):
                 print(f"{self.compiler=}")
+                self.compiler.initialize()
                 print(f"{self.compiler.linker=}")
                 # Override the linker with flexlink.exe
                 self.compiler.linker = os.environ["LDSHARED"]
