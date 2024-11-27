@@ -148,11 +148,17 @@ def build() -> None:
         def build_extensions(self):
             print(f"{sysconfig.get_platform()=}")
             if sysconfig.get_platform().startswith("win"):
+                flexlink_path = (
+                    os.popen("opam exec -- where flexlink.exe")
+                    .readline()
+                    .strip()
+                )
+
                 print(f"{self.compiler=}")
                 self.compiler.initialize()
                 print(f"{self.compiler.linker=}")
                 # Override the linker with flexlink.exe
-                self.compiler.linker = os.environ["LDSHARED"]
+                self.compiler.linker = flexlink_path
                 print(f"{self.compiler=}")
                 print(f"{self.compiler.linker=}")
                 print(f"{self.compiler.ldflags_static=}")
