@@ -141,6 +141,7 @@ def build() -> None:
 
     class CustomBuildExt(build_ext.build_ext):
         def initialize(self):
+            print(f"{sysconfig.get_platform()=}")
             if sysconfig.get_platform().startswith("win"):
                 from setuptools._distutils._msvccompiler import _find_exe
                 from setuptools._distutils.ccompiler import new_compiler
