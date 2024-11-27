@@ -169,7 +169,7 @@ def build() -> None:
                 self.compiler.ld_flags = [
                     "-chain",
                     "msvc",
-                    *self.compiler.ld_flags,
+                    *self.compiler.ld_flags_shared,
                 ]
 
             super().build_extensions()
