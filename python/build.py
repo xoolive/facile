@@ -139,9 +139,22 @@ def build() -> None:
         {"name": "extended", "ext_modules": ext_modules}
     )
 
-    cmd = build_ext.build_ext(distribution)
+    class CustomBuildExt(build_ext.build_ext):
+        def build_extensions(self):
+            if sysconfig.get_platform().startswith("win"):
+                from setuptools._distutils.ccompiler import new_compiler
+
+                # Override the linker with flexlink.exe
+                self.compiler = new_compiler(compiler="nt")
+                self.compiler.set_executable(
+                    "linker", "flexlink.exe -chain msvc"
+                )
+            super().build_extensions()
+
+    cmd = CustomBuildExt(distribution)
     cmd.verbose = True
     cmd.ensure_finalized()
+    print(cmd.compiler)
     cmd.run()
 
     # Copy built extensions back to the project
