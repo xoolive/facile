@@ -142,13 +142,36 @@ def build() -> None:
     class CustomBuildExt(build_ext.build_ext):
         def build_extensions(self):
             if sysconfig.get_platform().startswith("win"):
+                from setuptools._distutils._msvccompiler import _find_exe
                 from setuptools._distutils.ccompiler import new_compiler
+
+                # Get Python's include and library paths
+                include_dir = sysconfig.get_path("include")
+                plat_include_dir = sysconfig.get_path("platinclude")
+                library_dirs = [
+                    sysconfig.get_config_var("LIBDIR"),
+                    sysconfig.get_config_var("LIBPL"),
+                ]
+
+                # Add include directories
+                self.compiler.add_include_dir(include_dir)
+                if plat_include_dir:
+                    self.compiler.add_include_dir(plat_include_dir)
+
+                # Add library directories
+                for lib_dir in library_dirs:
+                    if lib_dir:
+                        self.compiler.add_library_dir(lib_dir)
 
                 # Override the linker with flexlink.exe
                 self.compiler = new_compiler()
-                self.compiler.set_executable(
-                    "linker", "flexlink.exe -chain msvc"
-                )
+                self.compiler.linker = _find_exe("flexlink.exe")
+                self.compiler.ld_flags = [
+                    "-chain",
+                    "msvc",
+                    *self.compiler.ld_flags,
+                ]
+
             super().build_extensions()
 
     cmd = CustomBuildExt(distribution)
