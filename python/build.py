@@ -145,7 +145,7 @@ def build() -> None:
                 from setuptools._distutils.ccompiler import new_compiler
 
                 # Override the linker with flexlink.exe
-                self.compiler = new_compiler(compiler="nt")
+                self.compiler = new_compiler()
                 self.compiler.set_executable(
                     "linker", "flexlink.exe -chain msvc"
                 )
