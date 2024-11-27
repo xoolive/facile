@@ -114,6 +114,11 @@ def build() -> None:
         ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
         if ocamlpath == "":
             raise SystemError("ocamlopt not found")
+        compileargs += (
+            " /wd4090"  # C4090: '=': different 'const' qualifiers
+            " /wd4024"  # different types for formal and actual parameter
+            " /wd4047"  # 'value *' differs in levels of indirection
+        )
         extra_link_args.append(mlobject + "bj")  # .obj
         # libraries=["ws2_32", "version"],  # Link Windows libraries
         # extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_msvc64.obj")
@@ -150,6 +155,12 @@ def build() -> None:
                 self.compiler.linker = os.environ["LDSHARED"]
                 print(f"{self.compiler=}")
                 print(f"{self.compiler.linker=}")
+                print(f"{self.compiler.ldflags_static=}")
+                self.compiler.ldflags_static = [
+                    "-chain msvc",
+                    *self.compiler.ldflags_static,
+                ]
+                print(f"{self.compiler.ldflags_static=}")
 
             super().build_extensions()
 
