@@ -76,7 +76,7 @@ jobs:
         working-directory: ./python
         if: ${{ startsWith(runner.os, 'windows') }}
         run: |
-          echo "LDSHARED=C:\Users\runneradmin\.opam\default\bin\flexlink.exe -chain msvc" >> $env:GITHUB_ENV
+          echo "LDSHARED=C:\Users\runneradmin\.opam\default\bin\flexlink.exe -chain msvc" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "LDSHARED is $env:LDSHARED"
           opam exec -- poetry install
 
