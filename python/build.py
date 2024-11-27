@@ -140,46 +140,17 @@ def build() -> None:
     )
 
     class CustomBuildExt(build_ext.build_ext):
-        def initialize(self):
+        def build_extensions(self):
             print(f"{sysconfig.get_platform()=}")
             if sysconfig.get_platform().startswith("win"):
-                from setuptools._distutils._msvccompiler import _find_exe
-                from setuptools._distutils.ccompiler import new_compiler
-
-                # Get Python's include and library paths
-                # include_dir = sysconfig.get_path("include")
-                # plat_include_dir = sysconfig.get_path("platinclude")
-                # library_dirs = [
-                #     sysconfig.get_config_var("LIBDIR"),
-                #     sysconfig.get_config_var("LIBPL"),
-                # ]
-
-                # # Add include directories
-                # self.compiler.add_include_dir(include_dir)
-                # if plat_include_dir:
-                #     self.compiler.add_include_dir(plat_include_dir)
-
-                # # Add library directories
-                # for lib_dir in library_dirs:
-                #     if lib_dir:
-                #         self.compiler.add_library_dir(lib_dir)
-
+                print(f"{self.compiler=}")
+                print(f"{self.compiler.linker=}")
                 # Override the linker with flexlink.exe
-                print(f"{self.compiler=}")
-                self.compiler = new_compiler()
-                print(f"{self.compiler=}")
-
-                super().initialize()
-
-                print(f"{self.compiler=}")
-                print(f"{self.compiler.linker=}")
-
                 self.compiler.linker = os.environ["LDSHARED"]
-
                 print(f"{self.compiler=}")
                 print(f"{self.compiler.linker=}")
-            else:
-                super().initialize()
+
+            super().build_extensions()
 
     cmd = CustomBuildExt(distribution)
     cmd.verbose = True
