@@ -115,14 +115,15 @@ def build() -> None:
         if ocamlpath == "":
             raise SystemError("ocamlopt not found")
         compileargs += (
+            " /LD"  # include dll information
             " /wd4090"  # C4090: '=': different 'const' qualifiers
             " /wd4024"  # different types for formal and actual parameter
             " /wd4047"  # 'value *' differs in levels of indirection
         )
         extra_link_args.append(mlobject + "bj")  # .obj
         # libraries=["ws2_32", "version"],  # Link Windows libraries
-        # extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_msvc64.obj")
-        # extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_initer_msvc64.obj")
+        extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_msvc64.obj")
+        extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_initer_msvc64.obj")
 
     extensions = [
         Extension(
