@@ -111,6 +111,8 @@ def build() -> None:
         extra_link_args.append(mlobject)
     # elif sys.platform.startswith("win"):
     elif sysconfig.get_platform().startswith("win"):
+        os.environ["FLEXDIR"] = "/d/a/facile/facile/_opam/lib/ocaml/flexdll/"
+
         ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
         if ocamlpath == "":
             raise SystemError("ocamlopt not found")
@@ -160,11 +162,25 @@ def build() -> None:
                 print(f"{self.compiler.linker=}")
                 # Override the linker with flexlink.exe
                 self.compiler.linker = flexlink_path
+
+                print(f"{self.compiler.compile_options=}")
+                # replace GL with Gy
+                self.compiler.compile_options = [
+                    "/nologo",
+                    "/O2",
+                    "/W3",
+                    "/Gy",
+                    "/DNDEBUG",
+                    "/MD",
+                ]
                 print(f"{self.compiler=}")
                 print(f"{self.compiler.linker=}")
                 print(f"{self.compiler.ldflags_static=}")
+                print(f"{self.compiler.include_dirs=}")
+                print(f"{self.compiler.compile_options=}")
                 self.compiler.ldflags_static = [
-                    "-chain msvc",
+                    "-chain",
+                    "msvc",
                     *self.compiler.ldflags_static,
                 ]
                 print(f"{self.compiler.ldflags_static=}")
