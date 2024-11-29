@@ -80,11 +80,7 @@ def flexlink_link(
         )
 
         ld_args = (
-            ldflags
-            + lib_opts
-            + export_opts
-            + objects
-            + ["-o " + output_filename]
+            ldflags + lib_opts + export_opts + objects + ["-o", output_filename]
         )
 
         if extra_preargs:
