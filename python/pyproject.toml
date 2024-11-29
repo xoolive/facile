@@ -7,7 +7,10 @@ authors = ["Xavier Olive <git@xoolive.org>"]
 license = "LGPL 3.0"
 readme = "readme.md"
 #packages = [{ include = "facile", from = "python/" }]
-include = [{ path = "facile/**/*.so", format = "wheel" }]
+include = [
+    { path = "facile/**/*.so", format = "wheel" },
+    { path = "facile/**/*.pyd", format = "wheel" },
+]
 build = "build.py"
 
 [tool.poetry.dependencies]
