@@ -10,6 +10,11 @@ from setuptools import Distribution, Extension
 from setuptools.command import build_ext
 
 
+def flexlink_library_dir_option(self, dir):
+    # replace c:\ by /c/
+    return "-L" + dir.replace("C:", "/c").replace("D:", "/d").replace("\\", "/")
+
+
 def flexlink_link(
     self,
     target_desc,
@@ -162,7 +167,6 @@ def build() -> None:
 
     class CustomBuildExt(build_ext.build_ext):
         def build_extensions(self):
-            print(f"{sysconfig.get_platform()=}")
             if sysconfig.get_platform().startswith("win"):
                 flexlink_path = (
                     os.popen("opam exec -- where flexlink.exe")
@@ -183,14 +187,16 @@ def build() -> None:
                     "/MD",
                 ]
 
-                self.compiler.link = flexlink_link
+                self.compiler.__class__.link = flexlink_link
+                self.compiler.__class__.library_dir_option = (
+                    flexlink_library_dir_option
+                )
 
             super().build_extensions()
 
     cmd = CustomBuildExt(distribution)
     cmd.verbose = True
     cmd.ensure_finalized()
-    print(cmd.compiler)
     cmd.run()
 
     # Copy built extensions back to the project
