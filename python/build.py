@@ -25,7 +25,7 @@ def flexlink_spawn(self, cmd):
         from setuptools._distutils.ccompiler import CCompiler
 
         # super() doesn't work here
-        return CCompiler.spawn(cmd, env=env)
+        return CCompiler.spawn(self, cmd, env=env)
     return fallback.value
 
 
