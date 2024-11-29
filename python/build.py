@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import functools
+import operator
 import os
 import shutil
 import sys
@@ -58,7 +60,11 @@ def flexlink_link(
     if self._need_link(objects, output_filename):
         ldflags = ["-v", "-maindll", "-chain", "msvc64"]
 
-        export_opts = ["-export " + sym for sym in (export_symbols or [])]
+        export_opts = functools.reduce(
+            operator.iadd,
+            (["-export", sym] for sym in (export_symbols or [])),
+            [],
+        )
 
         ld_args = (
             ldflags
@@ -78,7 +84,7 @@ def flexlink_link(
         try:
             print('Executing "%s" %s', self.linker, " ".join(ld_args))
             log.debug('Executing "%s" %s', self.linker, " ".join(ld_args))
-            self.spawn([self.linker] + ld_args)
+            self.spawn([self.linker, *ld_args])
         except DistutilsExecError as msg:
             raise LinkError(msg)
     else:
