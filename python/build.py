@@ -10,68 +10,74 @@ from setuptools import Distribution, Extension
 from setuptools.command import build_ext
 
 
-def ocaml_config(build_path: None | str = None) -> tuple[list[str], list[str]]:
-    include_dirs: list[str] = []
-    extra_link_args: list[str] = []
+def flexlink_link(
+    self,
+    target_desc,
+    objects,
+    output_filename,
+    output_dir=None,
+    libraries=None,
+    library_dirs=None,
+    runtime_library_dirs=None,
+    export_symbols=None,
+    debug=False,
+    extra_preargs=None,
+    extra_postargs=None,
+    build_temp=None,
+    target_lang=None,
+):
+    from setuptools._distutils._log import log
+    from setuptools._distutils._msvccompiler import gen_lib_options
+    from setuptools._distutils.errors import DistutilsExecError, LinkError
 
-    if build_path is None:
-        build_path = (
-            build_ext.build_ext(Distribution())
-            .get_finalized_command("build_ext")
-            .build_temp
+    if not self.initialized:
+        self.initialize()
+    objects, output_dir = self._fix_object_args(objects, output_dir)
+    fixed_args = self._fix_lib_args(
+        libraries, library_dirs, runtime_library_dirs
+    )
+    libraries, library_dirs, runtime_library_dirs = fixed_args
+
+    if runtime_library_dirs:
+        self.warn(
+            "I don't know what to do with 'runtime_library_dirs': "
+            + str(runtime_library_dirs)
         )
 
-    if not os.path.exists("build"):
-        os.mkdir("build")
-    if not os.path.exists(build_path):
-        os.mkdir(build_path)
+    lib_opts = gen_lib_options(
+        self, library_dirs, runtime_library_dirs, libraries
+    )
+    if output_dir is not None:
+        output_filename = os.path.join(output_dir, output_filename)
 
-    ext_obj = "o"
-    if sysconfig.get_platform().startswith("win"):
-        ext_obj = "obj"
+    if self._need_link(objects, output_filename):
+        ldflags = ["-v", "-maindll", "-chain", "msvc64"]
 
-    # mlobject = f"{build_path}/interface_ml.{ext_obj}"
-    mlobject = "binding/_build/default/binding.exe.o"
-    extra_link_args.append(mlobject)
+        export_opts = ["-export " + sym for sym in (export_symbols or [])]
 
-    ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
-    if ocamlpath == "":
-        raise SystemError("ocamlopt not found")
-    include_dirs.append(ocamlpath)
+        ld_args = (
+            ldflags
+            + lib_opts
+            + export_opts
+            + objects
+            + ["-o " + output_filename]
+        )
 
-    static_obj = "a"
-    if sysconfig.get_platform().startswith("win"):
-        static_obj = "lib"
+        if extra_preargs:
+            ld_args[:0] = extra_preargs
+        if extra_postargs:
+            ld_args.extend(extra_postargs)
 
-    # if sysconfig.get_platform().startswith("linux"):
-    #     extra_link_args.append(f"{ocamlpath}/libasmrun_pic.{static_obj}")
-    # else:
-    #     extra_link_args.append(f"{ocamlpath}/libasmrun.{static_obj}")
-
-    if sysconfig.get_platform().startswith("win"):
-        extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_msvc64.obj")
-        extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_initer_msvc64.obj")
-
-    # Rely on ocamlfind to find facile, but you can add some hints if need be
-    # facilepath = os.popen("opam exec -- ocamlfind query facile").readline()
-    # facilepath = facilepath.strip()
-
-    # Check timestamps for OCaml file
-    # exists = os.path.exists(mlobject)
-    # ml_mtime = os.path.getmtime("interface/interface.ml")
-    # obj_mtime = os.path.getmtime(mlobject) if exists else 0
-    # if not exists or ml_mtime > obj_mtime:
-    #     print("Compiling interface.ml")
-    #     cmd = (
-    #         "opam exec -- ocamlfind ocamlopt"
-    #         " -package facile -linkpkg -output-obj -verbose"
-    #         f" -o {mlobject} interface/interface.ml"
-    #     )
-    #     os.system(cmd)
-    #     now = time.time()
-    #     os.utime("facile/core.pyx", (now, now))
-
-    return include_dirs, extra_link_args
+        output_dir = os.path.dirname(os.path.abspath(output_filename))
+        self.mkpath(output_dir)
+        try:
+            print('Executing "%s" %s', self.linker, " ".join(ld_args))
+            log.debug('Executing "%s" %s', self.linker, " ".join(ld_args))
+            self.spawn([self.linker] + ld_args)
+        except DistutilsExecError as msg:
+            raise LinkError(msg)
+    else:
+        log.debug("skipping %s (up-to-date)", output_filename)
 
 
 def build() -> None:
@@ -88,7 +94,11 @@ def build() -> None:
     compileargs = "" if compileargs is None else compileargs
 
     extra_link_args: list[str] = []
-    mlobject = "binding/_build/default/binding.exe.o"
+    ext_obj = "o"
+    if sysconfig.get_platform().startswith("win"):
+        ext_obj = "obj"
+    mlobject = f"binding/_build/default/binding.exe.{ext_obj}"
+    extra_link_args.append(mlobject)
 
     if sys.platform == "linux":
         # Flag for array
@@ -99,7 +109,6 @@ def build() -> None:
         # assignment discards 'const' qualifier from pointer target type
         compileargs += " -Wno-discarded-qualifiers"
         compileargs += " -std=c99"
-        extra_link_args.append(mlobject)
     elif sys.platform == "darwin":
         # Flag for array
         compileargs += " -Wno-unused-function"
@@ -108,7 +117,6 @@ def build() -> None:
         compileargs += " -Wno-incompatible-pointer-types"
         compileargs += " -Wno-unreachable-code-fallthrough"
         compileargs += " -std=c99"
-        extra_link_args.append(mlobject)
     # elif sys.platform.startswith("win"):
     elif sysconfig.get_platform().startswith("win"):
         os.environ["FLEXDIR"] = "/d/a/facile/facile/_opam/lib/ocaml/flexdll/"
@@ -122,10 +130,15 @@ def build() -> None:
             " /wd4024"  # different types for formal and actual parameter
             " /wd4047"  # 'value *' differs in levels of indirection
         )
-        extra_link_args.append(mlobject + "bj")  # .obj
-        # libraries=["ws2_32", "version"],  # Link Windows libraries
-        extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_msvc64.obj")
-        extra_link_args.append(f"{ocamlpath}/flexdll/flexdll_initer_msvc64.obj")
+        extra_link_args += [
+            "-lvcruntime",
+            "-lversion",
+            "-luuid",
+            "-lkernel32",
+            "-luser32",
+            "-ladvapi32",
+            "-lws2_32",
+        ]
 
     extensions = [
         Extension(
@@ -157,33 +170,20 @@ def build() -> None:
                     .strip()
                 )
 
-                print(f"{self.compiler=}")
                 self.compiler.initialize()
-                print(f"{self.compiler.linker=}")
-                # Override the linker with flexlink.exe
+
                 self.compiler.linker = flexlink_path
 
-                print(f"{self.compiler.compile_options=}")
-                # replace GL with Gy
                 self.compiler.compile_options = [
                     "/nologo",
                     "/O2",
                     "/W3",
-                    "/Gy",
+                    "/Gy",  # replace GL with Gy
                     "/DNDEBUG",
                     "/MD",
                 ]
-                print(f"{self.compiler=}")
-                print(f"{self.compiler.linker=}")
-                print(f"{self.compiler.ldflags_static=}")
-                print(f"{self.compiler.include_dirs=}")
-                print(f"{self.compiler.compile_options=}")
-                self.compiler.ldflags_static = [
-                    "-chain",
-                    "msvc",
-                    *self.compiler.ldflags_static,
-                ]
-                print(f"{self.compiler.ldflags_static=}")
+
+                self.compiler.link = flexlink_link
 
             super().build_extensions()
 
