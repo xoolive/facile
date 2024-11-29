@@ -22,7 +22,10 @@ def flexlink_spawn(self, cmd):
     flexdir = "d:/a/facile/facile/_opam/lib/ocaml/flexdll/"
     env = dict(os.environ, PATH=self._paths, FLEXDIR=flexdir)
     with self._fallback_spawn(cmd, env) as fallback:
-        return super().spawn(cmd, env=env)
+        from setuptools._distutils.ccompiler import CCompiler
+
+        # super() doesn't work here
+        return CCompiler.spawn(cmd, env=env)
     return fallback.value
 
 
