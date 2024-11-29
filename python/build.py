@@ -13,8 +13,17 @@ from setuptools.command import build_ext
 
 
 def flexlink_library_dir_option(self, dir):
-    # replace c:\ by /c/
-    return "-L" + dir.replace("C:", "/c").replace("D:", "/d").replace("\\", "/")
+    # replace /LIB: by -L for flexlink
+    return "-L" + dir
+
+
+def flexlink_spawn(self, cmd):
+    # even if the environment variable is set, it would fail if not passed here
+    flexdir = "d:/a/facile/facile/_opam/lib/ocaml/flexdll/"
+    env = dict(os.environ, PATH=self._paths, FLEXDIR=flexdir)
+    with self._fallback_spawn(cmd, env) as fallback:
+        return super().spawn(cmd, env=env)
+    return fallback.value
 
 
 def flexlink_link(
@@ -33,6 +42,7 @@ def flexlink_link(
     build_temp=None,
     target_lang=None,
 ):
+    # Rewrite the link() method for flexlink
     from setuptools._distutils._log import log
     from setuptools._distutils._msvccompiler import gen_lib_options
     from setuptools._distutils.errors import DistutilsExecError, LinkError
@@ -82,7 +92,6 @@ def flexlink_link(
         output_dir = os.path.dirname(os.path.abspath(output_filename))
         self.mkpath(output_dir)
         try:
-            print('Executing "%s" %s', self.linker, " ".join(ld_args))
             log.debug('Executing "%s" %s', self.linker, " ".join(ld_args))
             self.spawn([self.linker, *ld_args])
         except DistutilsExecError as msg:
@@ -130,8 +139,6 @@ def build() -> None:
         compileargs += " -std=c99"
     # elif sys.platform.startswith("win"):
     elif sysconfig.get_platform().startswith("win"):
-        os.environ["FLEXDIR"] = "/d/a/facile/facile/_opam/lib/ocaml/flexdll/"
-
         ocamlpath = os.popen("opam exec -- ocamlopt -where").readline().strip()
         if ocamlpath == "":
             raise SystemError("ocamlopt not found")
@@ -141,6 +148,7 @@ def build() -> None:
             " /wd4024"  # different types for formal and actual parameter
             " /wd4047"  # 'value *' differs in levels of indirection
         )
+        # directly in the flexlink format
         extra_link_args += [
             "-lvcruntime",
             "-lversion",
@@ -184,6 +192,7 @@ def build() -> None:
 
                 self.compiler.linker = flexlink_path
 
+                # with /GL (by default), the symbols are not found by flexlink
                 self.compiler.compile_options = [
                     "/nologo",
                     "/O2",
@@ -194,6 +203,7 @@ def build() -> None:
                 ]
 
                 self.compiler.__class__.link = flexlink_link
+                self.compiler.__class__.spawn = flexlink_spawn
                 self.compiler.__class__.library_dir_option = (
                     flexlink_library_dir_option
                 )
