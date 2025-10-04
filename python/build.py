@@ -146,6 +146,7 @@ def build() -> None:
             " /wd4090"  # C4090: '=': different 'const' qualifiers
             " /wd4024"  # different types for formal and actual parameter
             " /wd4047"  # 'value *' differs in levels of indirection
+            " /std:c11"  # enable C11 mode for MSVC 14.44+ (equivalent to -std=c99)
         )
         # directly in the flexlink format
         extra_link_args += [
