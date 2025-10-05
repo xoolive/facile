@@ -46,8 +46,8 @@ def flexlink_link(
     target_lang=None,
 ):
     # Rewrite the link() method for flexlink
-    from setuptools._distutils._log import log
-    from setuptools._distutils._msvccompiler import gen_lib_options
+    from setuptools._distutils._log import log  # Maybe safer with _distutils.log
+    from setuptools._distutils.ccompiler import gen_lib_options
     from setuptools._distutils.errors import DistutilsExecError, LinkError
 
     if not self.initialized:
