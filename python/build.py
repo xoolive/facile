@@ -158,7 +158,18 @@ def build() -> None:
             "-luser32",
             "-ladvapi32",
             "-lws2_32",
+            # Additional libraries for unresolved symbols
+            "-lShell32",    # SHGetKnownFolderPath
+            "-lOle32",      # CoTaskMemFree
+            "-lShlwapi",    # PathIsPrefixW
+            "-lSynchronization",  # WaitOnAddress/WakeByAddressAll
         ]
+        # This ensures Flexlink finds Synchronization.lib, Ole32.lib, Shell32.lib, etc.
+        # win_sdk_libs = [
+        #     r"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64",
+        #     r"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64",
+        # ]
+        extra_link_args.extend([f"-L{d}" for d in win_sdk_libs])
 
     extensions = [
         Extension(
