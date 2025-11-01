@@ -95,7 +95,7 @@ jobs:
           poetry build
 
       - name: Upload the build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.os }}-centos7-${{ matrix.python-version }}-facile-wheel
           path: dist/*.whl
