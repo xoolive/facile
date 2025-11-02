@@ -1,5 +1,3 @@
-# flake8: noqa: E226
-
 from facile import constraint, solve, sum, variable
 
 # Number of buckets
