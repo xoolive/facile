@@ -9,7 +9,6 @@ data = [
         "sizes": [10, 9, 7, 6, 4, 4, 3, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1],
         "bigsize": 19,
     },
-    # fmt: off
     {
         "sizes": [
             50,
@@ -65,7 +64,6 @@ data = [
         ],
         "bigsize": 175,
     },
-    # fmt: on
 ]
 
 
@@ -105,7 +103,7 @@ def tiles(sizes, bigsize):
     try:
         import matplotlib.pyplot as plt  # type: ignore
 
-        fig, ax = plt.subplots(figsize=(7, 7))
+        _fig, ax = plt.subplots(figsize=(7, 7))
 
         def fill_square(x, y, s):
             plt.fill(

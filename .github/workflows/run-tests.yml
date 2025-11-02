@@ -21,10 +21,10 @@ jobs:
           - os: windows-latest
             ocaml: system-msvc
         python-version:
-          - "3.10"
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
 
     steps:
       - name: Checkout Python code
@@ -71,9 +71,9 @@ jobs:
         run: |
           opam exec -- poetry install
 
-      - name: Start Tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
+      # - name: Start Tmate session
+      #   if: ${{ failure() }}
+      #   uses: mxschmitt/action-tmate@v3
 
       - name: Style checking
         working-directory: ./python
