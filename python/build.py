@@ -21,12 +21,10 @@ def flexlink_spawn(self, cmd):
     # even if the environment variable is set, it would fail if not passed here
     flexdir = "d:/a/facile/facile/_opam/lib/ocaml/flexdll/"
     env = dict(os.environ, PATH=self._paths, FLEXDIR=flexdir)
-    with self._fallback_spawn(cmd, env) as fallback:
-        from setuptools._distutils.ccompiler import CCompiler
+    from setuptools._distutils.spawn import spawn
 
-        # super() doesn't work here
-        return CCompiler.spawn(self, cmd, env=env)
-    return fallback.value
+    # Bypass MSVC's environment override and the removed _fallback_spawn helper.
+    return spawn(cmd, env=env)
 
 
 def flexlink_link(

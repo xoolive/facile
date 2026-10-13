@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         runner:
-          - os: macos-14
+          - os: macos-15
             ocaml: 5.1
           - os: ubuntu-latest
             ocaml: 5.1
